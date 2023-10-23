@@ -57,7 +57,7 @@ func (ui *Ui) handleEntitySelected(directoryId string) {
 			title = tview.Escape("[" + entity.Title + "]")
 			handler = ui.makeEntityHandler(entity.Id)
 		} else {
-			title = entityListTextFormat(entity, ui.starIdList )
+			title = entityListTextFormat(entity, ui.starIdList)
 			handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity),
 				title, stringOr(entity.Artist, response.Directory.Name),
 				entity.Duration, ui.player, ui.queueList, ui.starIdList)
@@ -134,18 +134,18 @@ func (ui *Ui) handleToggleStar() {
 	// resp, _ := ui.connection.ToggleStar(entity.Id, remove)
 	ui.connection.ToggleStar(entity.Id, ui.starIdList)
 
-	if (remove) {
+	if remove {
 		delete(ui.starIdList, entity.Id)
 	} else {
 		ui.starIdList[entity.Id] = struct{}{}
 	}
 
-	var text = queueListTextFormat(ui.player.Queue[currentIndex], ui.starIdList )
+	var text = queueListTextFormat(ui.player.Queue[currentIndex], ui.starIdList)
 	updateQueueListItem(ui.queueList, currentIndex, text)
 	// Update the entity list to reflect any changes
 	ui.connection.Logger.Printf("entity test", ui.currentDirectory)
-	if (ui.currentDirectory != nil) {
-		ui.handleEntitySelected(ui.currentDirectory.Id) 
+	if ui.currentDirectory != nil {
+		ui.handleEntitySelected(ui.currentDirectory.Id)
 	}
 }
 
@@ -186,18 +186,18 @@ func (ui *Ui) handleToggleEntityStar() {
 
 	ui.connection.ToggleStar(entity.Id, ui.starIdList)
 
-	if (remove) {
+	if remove {
 		delete(ui.starIdList, entity.Id)
 	} else {
 		ui.starIdList[entity.Id] = struct{}{}
 	}
 
-	var text = entityListTextFormat(entity, ui.starIdList )
+	var text = entityListTextFormat(entity, ui.starIdList)
 	updateEntityListItem(ui.entityList, currentIndex, text)
 	updateQueueList(ui.player, ui.queueList, ui.starIdList)
 }
 
-func entityListTextFormat(queueItem SubsonicEntity, starredItems map[string]struct{} ) string {
+func entityListTextFormat(queueItem SubsonicEntity, starredItems map[string]struct{}) string {
 	var star = ""
 	_, hasStar := starredItems[queueItem.Id]
 	if hasStar {
@@ -284,7 +284,7 @@ func (ui *Ui) handleAddSongToPlaylist(playlist *SubsonicPlaylist) {
 
 func (ui *Ui) addRandomSongsToQueue() {
 	response, err := ui.connection.GetRandomSongs()
-	if (err != nil) {
+	if err != nil {
 		ui.connection.Logger.Printf("addRandomSongsToQueue", err.Error())
 	}
 	for _, e := range response.RandomSongs.Song {
@@ -294,7 +294,7 @@ func (ui *Ui) addRandomSongsToQueue() {
 
 func (ui *Ui) addStarredToList() {
 	response, err := ui.connection.GetStarred()
-	if (err != nil) {
+	if err != nil {
 		ui.connection.Logger.Printf("addStarredToList", err.Error())
 	}
 	for _, e := range response.Starred.Song {
@@ -373,7 +373,6 @@ func (ui *Ui) addSongToQueue(entity *SubsonicEntity) {
 	}
 
 	var id = entity.Id
-
 
 	queueItem := QueueItem{
 		id,
@@ -872,15 +871,14 @@ func InitGui(indexes *[]SubsonicIndex, playlists *[]SubsonicPlaylist, connection
 	return ui
 }
 
-
-func queueListTextFormat(queueItem QueueItem, starredItems map[string]struct{} ) string {
+func queueListTextFormat(queueItem QueueItem, starredItems map[string]struct{}) string {
 	min, sec := iSecondsToMinAndSec(queueItem.Duration)
 	var star = ""
 	_, hasStar := starredItems[queueItem.Id]
 	if hasStar {
 		star = " [red]♥"
 	}
-	return fmt.Sprintf("%s - %s - %02d:%02d %s", queueItem.Title, queueItem.Artist, min, sec,star)
+	return fmt.Sprintf("%s - %s - %02d:%02d %s", queueItem.Title, queueItem.Artist, min, sec, star)
 }
 
 // Just update the text of a specific row
