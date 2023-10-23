@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Library dependencies
+        run: sudo apt-get install libmpv-dev libglx-dev libgl-dev
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v4
