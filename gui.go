@@ -488,6 +488,8 @@ func createUi(_ *[]SubsonicIndex, playlists *[]SubsonicPlaylist, connection *Sub
 	ui.addStarredToList()
 
 	go func() {
+		//lint:ignore S1000 // additional cases may be added later
+		//nolint:gosimple
 		for {
 			select {
 			case msg := <-connection.Logger.prints:
