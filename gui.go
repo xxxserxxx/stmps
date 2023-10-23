@@ -143,7 +143,7 @@ func (ui *Ui) handleToggleStar() {
 	var text = queueListTextFormat(ui.player.Queue[currentIndex], ui.starIdList)
 	updateQueueListItem(ui.queueList, currentIndex, text)
 	// Update the entity list to reflect any changes
-	ui.connection.Logger.Printf("entity test", ui.currentDirectory)
+	ui.connection.Logger.Printf("entity test %v", ui.currentDirectory)
 	if ui.currentDirectory != nil {
 		ui.handleEntitySelected(ui.currentDirectory.Id)
 	}
@@ -285,7 +285,7 @@ func (ui *Ui) handleAddSongToPlaylist(playlist *SubsonicPlaylist) {
 func (ui *Ui) addRandomSongsToQueue() {
 	response, err := ui.connection.GetRandomSongs()
 	if err != nil {
-		ui.connection.Logger.Printf("addRandomSongsToQueue", err.Error())
+		ui.connection.Logger.Printf("addRandomSongsToQueue %s", err.Error())
 	}
 	for _, e := range response.RandomSongs.Song {
 		ui.addSongToQueue(&e)
@@ -295,7 +295,7 @@ func (ui *Ui) addRandomSongsToQueue() {
 func (ui *Ui) addStarredToList() {
 	response, err := ui.connection.GetStarred()
 	if err != nil {
-		ui.connection.Logger.Printf("addStarredToList", err.Error())
+		ui.connection.Logger.Printf("addStarredToList %s", err.Error())
 	}
 	for _, e := range response.Starred.Song {
 		// We're storing empty struct as values as we only want the indexes
@@ -369,7 +369,7 @@ func (ui *Ui) addSongToQueue(entity *SubsonicEntity) {
 	if ui.currentDirectory == nil {
 		artist = entity.Artist
 	} else {
-		stringOr(entity.Artist, ui.currentDirectory.Name)
+		artist = stringOr(entity.Artist, ui.currentDirectory.Name)
 	}
 
 	var id = entity.Id

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/wildeyedskies/go-mpv/mpv"
 	"strconv"
+
+	"github.com/wildeyedskies/go-mpv/mpv"
 )
 
 const (
