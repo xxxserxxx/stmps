@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/wildeyedskies/go-mpv/mpv"
+	"github.com/wildeyedskies/stmp/logger"
+	"github.com/wildeyedskies/stmp/subsonic"
 )
 
 // struct contains all the updatable elements of the Ui
@@ -28,19 +29,113 @@ type Ui struct {
 	searchField       *tview.InputField
 	artistList        *tview.List
 
-	currentDirectory *SubsonicDirectory
+	currentDirectory *subsonic.SubsonicDirectory
 	artistIdList     []string
 	starIdList       map[string]struct{}
-	playlists        []SubsonicPlaylist
+	playlists        []subsonic.SubsonicPlaylist
 
-	connection *SubsonicConnection
+	connection *subsonic.SubsonicConnection
 	player     *Player
+	logger     *logger.Logger
 
 	scrobbleTimer *time.Timer
 }
 
-func InitGui(indexes *[]SubsonicIndex, playlists *[]SubsonicPlaylist, connection *SubsonicConnection, player *Player) *Ui {
-	ui := createUi(indexes, playlists, connection, player)
+func InitGui(indexes *[]subsonic.SubsonicIndex,
+	playlists *[]subsonic.SubsonicPlaylist,
+	connection *subsonic.SubsonicConnection,
+	player *Player,
+	logger *logger.Logger) *Ui {
+
+	app := tview.NewApplication()
+	pages := tview.NewPages()
+	// player queue
+	queueList := tview.NewList().ShowSecondaryText(false)
+	// list of playlists
+	playlistList := tview.NewList().ShowSecondaryText(false).
+		SetSelectedFocusOnly(true)
+	// same as 'playlistList' except for the addToPlaylistModal
+	// - we need a specific version of this because we need different keybinds
+	addToPlaylistList := tview.NewList().ShowSecondaryText(false)
+	// songs in the selected playlist
+	selectedPlaylist := tview.NewList().ShowSecondaryText(false)
+	// status text at the top
+	startStopStatus := tview.NewTextView().SetText("[::b]stmp: [red]stopped").
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
+	currentPage := tview.NewTextView().SetText("Browser").
+		SetTextAlign(tview.AlignCenter).
+		SetDynamicColors(true)
+	playerStatus := tview.NewTextView().SetText("[::b][100%][0:00/0:00]").
+		SetTextAlign(tview.AlignRight).
+		SetDynamicColors(true)
+	newPlaylistInput := tview.NewInputField().
+		SetLabel("Playlist name:").
+		SetFieldWidth(50)
+	logs := tview.NewList().ShowSecondaryText(false)
+	var currentDirectory *subsonic.SubsonicDirectory
+	var artistIdList []string
+	// Stores the song IDs
+	var starIdList = map[string]struct{}{}
+
+	// create reused timer to scrobble after delay
+	scrobbleTimer := time.NewTimer(0)
+	if !scrobbleTimer.Stop() {
+		<-scrobbleTimer.C
+	}
+
+	ui := &Ui{
+		app:               app,
+		pages:             pages,
+		queueList:         queueList,
+		playlistList:      playlistList,
+		addToPlaylistList: addToPlaylistList,
+		selectedPlaylist:  selectedPlaylist,
+		newPlaylistInput:  newPlaylistInput,
+		startStopStatus:   startStopStatus,
+		currentPage:       currentPage,
+		playerStatus:      playerStatus,
+		logList:           logs,
+
+		currentDirectory: currentDirectory,
+		artistIdList:     artistIdList,
+		starIdList:       starIdList,
+		playlists:        *playlists,
+
+		connection: connection,
+		player:     player,
+		logger:     logger,
+
+		scrobbleTimer: scrobbleTimer,
+	}
+
+	ui.addStarredToList()
+
+	go func() {
+		for {
+			select {
+			case msg := <-ui.logger.Prints:
+				ui.app.QueueUpdate(func() {
+					ui.logList.AddItem(msg, "", 0, nil)
+					// Make sure the log list doesn't grow infinitely
+					for ui.logList.GetItemCount() > 200 {
+						ui.logList.RemoveItem(0)
+					}
+				})
+
+			case <-scrobbleTimer.C:
+				// scrobble submission delay elapsed
+				paused, err := ui.player.IsPaused()
+				connection.Logger.Printf("scrobbler event: paused %v, err %v, qlen %d", paused, err, len(ui.player.Queue))
+				isPlaying := err == nil && !paused
+				if len(ui.player.Queue) > 0 && isPlaying {
+					// it's still playing, submit it
+					currentSong := ui.player.Queue[0]
+					ui.connection.ScrobbleSubmission(currentSong.Id, true)
+				}
+			}
+		}
+	}()
 
 	// create components shared by pages
 
@@ -82,100 +177,7 @@ func InitGui(indexes *[]SubsonicIndex, playlists *[]SubsonicPlaylist, connection
 	return ui
 }
 
-func createUi(_ *[]SubsonicIndex, playlists *[]SubsonicPlaylist, connection *SubsonicConnection, player *Player) *Ui {
-	app := tview.NewApplication()
-	pages := tview.NewPages()
-	// player queue
-	queueList := tview.NewList().ShowSecondaryText(false)
-	// list of playlists
-	playlistList := tview.NewList().ShowSecondaryText(false).
-		SetSelectedFocusOnly(true)
-	// same as 'playlistList' except for the addToPlaylistModal
-	// - we need a specific version of this because we need different keybinds
-	addToPlaylistList := tview.NewList().ShowSecondaryText(false)
-	// songs in the selected playlist
-	selectedPlaylist := tview.NewList().ShowSecondaryText(false)
-	// status text at the top
-	startStopStatus := tview.NewTextView().SetText("[::b]stmp: [red]stopped").
-		SetTextAlign(tview.AlignLeft).
-		SetDynamicColors(true)
-	currentPage := tview.NewTextView().SetText("Browser").
-		SetTextAlign(tview.AlignCenter).
-		SetDynamicColors(true)
-	playerStatus := tview.NewTextView().SetText("[::b][100%][0:00/0:00]").
-		SetTextAlign(tview.AlignRight).
-		SetDynamicColors(true)
-	newPlaylistInput := tview.NewInputField().
-		SetLabel("Playlist name:").
-		SetFieldWidth(50)
-	logs := tview.NewList().ShowSecondaryText(false)
-	var currentDirectory *SubsonicDirectory
-	var artistIdList []string
-	// Stores the song IDs
-	var starIdList = map[string]struct{}{}
-
-	// create reused timer to scrobble after delay
-	scrobbleTimer := time.NewTimer(0)
-	if !scrobbleTimer.Stop() {
-		<-scrobbleTimer.C
-	}
-
-	ui := Ui{
-		app:               app,
-		pages:             pages,
-		queueList:         queueList,
-		playlistList:      playlistList,
-		addToPlaylistList: addToPlaylistList,
-		selectedPlaylist:  selectedPlaylist,
-		newPlaylistInput:  newPlaylistInput,
-		startStopStatus:   startStopStatus,
-		currentPage:       currentPage,
-		playerStatus:      playerStatus,
-		logList:           logs,
-
-		currentDirectory: currentDirectory,
-		artistIdList:     artistIdList,
-		starIdList:       starIdList,
-		playlists:        *playlists,
-
-		connection: connection,
-		player:     player,
-
-		scrobbleTimer: scrobbleTimer,
-	}
-
-	ui.addStarredToList()
-
-	go func() {
-		for {
-			select {
-			case msg := <-connection.Logger.prints:
-				ui.app.QueueUpdate(func() {
-					ui.logList.AddItem(msg, "", 0, nil)
-					// Make sure the log list doesn't grow infinitely
-					for ui.logList.GetItemCount() > 200 {
-						ui.logList.RemoveItem(0)
-					}
-				})
-
-			case <-scrobbleTimer.C:
-				// scrobble submission delay elapsed
-				paused, err := ui.player.IsPaused()
-				connection.Logger.Printf("scrobbler event: paused %v, err %v, qlen %d", paused, err, len(ui.player.Queue))
-				isPlaying := err == nil && !paused
-				if len(ui.player.Queue) > 0 && isPlaying {
-					// it's still playing, submit it
-					currentSong := ui.player.Queue[0]
-					ui.connection.ScrobbleSubmission(currentSong.Id, true)
-				}
-			}
-		}
-	}()
-
-	return &ui
-}
-
-func (ui *Ui) createBrowserPage(titleFlex *tview.Flex, indexes *[]SubsonicIndex) (*tview.Flex, tview.Primitive) {
+func (ui *Ui) createBrowserPage(titleFlex *tview.Flex, indexes *[]subsonic.SubsonicIndex) (*tview.Flex, tview.Primitive) {
 	// artist list
 	ui.artistList = tview.NewList().
 		ShowSecondaryText(false)
@@ -247,7 +249,7 @@ func (ui *Ui) createBrowserPage(titleFlex *tview.Flex, indexes *[]SubsonicIndex)
 				return event
 			}
 			ui.artistList.Clear()
-			ui.connection.directoryCache = make(map[string]SubsonicResponse)
+			ui.connection.ClearCache()
 			for _, index := range indexResponse.Indexes.Index {
 				for _, artist := range index.Artists {
 					ui.artistList.AddItem(artist.Name, "", 0, nil)
@@ -318,7 +320,7 @@ func (ui *Ui) createBrowserPage(titleFlex *tview.Flex, indexes *[]SubsonicIndex)
 			artistIdx := ui.artistList.GetCurrentItem()
 			entity := ui.artistIdList[artistIdx]
 			//ui.logger.Printf("refreshing artist idx %d, entity %s (%s)", artistIdx, entity, ui.connection.directoryCache[entity].Directory.Name)
-			delete(ui.connection.directoryCache, entity)
+			ui.connection.RemoveCacheEntry(entity)
 			ui.handleEntitySelected(ui.artistIdList[artistIdx])
 			return nil
 		}
@@ -596,26 +598,4 @@ func stringOr(firstChoice string, secondChoice string) string {
 		return firstChoice
 	}
 	return secondChoice
-}
-
-// Return the title if present, otherwise fallback to the file path
-func (e SubsonicEntity) getSongTitle() string {
-	if e.Title != "" {
-		return e.Title
-	}
-
-	// we get around the weird edge case where a path ends with a '/' by just
-	// returning nothing in that instance, which shouldn't happen unless
-	// subsonic is being weird
-	if e.Path == "" || strings.HasSuffix(e.Path, "/") {
-		return ""
-	}
-
-	lastSlash := strings.LastIndex(e.Path, "/")
-
-	if lastSlash == -1 {
-		return e.Path
-	}
-
-	return e.Path[lastSlash+1 : len(e.Path)]
 }

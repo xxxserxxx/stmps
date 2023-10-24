@@ -1,42 +1,38 @@
-package main
+package subsonic
 
 import (
-	"crypto/md5"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
-// used for generating salt
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
 type SubsonicConnection struct {
-	Username       string
-	Password       string
-	Host           string
-	PlaintextAuth  bool
-	Scrobble       bool
-	Logger         Logger
+	Username      string
+	Password      string
+	Host          string
+	PlaintextAuth bool
+	Scrobble      bool
+	Logger        LoggerInterface
+
 	directoryCache map[string]SubsonicResponse
 }
 
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+func Init(logger LoggerInterface) *SubsonicConnection {
+	return &SubsonicConnection{
+		Logger:         logger,
+		directoryCache: make(map[string]SubsonicResponse),
 	}
-	return string(b)
 }
 
-func authToken(password string) (string, string) {
-	salt := randSeq(8)
-	token := fmt.Sprintf("%x", md5.Sum([]byte(password+salt)))
+func (s *SubsonicConnection) ClearCache() {
+	s.directoryCache = make(map[string]SubsonicResponse)
+}
 
-	return token, salt
+func (s *SubsonicConnection) RemoveCacheEntry(key string) {
+	delete(s.directoryCache, key)
 }
 
 func defaultQuery(connection *SubsonicConnection) url.Values {
@@ -93,6 +89,28 @@ type SubsonicEntity struct {
 	Track       int    `json:"track"`
 	DiskNumber  int    `json:"diskNumber"`
 	Path        string `json:"path"`
+}
+
+// Return the title if present, otherwise fallback to the file path
+func (e SubsonicEntity) GetSongTitle() string {
+	if e.Title != "" {
+		return e.Title
+	}
+
+	// we get around the weird edge case where a path ends with a '/' by just
+	// returning nothing in that instance, which shouldn't happen unless
+	// subsonic is being weird
+	if e.Path == "" || strings.HasSuffix(e.Path, "/") {
+		return ""
+	}
+
+	lastSlash := strings.LastIndex(e.Path, "/")
+
+	if lastSlash == -1 {
+		return e.Path
+	}
+
+	return e.Path[lastSlash+1 : len(e.Path)]
 }
 
 // SubsonicEntities is a sortable list of entities.

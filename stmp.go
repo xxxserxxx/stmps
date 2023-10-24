@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/spf13/viper"
+	"github.com/wildeyedskies/stmp/logger"
+	"github.com/wildeyedskies/stmp/subsonic"
 )
 
 func readConfig() {
@@ -29,14 +31,6 @@ func readConfig() {
 	}
 }
 
-type Logger struct {
-	prints chan string
-}
-
-func (l Logger) Printf(s string, as ...interface{}) {
-	l.prints <- fmt.Sprintf(s, as...)
-}
-
 func main() {
 	help := flag.Bool("help", false, "Print usage")
 	enableMpris := flag.Bool("mpris", false, "Enable MPRIS2")
@@ -49,17 +43,14 @@ func main() {
 
 	readConfig()
 
-	logger := Logger{make(chan string, 100)}
+	logger := logger.Init()
 
-	connection := &SubsonicConnection{
-		Username:       viper.GetString("auth.username"),
-		Password:       viper.GetString("auth.password"),
-		Host:           viper.GetString("server.host"),
-		PlaintextAuth:  viper.GetBool("auth.plaintext"),
-		Scrobble:       viper.GetBool("server.scrobble"),
-		Logger:         logger,
-		directoryCache: make(map[string]SubsonicResponse),
-	}
+	connection := subsonic.Init(logger)
+	connection.Username = viper.GetString("auth.username")
+	connection.Password = viper.GetString("auth.password")
+	connection.Host = viper.GetString("server.host")
+	connection.PlaintextAuth = viper.GetBool("auth.plaintext")
+	connection.Scrobble = viper.GetBool("server.scrobble")
 
 	indexResponse, err := connection.GetIndexes()
 	if err != nil {
@@ -88,5 +79,9 @@ func main() {
 		defer mpris.Close()
 	}
 
-	InitGui(&indexResponse.Indexes.Index, &playlistResponse.Playlists.Playlists, connection, player)
+	InitGui(&indexResponse.Indexes.Index,
+		&playlistResponse.Playlists.Playlists,
+		connection,
+		player,
+		logger)
 }

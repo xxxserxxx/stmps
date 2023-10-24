@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/wildeyedskies/stmp/subsonic"
 )
 
 func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
@@ -114,7 +115,7 @@ func (ui *Ui) handleEntitySelected(directoryId string) {
 	}
 }
 
-func (ui *Ui) handlePlaylistSelected(playlist SubsonicPlaylist) {
+func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 	ui.selectedPlaylist.Clear()
 
 	for _, entity := range playlist.Entries {
@@ -123,7 +124,7 @@ func (ui *Ui) handlePlaylistSelected(playlist SubsonicPlaylist) {
 
 		var id = entity.Id
 
-		title = entity.getSongTitle()
+		title = entity.GetSongTitle()
 		handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity), title, entity.Artist, entity.Duration, ui.player, ui.queueList, ui.starIdList)
 
 		ui.selectedPlaylist.AddItem(title, "", 0, handler)
@@ -244,7 +245,7 @@ func (ui *Ui) handleToggleEntityStar() {
 	updateQueueList(ui.player, ui.queueList, ui.starIdList)
 }
 
-func entityListTextFormat(queueItem SubsonicEntity, starredItems map[string]struct{}) string {
+func entityListTextFormat(queueItem subsonic.SubsonicEntity, starredItems map[string]struct{}) string {
 	var star = ""
 	_, hasStar := starredItems[queueItem.Id]
 	if hasStar {
@@ -291,7 +292,7 @@ func (ui *Ui) handleAddPlaylistToQueue() {
 	updateQueueList(ui.player, ui.queueList, ui.starIdList)
 }
 
-func (ui *Ui) handleAddSongToPlaylist(playlist *SubsonicPlaylist) {
+func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
 	currentIndex := ui.entityList.GetCurrentItem()
 
 	// if we have a parent directory subtract 1 to account for the [..]
@@ -351,7 +352,7 @@ func (ui *Ui) addStarredToList() {
 	}
 }
 
-func (ui *Ui) addDirectoryToQueue(entity *SubsonicEntity) {
+func (ui *Ui) addDirectoryToQueue(entity *subsonic.SubsonicEntity) {
 	response, err := ui.connection.GetMusicDirectory(entity.Id)
 	if err != nil {
 		ui.connection.Logger.Printf("addDirectoryToQueue: GetMusicDirectory %s -- %s", entity.Id, err.Error())
@@ -409,7 +410,7 @@ func (ui *Ui) searchPrev() {
 	ui.artistList.SetCurrentItem(idxs[len(idxs)-1])
 }
 
-func (ui *Ui) addSongToQueue(entity *SubsonicEntity) {
+func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 	uri := ui.connection.GetPlayUrl(entity)
 
 	var artist string
@@ -424,7 +425,7 @@ func (ui *Ui) addSongToQueue(entity *SubsonicEntity) {
 	queueItem := QueueItem{
 		id,
 		uri,
-		entity.getSongTitle(),
+		entity.GetSongTitle(),
 		artist,
 		entity.Duration,
 	}

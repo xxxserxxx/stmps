@@ -8,12 +8,13 @@ import (
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
 	"github.com/godbus/dbus/v5/prop"
+	"github.com/wildeyedskies/stmp/logger"
 )
 
 type MprisPlayer struct {
 	conn   *dbus.Conn
 	player *Player
-	logger Logger
+	logger *logger.Logger
 
 	lastVolume float64
 }
@@ -70,7 +71,7 @@ func (mpp MprisPlayer) SetPosition(string, int) {
 	// TODO not implemented
 }
 
-func RegisterPlayer(p *Player, l Logger) (MprisPlayer, error) {
+func RegisterPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		return MprisPlayer{}, err
