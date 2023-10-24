@@ -117,25 +117,26 @@ func (p *Player) Pause() (int, error) {
 	}
 }
 
+func (p *Player) SetVolume(percentValue int64) error {
+	if percentValue > 100 {
+		percentValue = 100
+	} else if percentValue < 0 {
+		percentValue = 0
+	}
+
+	return p.Instance.SetProperty("volume", mpv.FORMAT_INT64, percentValue)
+}
+
 func (p *Player) AdjustVolume(increment int64) error {
 	volume, err := p.Instance.GetProperty("volume", mpv.FORMAT_INT64)
 	if err != nil {
 		return err
 	}
-
 	if volume == nil {
 		return nil
 	}
 
-	nevVolume := volume.(int64) + increment
-
-	if nevVolume > 100 {
-		nevVolume = 100
-	} else if nevVolume < 0 {
-		nevVolume = 0
-	}
-
-	return p.Instance.SetProperty("volume", mpv.FORMAT_INT64, nevVolume)
+	return p.SetVolume(volume.(int64) + increment)
 }
 
 func (p *Player) Volume() (int64, error) {

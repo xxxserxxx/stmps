@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/godbus/dbus/v5"
@@ -13,6 +14,8 @@ type MprisPlayer struct {
 	conn   *dbus.Conn
 	player *Player
 	logger Logger
+
+	lastVolume float64
 }
 
 // Mandatory functions
@@ -118,19 +121,15 @@ func RegisterPlayer(p *Player, l Logger) (MprisPlayer, error) {
 			"CanGoPrevious": {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
 			"Metadata":      {Value: metadata, Writable: false, Emit: prop.EmitTrue, Callback: nil},
 			"Volume": {Value: float64(0.0), Writable: true, Emit: prop.EmitTrue, Callback: func(c *prop.Change) *dbus.Error {
-				oldVolume, err := mpp.player.Volume()
-				if err != nil {
-					mpp.logger.Printf(err.Error())
-					return nil
-				}
-				fvol := c.Value.(float64)
-				if fvol < 0 {
-					mpp.player.AdjustVolume(-oldVolume)
-					return nil
-				}
-				vol := int64(fvol * 100)
-				volDiff := vol - oldVolume
-				mpp.player.AdjustVolume(volDiff)
+				// get volume change value as float where 1.0 = 100%
+				fVol := c.Value.(float64)
+				fDelta := fVol - mpp.lastVolume
+				mpp.lastVolume = fVol
+
+				// convert to %
+				pcDelta := int64(math.Round(fDelta * 100))
+				mpp.player.AdjustVolume(pcDelta)
+				mpp.logger.Printf("mpris: adjust volume %f d%f -> %d%%", fVol, fDelta, pcDelta)
 				return nil
 			},
 			},
