@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/gdamore/tcell/v2"
@@ -38,13 +39,13 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.player.Queue = make([]QueueItem, 0)
 		err := ui.player.Stop()
 		if err != nil {
-			ui.connection.Logger.Printf("handlePageInput: Stop -- %s", err.Error())
+			ui.logger.Printf("handlePageInput: Stop -- %s", err.Error())
 		}
 		updateQueueList(ui.player, ui.queueList, ui.starIdList)
 	case 'p':
 		status, err := ui.player.Pause()
 		if err != nil {
-			ui.connection.Logger.Printf("handlePageInput: Pause -- %s", err.Error())
+			ui.logger.Printf("handlePageInput: Pause -- %s", err.Error())
 			ui.startStopStatus.SetText("[::b]stmp: [red]error")
 			return nil
 		}
@@ -58,24 +59,24 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case '-':
 		if err := ui.player.AdjustVolume(-5); err != nil {
-			ui.connection.Logger.Printf("handlePageInput: AdjustVolume %d -- %s", -5, err.Error())
+			ui.logger.Printf("handlePageInput: AdjustVolume %d -- %s", -5, err.Error())
 		}
 		return nil
 
 	case '=':
 		if err := ui.player.AdjustVolume(5); err != nil {
-			ui.connection.Logger.Printf("handlePageInput: AdjustVolume %d -- %s", 5, err.Error())
+			ui.logger.Printf("handlePageInput: AdjustVolume %d -- %s", 5, err.Error())
 		}
 		return nil
 
 	case '.':
 		if err := ui.player.Seek(10); err != nil {
-			ui.connection.Logger.Printf("handlePageInput: Seek %d -- %s", 10, err.Error())
+			ui.logger.Printf("handlePageInput: Seek %d -- %s", 10, err.Error())
 		}
 		return nil
 	case ',':
 		if err := ui.player.Seek(-10); err != nil {
-			ui.connection.Logger.Printf("handlePageInput: Seek %d -- %s", -10, err.Error())
+			ui.logger.Printf("handlePageInput: Seek %d -- %s", -10, err.Error())
 		}
 		return nil
 	}
@@ -87,7 +88,7 @@ func (ui *Ui) handleEntitySelected(directoryId string) {
 	response, err := ui.connection.GetMusicDirectory(directoryId)
 	sort.Sort(response.Directory.Entities)
 	if err != nil {
-		ui.connection.Logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %s", directoryId, err.Error())
+		ui.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %s", directoryId, err.Error())
 	}
 
 	ui.currentDirectory = &response.Directory
@@ -143,7 +144,7 @@ func (ui *Ui) handleDeleteFromQueue() {
 	// remove the track. Removing the track auto starts the next one
 	if currentIndex == 0 {
 		if isSongLoaded, err := ui.player.IsSongLoaded(); err != nil {
-			ui.connection.Logger.Printf("handleDeleteFromQueue: IsSongLoaded -- %s", err.Error())
+			ui.logger.Printf("handleDeleteFromQueue: IsSongLoaded -- %s", err.Error())
 			return
 		} else if isSongLoaded {
 			ui.player.Stop()
@@ -191,7 +192,7 @@ func (ui *Ui) handleToggleStar() {
 	var text = queueListTextFormat(ui.player.Queue[currentIndex], ui.starIdList)
 	updateQueueListItem(ui.queueList, currentIndex, text)
 	// Update the entity list to reflect any changes
-	ui.connection.Logger.Printf("entity test %v", ui.currentDirectory)
+	ui.logger.Printf("entity test %v", ui.currentDirectory)
 	if ui.currentDirectory != nil {
 		ui.handleEntitySelected(ui.currentDirectory.Id)
 	}
@@ -313,7 +314,7 @@ func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
 	// update the playlists
 	response, err := ui.connection.GetPlaylists()
 	if err != nil {
-		ui.connection.Logger.Printf("handleAddSongToPlaylist: GetPlaylists -- %s", err.Error())
+		ui.logger.Printf("handleAddSongToPlaylist: GetPlaylists -- %s", err.Error())
 	}
 	ui.playlists = response.Playlists.Playlists
 
@@ -333,7 +334,7 @@ func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
 func (ui *Ui) addRandomSongsToQueue() {
 	response, err := ui.connection.GetRandomSongs()
 	if err != nil {
-		ui.connection.Logger.Printf("addRandomSongsToQueue %s", err.Error())
+		ui.logger.Printf("addRandomSongsToQueue %s", err.Error())
 	}
 	for _, e := range response.RandomSongs.Song {
 		ui.addSongToQueue(&e)
@@ -343,7 +344,7 @@ func (ui *Ui) addRandomSongsToQueue() {
 func (ui *Ui) addStarredToList() {
 	response, err := ui.connection.GetStarred()
 	if err != nil {
-		ui.connection.Logger.Printf("addStarredToList %s", err.Error())
+		ui.logger.Printf("addStarredToList %s", err.Error())
 	}
 	for _, e := range response.Starred.Song {
 		// We're storing empty struct as values as we only want the indexes
@@ -355,7 +356,7 @@ func (ui *Ui) addStarredToList() {
 func (ui *Ui) addDirectoryToQueue(entity *subsonic.SubsonicEntity) {
 	response, err := ui.connection.GetMusicDirectory(entity.Id)
 	if err != nil {
-		ui.connection.Logger.Printf("addDirectoryToQueue: GetMusicDirectory %s -- %s", entity.Id, err.Error())
+		ui.logger.Printf("addDirectoryToQueue: GetMusicDirectory %s -- %s", entity.Id, err.Error())
 		return
 	}
 
@@ -435,7 +436,7 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 func (ui *Ui) newPlaylist(name string) {
 	response, err := ui.connection.CreatePlaylist(name)
 	if err != nil {
-		ui.connection.Logger.Printf("newPlaylist: CreatePlaylist %s -- %s", name, err.Error())
+		ui.logger.Printf("newPlaylist: CreatePlaylist %s -- %s", name, err.Error())
 		return
 	}
 
@@ -474,5 +475,27 @@ func makeSongHandler(id string, uri string, title string, artist string, duratio
 func (ui *Ui) makeEntityHandler(directoryId string) func() {
 	return func() {
 		ui.handleEntitySelected(directoryId)
+	}
+}
+
+func queueListTextFormat(queueItem QueueItem, starredItems map[string]struct{}) string {
+	min, sec := iSecondsToMinAndSec(queueItem.Duration)
+	var star = ""
+	_, hasStar := starredItems[queueItem.Id]
+	if hasStar {
+		star = " [red]♥"
+	}
+	return fmt.Sprintf("%s - %s - %02d:%02d %s", queueItem.Title, queueItem.Artist, min, sec, star)
+}
+
+// Just update the text of a specific row
+func updateQueueListItem(queueList *tview.List, id int, text string) {
+	queueList.SetItemText(id, text, "")
+}
+
+func updateQueueList(player *Player, queueList *tview.List, starredItems map[string]struct{}) {
+	queueList.Clear()
+	for _, queueItem := range player.Queue {
+		queueList.AddItem(queueListTextFormat(queueItem, starredItems), "", 0, nil)
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/wildeyedskies/go-mpv/mpv"
 	"github.com/wildeyedskies/stmp/logger"
@@ -126,7 +125,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 			case <-scrobbleTimer.C:
 				// scrobble submission delay elapsed
 				paused, err := ui.player.IsPaused()
-				connection.Logger.Printf("scrobbler event: paused %v, err %v, qlen %d", paused, err, len(ui.player.Queue))
+				ui.logger.Printf("scrobbler event: paused %v, err %v, qlen %d", paused, err, len(ui.player.Queue))
 				isPlaying := err == nil && !paused
 				if len(ui.player.Queue) > 0 && isPlaying {
 					// it's still playing, submit it
@@ -177,311 +176,18 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	return ui
 }
 
-func (ui *Ui) createBrowserPage(titleFlex *tview.Flex, indexes *[]subsonic.SubsonicIndex) (*tview.Flex, tview.Primitive) {
-	// artist list
-	ui.artistList = tview.NewList().
-		ShowSecondaryText(false)
-	ui.artistList.Box.
-		SetTitle(" Artist ").
-		SetTitleAlign(tview.AlignLeft).
-		SetBorder(true)
-
-	for _, index := range *indexes {
-		for _, artist := range index.Artists {
-			ui.artistList.AddItem(artist.Name, "", 0, nil)
-			ui.artistIdList = append(ui.artistIdList, artist.Id)
-		}
-	}
-
-	// album list
-	ui.entityList = tview.NewList().
-		ShowSecondaryText(false).
-		SetSelectedFocusOnly(true)
-	ui.entityList.Box.
-		SetTitle(" Album ").
-		SetTitleAlign(tview.AlignLeft).
-		SetBorder(true)
-
-	// search bar
-	ui.searchField = tview.NewInputField().
-		SetLabel("Search:").
-		SetChangedFunc(func(s string) {
-			idxs := ui.artistList.FindItems(s, "", false, true)
-			if len(idxs) == 0 {
-				return
-			}
-			ui.artistList.SetCurrentItem(idxs[0])
-		}).SetDoneFunc(func(key tcell.Key) {
-		ui.app.SetFocus(ui.artistList)
-	})
-
-	artistFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(ui.artistList, 0, 1, true).
-		AddItem(ui.entityList, 0, 1, false)
-
-	browserFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(titleFlex, 1, 0, false).
-		AddItem(artistFlex, 0, 1, true).
-		AddItem(ui.searchField, 1, 0, false)
-
-	// going right from the artist list should focus the album/song list
-	ui.artistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyRight {
-			ui.app.SetFocus(ui.entityList)
-			return nil
-		}
-		switch event.Rune() {
-		case '/':
-			ui.search()
-			return nil
-		case 'n':
-			ui.searchNext()
-			return nil
-		case 'N':
-			ui.searchPrev()
-			return nil
-		case 'r':
-			goBackTo := ui.artistList.GetCurrentItem()
-			// REFRESH artists
-			indexResponse, err := ui.connection.GetIndexes()
-			if err != nil {
-				ui.connection.Logger.Printf("Error fetching indexes from server: %s\n", err)
-				return event
-			}
-			ui.artistList.Clear()
-			ui.connection.ClearCache()
-			for _, index := range indexResponse.Indexes.Index {
-				for _, artist := range index.Artists {
-					ui.artistList.AddItem(artist.Name, "", 0, nil)
-					ui.artistIdList = append(ui.artistIdList, artist.Id)
-				}
-			}
-			// Try to put the user to about where they were
-			if goBackTo < ui.artistList.GetItemCount() {
-				ui.artistList.SetCurrentItem(goBackTo)
-			}
-		}
-		return event
-	})
-
-	ui.artistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
-		ui.handleEntitySelected(ui.artistIdList[index])
-	})
-
-	for _, playlist := range ui.playlists {
-		ui.addToPlaylistList.AddItem(playlist.Name, "", 0, nil)
-	}
-	ui.addToPlaylistList.SetBorder(true).
-		SetTitle("Add to Playlist")
-
-	addToPlaylistFlex := tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(ui.addToPlaylistList, 0, 1, true)
-
-	addToPlaylistModal := makeModal(addToPlaylistFlex, 60, 20)
-
-	ui.addToPlaylistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape {
-			ui.pages.HidePage("addToPlaylist")
-			ui.pages.SwitchToPage("browser")
-			ui.app.SetFocus(ui.entityList)
-		} else if event.Key() == tcell.KeyEnter {
-			playlist := ui.playlists[ui.addToPlaylistList.GetCurrentItem()]
-			ui.handleAddSongToPlaylist(&playlist)
-
-			ui.pages.HidePage("addToPlaylist")
-			ui.pages.SwitchToPage("browser")
-			ui.app.SetFocus(ui.entityList)
-		}
-		return event
-	})
-
-	ui.entityList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyLeft {
-			ui.app.SetFocus(ui.artistList)
-			return nil
-		}
-		if event.Rune() == 'a' {
-			ui.handleAddEntityToQueue()
-			return nil
-		}
-		if event.Rune() == 'y' {
-			ui.handleToggleEntityStar()
-			return nil
-		}
-		// only makes sense to add to a playlist if there are playlists
-		if event.Rune() == 'A' && ui.playlistList.GetItemCount() > 0 {
-			ui.pages.ShowPage("addToPlaylist")
-			ui.app.SetFocus(ui.addToPlaylistList)
-			return nil
-		}
-		// REFRESH only the artist
-		if event.Rune() == 'r' {
-			artistIdx := ui.artistList.GetCurrentItem()
-			entity := ui.artistIdList[artistIdx]
-			//ui.logger.Printf("refreshing artist idx %d, entity %s (%s)", artistIdx, entity, ui.connection.directoryCache[entity].Directory.Name)
-			ui.connection.RemoveCacheEntry(entity)
-			ui.handleEntitySelected(ui.artistIdList[artistIdx])
-			return nil
-		}
-		return event
-	})
-
-	return browserFlex, addToPlaylistModal
-}
-
-func (ui *Ui) createQueuePage(titleFlex *tview.Flex) *tview.Flex {
-	queueFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(titleFlex, 1, 0, false).
-		AddItem(ui.queueList, 0, 1, true)
-	ui.queueList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyDelete || event.Rune() == 'd' {
-			ui.handleDeleteFromQueue()
-			return nil
-		} else if event.Rune() == 'y' {
-			ui.handleToggleStar()
-			return nil
-		}
-
-		return event
-	})
-
-	return queueFlex
-}
-
-func (ui *Ui) createPlaylistPage(titleFlex *tview.Flex) (*tview.Flex, tview.Primitive) {
-	//add the playlists
-	for _, playlist := range ui.playlists {
-		ui.playlistList.AddItem(playlist.Name, "", 0, nil)
-	}
-
-	ui.playlistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
-		ui.handlePlaylistSelected(ui.playlists[index])
-	})
-
-	playlistColFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(ui.playlistList, 0, 1, true).
-		AddItem(ui.selectedPlaylist, 0, 1, false)
-
-	playlistFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(titleFlex, 1, 0, false).
-		AddItem(playlistColFlex, 0, 1, true)
-
-	ui.newPlaylistInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
-			ui.newPlaylist(ui.newPlaylistInput.GetText())
-			playlistFlex.Clear()
-			playlistFlex.AddItem(titleFlex, 1, 0, false)
-			playlistFlex.AddItem(playlistColFlex, 0, 1, true)
-			ui.app.SetFocus(ui.playlistList)
-			return nil
-		}
-		if event.Key() == tcell.KeyEscape {
-			playlistFlex.Clear()
-			playlistFlex.AddItem(titleFlex, 1, 0, false)
-			playlistFlex.AddItem(playlistColFlex, 0, 1, true)
-			ui.app.SetFocus(ui.playlistList)
-			return nil
-		}
-		return event
-	})
-
-	ui.playlistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyRight {
-			ui.app.SetFocus(ui.selectedPlaylist)
-			return nil
-		}
-		if event.Rune() == 'a' {
-			ui.handleAddPlaylistToQueue()
-			return nil
-		}
-		if event.Rune() == 'n' {
-			playlistFlex.AddItem(ui.newPlaylistInput, 0, 1, true)
-			ui.app.SetFocus(ui.newPlaylistInput)
-		}
-		if event.Rune() == 'd' {
-			ui.pages.ShowPage("deletePlaylist")
-		}
-		return event
-	})
-
-	ui.selectedPlaylist.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyLeft {
-			ui.app.SetFocus(ui.playlistList)
-			return nil
-		}
-		if event.Rune() == 'a' {
-			ui.handleAddPlaylistSongToQueue()
-			return nil
-		}
-		return event
-	})
-
-	deletePlaylistList := tview.NewList().
-		ShowSecondaryText(false)
-
-	deletePlaylistList.AddItem("Confirm", "", 0, nil)
-
-	deletePlaylistList.SetBorder(true).
-		SetTitle("Confirm deletion")
-
-	deletePlaylistFlex := tview.NewFlex().
-		SetDirection(tview.FlexColumn).
-		AddItem(deletePlaylistList, 0, 1, true)
-
-	deletePlaylistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
-			ui.deletePlaylist(ui.playlistList.GetCurrentItem())
-			ui.app.SetFocus(ui.playlistList)
-			ui.pages.HidePage("deletePlaylist")
-			return nil
-		}
-		if event.Key() == tcell.KeyEscape {
-			ui.app.SetFocus(ui.playlistList)
-			ui.pages.HidePage("deletePlaylist")
-			return nil
-		}
-		return event
-	})
-
-	deletePlaylistModal := makeModal(deletePlaylistFlex, 20, 3)
-
-	return playlistFlex, deletePlaylistModal
-}
-
-func queueListTextFormat(queueItem QueueItem, starredItems map[string]struct{}) string {
-	min, sec := iSecondsToMinAndSec(queueItem.Duration)
-	var star = ""
-	_, hasStar := starredItems[queueItem.Id]
-	if hasStar {
-		star = " [red]♥"
-	}
-	return fmt.Sprintf("%s - %s - %02d:%02d %s", queueItem.Title, queueItem.Artist, min, sec, star)
-}
-
-// Just update the text of a specific row
-func updateQueueListItem(queueList *tview.List, id int, text string) {
-	queueList.SetItemText(id, text, "")
-}
-
-func updateQueueList(player *Player, queueList *tview.List, starredItems map[string]struct{}) {
-	queueList.Clear()
-	for _, queueItem := range player.Queue {
-		queueList.AddItem(queueListTextFormat(queueItem, starredItems), "", 0, nil)
-	}
-}
-
 func (ui *Ui) handleMpvEvents() {
 	ui.player.Instance.ObserveProperty(0, "time-pos", mpv.FORMAT_DOUBLE)
 	ui.player.Instance.ObserveProperty(0, "duration", mpv.FORMAT_DOUBLE)
 	ui.player.Instance.ObserveProperty(0, "volume", mpv.FORMAT_INT64)
-	for {
-		e := <-ui.player.EventChannel
-		if e == nil {
+	for evt := range ui.player.EventChannel {
+		if evt == nil {
+			// quit signal
 			break
+		} else if evt.Event_Id == mpv.EVENT_END_FILE && !ui.player.ReplaceInProgress {
 			// we don't want to update anything if we're in the process of replacing the current track
-		} else if e.Event_Id == mpv.EVENT_END_FILE && !ui.player.ReplaceInProgress {
 			ui.startStopStatus.SetText("[::b]stmp: [red]stopped")
+
 			// TODO it's gross that this is here, need better event handling
 			if len(ui.player.Queue) > 0 {
 				ui.player.Queue = ui.player.Queue[1:]
@@ -489,9 +195,9 @@ func (ui *Ui) handleMpvEvents() {
 			updateQueueList(ui.player, ui.queueList, ui.starIdList)
 			err := ui.player.PlayNextTrack()
 			if err != nil {
-				ui.connection.Logger.Printf("handleMoveEvents: PlayNextTrack -- %s", err.Error())
+				ui.logger.Printf("handleMpvEvents: PlayNextTrack -- %s", err.Error())
 			}
-		} else if e.Event_Id == mpv.EVENT_START_FILE {
+		} else if evt.Event_Id == mpv.EVENT_START_FILE {
 			ui.player.ReplaceInProgress = false
 			updateQueueList(ui.player, ui.queueList, ui.starIdList)
 
@@ -516,28 +222,28 @@ func (ui *Ui) handleMpvEvents() {
 						scrobbleDuration := time.Duration(scrobbleDelay) * time.Second
 
 						ui.scrobbleTimer.Reset(scrobbleDuration)
-						ui.connection.Logger.Printf("scrobbler: timer started, %v", scrobbleDuration)
+						ui.logger.Printf("scrobbler: timer started, %v", scrobbleDuration)
 					} else {
-						ui.connection.Logger.Printf("scrobbler: track too short")
+						ui.logger.Printf("scrobbler: track too short")
 					}
 				}
 			}
-		} else if e.Event_Id == mpv.EVENT_IDLE || e.Event_Id == mpv.EVENT_NONE {
+		} else if evt.Event_Id == mpv.EVENT_IDLE || evt.Event_Id == mpv.EVENT_NONE {
 			continue
 		}
 
 		position, err := ui.player.Instance.GetProperty("time-pos", mpv.FORMAT_DOUBLE)
 		if err != nil {
-			ui.connection.Logger.Printf("handleMoveEvents (%s): GetProperty %s -- %s", e.Event_Id.String(), "time-pos", err.Error())
+			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "time-pos", err.Error())
 		}
 		// TODO only update these as needed
 		duration, err := ui.player.Instance.GetProperty("duration", mpv.FORMAT_DOUBLE)
 		if err != nil {
-			ui.connection.Logger.Printf("handleMoveEvents (%s): GetProperty %s -- %s", e.Event_Id.String(), "duration", err.Error())
+			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "duration", err.Error())
 		}
 		volume, err := ui.player.Instance.GetProperty("volume", mpv.FORMAT_INT64)
 		if err != nil {
-			ui.connection.Logger.Printf("handleMoveEvents (%s): GetProperty %s -- %s", e.Event_Id.String(), "volume", err.Error())
+			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "volume", err.Error())
 		}
 
 		if position == nil {
@@ -555,13 +261,6 @@ func (ui *Ui) handleMpvEvents() {
 		ui.playerStatus.SetText(formatPlayerStatus(volume.(int64), position.(float64), duration.(float64)))
 		ui.app.Draw()
 	}
-}
-
-func makeModal(p tview.Primitive, width, height int) tview.Primitive {
-	return tview.NewGrid().
-		SetColumns(0, width, 0).
-		SetRows(0, height, 0).
-		AddItem(p, 1, 1, 1, 1, 0, 0, true)
 }
 
 func formatPlayerStatus(volume int64, position float64, duration float64) string {

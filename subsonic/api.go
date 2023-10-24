@@ -2,7 +2,7 @@ package subsonic
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,14 +15,14 @@ type SubsonicConnection struct {
 	Host          string
 	PlaintextAuth bool
 	Scrobble      bool
-	Logger        LoggerInterface
 
+	logger         LoggerInterface
 	directoryCache map[string]SubsonicResponse
 }
 
 func Init(logger LoggerInterface) *SubsonicConnection {
 	return &SubsonicConnection{
-		Logger:         logger,
+		logger:         logger,
 		directoryCache: make(map[string]SubsonicResponse),
 	}
 }
@@ -243,7 +243,7 @@ func (connection *SubsonicConnection) ScrobbleSubmission(id string, isSubmission
 	requestUrl := connection.Host + "/rest/scrobble" + "?" + query.Encode()
 	resp, err := connection.getResponse("ScrobbleSubmission", requestUrl)
 	if err != nil {
-		connection.Logger.Printf("ScrobbleSubmission error: %v", err)
+		connection.logger.Printf("ScrobbleSubmission error: %v", err)
 		return resp, err
 	}
 	return resp, nil
@@ -336,7 +336,7 @@ func (connection *SubsonicConnection) getResponse(caller, requestUrl string) (*S
 		defer res.Body.Close()
 	}
 
-	responseBody, readErr := ioutil.ReadAll(res.Body)
+	responseBody, readErr := io.ReadAll(res.Body)
 
 	if readErr != nil {
 		return nil, err
