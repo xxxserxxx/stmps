@@ -1,19 +1,17 @@
 package mpv
 
 import (
-	"fmt"
-	"math"
 	"time"
 
 	"github.com/wildeyedskies/go-mpv/mpv"
 )
 
 func (p *Player) EventLoop() {
-	p.Instance.ObserveProperty(0, "time-pos", mpv.FORMAT_DOUBLE)
-	p.Instance.ObserveProperty(0, "duration", mpv.FORMAT_DOUBLE)
-	p.Instance.ObserveProperty(0, "volume", mpv.FORMAT_INT64)
+	p.instance.ObserveProperty(0, "time-pos", mpv.FORMAT_DOUBLE)
+	p.instance.ObserveProperty(0, "duration", mpv.FORMAT_DOUBLE)
+	p.instance.ObserveProperty(0, "volume", mpv.FORMAT_INT64)
 
-	for evt := range p.EventChannel {
+	for evt := range p.eventChannel {
 		if evt == nil {
 			// quit signal
 			break
@@ -66,16 +64,16 @@ func (p *Player) EventLoop() {
 			continue
 		}
 
-		position, err := p.Instance.GetProperty("time-pos", mpv.FORMAT_DOUBLE)
+		position, err := p.instance.GetProperty("time-pos", mpv.FORMAT_DOUBLE)
 		if err != nil {
 			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "time-pos", err.Error())
 		}
 		// TODO only update these as needed
-		duration, err := p.Instance.GetProperty("duration", mpv.FORMAT_DOUBLE)
+		duration, err := p.instance.GetProperty("duration", mpv.FORMAT_DOUBLE)
 		if err != nil {
 			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "duration", err.Error())
 		}
-		volume, err := p.Instance.GetProperty("volume", mpv.FORMAT_INT64)
+		volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
 		if err != nil {
 			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "volume", err.Error())
 		}
@@ -95,32 +93,4 @@ func (p *Player) EventLoop() {
 		pStatus.SetText(formatPlayerStatus(volume.(int64), position.(float64), duration.(float64)))
 		ui.app.Draw()
 	}
-}
-
-func formatPlayerStatus(volume int64, position float64, duration float64) string {
-	if position < 0 {
-		position = 0.0
-	}
-
-	if duration < 0 {
-		duration = 0.0
-	}
-
-	positionMin, positionSec := secondsToMinAndSec(position)
-	durationMin, durationSec := secondsToMinAndSec(duration)
-
-	return fmt.Sprintf("[::b][%d%%][%02d:%02d/%02d:%02d]", volume,
-		positionMin, positionSec, durationMin, durationSec)
-}
-
-func secondsToMinAndSec(seconds float64) (int, int) {
-	minutes := math.Floor(seconds / 60)
-	remainingSeconds := int(seconds) % 60
-	return int(minutes), remainingSeconds
-}
-
-func iSecondsToMinAndSec(seconds int) (int, int) {
-	minutes := seconds / 60
-	remainingSeconds := seconds % 60
-	return minutes, remainingSeconds
 }

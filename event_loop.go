@@ -49,14 +49,11 @@ func (ui *Ui) backgroundEventLoop() {
 		select {
 		case <-ui.eventLoop.scrobbleTimer.C:
 			// scrobble submission delay elapsed
-			paused, err := ui.player.IsPaused()
-			ui.logger.Printf("scrobbler event: paused %v, err %v, qlen %d", paused, err, len(ui.player.Queue))
-
-			isPlaying := err == nil && !paused
-			// TODO we need some mutexed thing to access ui data
-			if len(ui.player.Queue) > 0 && isPlaying {
-				// it's still playing, submit it
-				currentSong := ui.player.Queue[0]
+			if currentSong, err := ui.player.GetPlayingTrack(); err != nil {
+				ui.logger.Printf("not scrobbling: %v", err)
+			} else {
+				// it's still playing
+				ui.logger.Printf("scrobbling: %s", currentSong.Id)
 				ui.connection.ScrobbleSubmission(currentSong.Id, true)
 			}
 		}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/wildeyedskies/stmp/mpv"
 	"github.com/wildeyedskies/stmp/subsonic"
 )
 
@@ -30,13 +31,12 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.pages.SwitchToPage("log")
 		ui.currentPage.SetText("Log")
 	case 'Q':
-		ui.player.EventChannel <- nil
-		ui.player.Instance.TerminateDestroy()
+		ui.player.Quit()
 		ui.app.Stop()
 	case 's':
 		ui.handleAddRandomSongs()
 	case 'D':
-		ui.player.Queue = make([]QueueItem, 0)
+		ui.player.ClearQueue()
 		err := ui.player.Stop()
 		if err != nil {
 			ui.logger.Printf("handlePageInput: Stop -- %s", err.Error())
@@ -49,11 +49,15 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 			ui.startStopStatus.SetText("[::b]stmp: [red]error")
 			return nil
 		}
-		if status == PlayerStopped {
+		if status == mpv.PlayerStopped {
 			ui.startStopStatus.SetText("[::b]stmp: [red]stopped")
-		} else if status == PlayerPlaying {
-			ui.startStopStatus.SetText("[::b]stmp: [green]playing " + ui.player.Queue[0].Title)
-		} else if status == PlayerPaused {
+		} else if status == mpv.PlayerPlaying {
+			if currentSong, err := ui.player.GetPlayingTrack(); err != nil {
+				ui.startStopStatus.SetText("[::b]stmp: [green]playing " + currentSong.Title)
+			} else {
+				ui.logger.PrintError("handlePageInput", err)
+			}
+		} else if status == mpv.PlayerPaused {
 			ui.startStopStatus.SetText("[::b]stmp: [yellow]paused")
 		}
 		return nil
@@ -86,10 +90,10 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 
 func (ui *Ui) handleEntitySelected(directoryId string) {
 	response, err := ui.connection.GetMusicDirectory(directoryId)
-	sort.Sort(response.Directory.Entities)
 	if err != nil {
 		ui.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %s", directoryId, err.Error())
 	}
+	sort.Sort(response.Directory.Entities)
 
 	ui.currentDirectory = &response.Directory
 	ui.entityList.Clear()
@@ -134,9 +138,8 @@ func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 
 func (ui *Ui) handleDeleteFromQueue() {
 	currentIndex := ui.queueList.GetCurrentItem()
-	queue := ui.player.Queue
 
-	if currentIndex == -1 || len(ui.player.Queue) < currentIndex {
+	if currentIndex == -1 /*|| len(ui.player.Queue) < currentIndex*/ {
 		return
 	}
 
@@ -145,7 +148,6 @@ func (ui *Ui) handleDeleteFromQueue() {
 	if currentIndex == 0 {
 		if isSongLoaded, err := ui.player.IsSongLoaded(); err != nil {
 			ui.logger.Printf("handleDeleteFromQueue: IsSongLoaded -- %s", err.Error())
-			return
 		} else if isSongLoaded {
 			ui.player.Stop()
 		}
@@ -153,11 +155,7 @@ func (ui *Ui) handleDeleteFromQueue() {
 	}
 
 	// remove the item from the queue
-	if len(ui.player.Queue) > 1 {
-		ui.player.Queue = append(queue[:currentIndex], queue[currentIndex+1:]...)
-	} else {
-		ui.player.Queue = make([]QueueItem, 0)
-	}
+	ui.player.DeleteQueueItem(currentIndex)
 
 	updateQueueList(ui.player, ui.queueList, ui.starIdList)
 }
@@ -169,13 +167,15 @@ func (ui *Ui) handleAddRandomSongs() {
 
 func (ui *Ui) handleToggleStar() {
 	currentIndex := ui.queueList.GetCurrentItem()
-	queue := ui.player.Queue
-
-	if currentIndex == -1 || len(ui.player.Queue) < currentIndex {
+	if currentIndex == -1 /*|| len(ui.player.Queue) < currentIndex*/ {
 		return
 	}
 
-	var entity = queue[currentIndex]
+	entity, err := ui.player.GetQueueItem(currentIndex)
+	if err != nil {
+		ui.logger.PrintError("handleToggleStar", err)
+		return
+	}
 
 	// If the song is already in the star list, remove it
 	_, remove := ui.starIdList[entity.Id]
@@ -189,7 +189,7 @@ func (ui *Ui) handleToggleStar() {
 		ui.starIdList[entity.Id] = struct{}{}
 	}
 
-	var text = queueListTextFormat(ui.player.Queue[currentIndex], ui.starIdList)
+	var text = queueListTextFormat(entity, ui.starIdList)
 	updateQueueListItem(ui.queueList, currentIndex, text)
 	// Update the entity list to reflect any changes
 	ui.logger.Printf("entity test %v", ui.currentDirectory)
@@ -423,14 +423,14 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 
 	var id = entity.Id
 
-	queueItem := QueueItem{
-		id,
-		uri,
-		entity.GetSongTitle(),
-		artist,
-		entity.Duration,
+	queueItem := &mpv.QueueItem{
+		Id:       id,
+		Uri:      uri,
+		Title:    entity.GetSongTitle(),
+		Artist:   artist,
+		Duration: entity.Duration,
 	}
-	ui.player.Queue = append(ui.player.Queue, queueItem)
+	ui.player.AddToQueue(queueItem)
 }
 
 func (ui *Ui) newPlaylist(name string) {
@@ -465,7 +465,8 @@ func (ui *Ui) deletePlaylist(index int) {
 	ui.connection.DeletePlaylist(string(playlist.Id))
 }
 
-func makeSongHandler(id string, uri string, title string, artist string, duration int, player *Player, queueList *tview.List, starIdList map[string]struct{}) func() {
+func makeSongHandler(id string, uri string, title string, artist string, duration int,
+	player *mpv.Player, queueList *tview.List, starIdList map[string]struct{}) func() {
 	return func() {
 		player.Play(id, uri, title, artist, duration)
 		updateQueueList(player, queueList, starIdList)
@@ -478,7 +479,7 @@ func (ui *Ui) makeEntityHandler(directoryId string) func() {
 	}
 }
 
-func queueListTextFormat(queueItem QueueItem, starredItems map[string]struct{}) string {
+func queueListTextFormat(queueItem mpv.QueueItem, starredItems map[string]struct{}) string {
 	min, sec := iSecondsToMinAndSec(queueItem.Duration)
 	var star = ""
 	_, hasStar := starredItems[queueItem.Id]
@@ -493,9 +494,9 @@ func updateQueueListItem(queueList *tview.List, id int, text string) {
 	queueList.SetItemText(id, text, "")
 }
 
-func updateQueueList(player *Player, queueList *tview.List, starredItems map[string]struct{}) {
+func updateQueueList(player *mpv.Player, queueList *tview.List, starredItems map[string]struct{}) {
 	queueList.Clear()
-	for _, queueItem := range player.Queue {
+	for _, queueItem := range player.GetQueueCopy() { // TODO find a way without a deepcopy
 		queueList.AddItem(queueListTextFormat(queueItem, starredItems), "", 0, nil)
 	}
 }

@@ -1,6 +1,7 @@
 package mpv
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/wildeyedskies/go-mpv/mpv"
@@ -22,10 +23,12 @@ type QueueItem struct {
 	Duration int
 }
 
+type PlayerQueue []QueueItem
+
 type Player struct {
-	Instance          *mpv.Mpv
-	EventChannel      chan *mpv.Event
-	Queue             []QueueItem
+	instance          *mpv.Mpv
+	eventChannel      chan *mpv.Event
+	queue             PlayerQueue
 	ReplaceInProgress bool
 }
 
@@ -56,33 +59,38 @@ func NewPlayer(logger logger.LoggerInterface) (*Player, error) {
 	return &Player{mpvInstance, eventListener(mpvInstance), make([]QueueItem, 0), false}, nil
 }
 
+func (p *Player) Quit() {
+	p.eventChannel <- nil
+	p.instance.TerminateDestroy()
+}
+
 func (p *Player) PlayNextTrack() error {
-	if len(p.Queue) > 0 {
-		return p.Instance.Command([]string{"loadfile", p.Queue[0].Uri})
+	if len(p.queue) > 0 {
+		return p.instance.Command([]string{"loadfile", p.queue[0].Uri})
 	}
 	return nil
 }
 
 func (p *Player) Play(id string, uri string, title string, artist string, duration int) error {
-	p.Queue = []QueueItem{{id, uri, title, artist, duration}}
+	p.queue = []QueueItem{{id, uri, title, artist, duration}}
 	p.ReplaceInProgress = true
 	if ip, e := p.IsPaused(); ip && e == nil {
 		p.Pause()
 	}
-	return p.Instance.Command([]string{"loadfile", uri})
+	return p.instance.Command([]string{"loadfile", uri})
 }
 
 func (p *Player) Stop() error {
-	return p.Instance.Command([]string{"stop"})
+	return p.instance.Command([]string{"stop"})
 }
 
 func (p *Player) IsSongLoaded() (bool, error) {
-	idle, err := p.Instance.GetProperty("idle-active", mpv.FORMAT_FLAG)
+	idle, err := p.instance.GetProperty("idle-active", mpv.FORMAT_FLAG)
 	return !idle.(bool), err
 }
 
 func (p *Player) IsPaused() (bool, error) {
-	pause, err := p.Instance.GetProperty("pause", mpv.FORMAT_FLAG)
+	pause, err := p.instance.GetProperty("pause", mpv.FORMAT_FLAG)
 	return pause.(bool), err
 }
 
@@ -100,7 +108,7 @@ func (p *Player) Pause() (int, error) {
 	}
 
 	if loaded {
-		err := p.Instance.Command([]string{"cycle", "pause"})
+		err := p.instance.Command([]string{"cycle", "pause"})
 		if err != nil {
 			return PlayerError, err
 		}
@@ -109,8 +117,8 @@ func (p *Player) Pause() (int, error) {
 		}
 		return PlayerPaused, nil
 	} else {
-		if len(p.Queue) != 0 {
-			err := p.Instance.Command([]string{"loadfile", p.Queue[0].Uri})
+		if len(p.queue) != 0 {
+			err := p.instance.Command([]string{"loadfile", p.queue[0].Uri})
 			return PlayerPlaying, err
 		} else {
 			return PlayerStopped, nil
@@ -125,11 +133,11 @@ func (p *Player) SetVolume(percentValue int64) error {
 		percentValue = 0
 	}
 
-	return p.Instance.SetProperty("volume", mpv.FORMAT_INT64, percentValue)
+	return p.instance.SetProperty("volume", mpv.FORMAT_INT64, percentValue)
 }
 
 func (p *Player) AdjustVolume(increment int64) error {
-	volume, err := p.Instance.GetProperty("volume", mpv.FORMAT_INT64)
+	volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
 	if err != nil {
 		return err
 	}
@@ -141,7 +149,7 @@ func (p *Player) AdjustVolume(increment int64) error {
 }
 
 func (p *Player) Volume() (int64, error) {
-	volume, err := p.Instance.GetProperty("volume", mpv.FORMAT_INT64)
+	volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
 	if err != nil {
 		return -1, err
 	}
@@ -149,5 +157,53 @@ func (p *Player) Volume() (int64, error) {
 }
 
 func (p *Player) Seek(increment int) error {
-	return p.Instance.Command([]string{"seek", strconv.Itoa(increment)})
+	return p.instance.Command([]string{"seek", strconv.Itoa(increment)})
+}
+
+// accessed from gui context
+func (p *Player) ClearQueue() {
+	p.queue = make([]QueueItem, 0) // TODO mutex queue access
+}
+
+func (p *Player) DeleteQueueItem(index int) {
+	// TODO mutex queue access
+	if len(p.queue) > 1 {
+		p.queue = append(p.queue[:index], p.queue[index+1:]...)
+	} else {
+		p.queue = make([]QueueItem, 0)
+	}
+}
+
+func (p *Player) AddToQueue(item *QueueItem) {
+	p.queue = append(p.queue, *item)
+}
+
+func (p *Player) GetQueueItem(index int) (QueueItem, error) {
+	if index < 0 || index >= len(p.queue) {
+		return QueueItem{}, errors.New("invalid queue entry")
+	}
+	return p.queue[index], nil
+}
+
+func (p *Player) GetQueueCopy() PlayerQueue {
+	cpy := make(PlayerQueue, len(p.queue))
+	copy(cpy, p.queue)
+	return cpy
+}
+
+// accessed from background context
+func (p *Player) GetPlayingTrack() (QueueItem, error) {
+	paused, err := p.IsPaused()
+	if err != nil {
+		return QueueItem{}, err
+	}
+	if paused {
+		return QueueItem{}, errors.New("not playing")
+	}
+
+	if len(p.queue) > 0 { // TODO mutex queue access
+		return QueueItem{}, errors.New("queue empty")
+	}
+	currentSong := p.queue[0]
+	return currentSong, nil
 }

@@ -64,7 +64,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	player, err := mpv.NewPlayer()
+	player, err := mpv.NewPlayer(logger)
 	if err != nil {
 		fmt.Println("Unable to initialize mpv. Is mpv installed?")
 		os.Exit(1)
