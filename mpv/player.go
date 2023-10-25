@@ -207,7 +207,7 @@ func (p *Player) GetPlayingTrack() (QueueItem, error) {
 		return QueueItem{}, errors.New("not playing")
 	}
 
-	if len(p.queue) > 0 { // TODO mutex queue access
+	if len(p.queue) == 0 { // TODO mutex queue access
 		return QueueItem{}, errors.New("queue empty")
 	}
 	currentSong := p.queue[0]
