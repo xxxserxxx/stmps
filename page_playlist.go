@@ -6,6 +6,10 @@ import (
 )
 
 func (ui *Ui) createPlaylistPage(titleFlex *tview.Flex) (*tview.Flex, tview.Primitive) {
+	ui.playlistList = tview.NewList().
+		ShowSecondaryText(false).
+		SetSelectedFocusOnly(true)
+
 	//add the playlists
 	for _, playlist := range ui.playlists {
 		ui.playlistList.AddItem(playlist.Name, "", 0, nil)

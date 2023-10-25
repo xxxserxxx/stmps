@@ -13,143 +13,98 @@ import (
 
 // struct contains all the updatable elements of the Ui
 type Ui struct {
-	app               *tview.Application
-	pages             *tview.Pages
-	entityList        *tview.List
-	queueList         *tview.List
-	playlistList      *tview.List
+	app   *tview.Application
+	pages *tview.Pages
+
+	// top row
+	startStopStatus *tview.TextView
+	currentPage     *tview.TextView
+	playerStatus    *tview.TextView
+
+	// browser page
+	artistList  *tview.List
+	entityList  *tview.List
+	searchField *tview.InputField
+
+	// queue page
+	queueList *tview.List
+
+	// playlist page
+	playlistList *tview.List
+
+	// log page
+	logList *tview.List
+
 	addToPlaylistList *tview.List
 	selectedPlaylist  *tview.List
 	newPlaylistInput  *tview.InputField
-	startStopStatus   *tview.TextView
-	currentPage       *tview.TextView
-	playerStatus      *tview.TextView
-	logList           *tview.List
-	searchField       *tview.InputField
-	artistList        *tview.List
 
 	currentDirectory *subsonic.SubsonicDirectory
 	artistIdList     []string
 	starIdList       map[string]struct{}
-	playlists        []subsonic.SubsonicPlaylist
+	eventLoop        *eventLoop
 
+	playlists  []subsonic.SubsonicPlaylist
 	connection *subsonic.SubsonicConnection
 	player     *Player
 	logger     *logger.Logger
-
-	scrobbleTimer *time.Timer
 }
 
 func InitGui(indexes *[]subsonic.SubsonicIndex,
 	playlists *[]subsonic.SubsonicPlaylist,
 	connection *subsonic.SubsonicConnection,
 	player *Player,
-	logger *logger.Logger) *Ui {
+	logger *logger.Logger) (ui *Ui) {
+	ui = &Ui{
+		currentDirectory: &subsonic.SubsonicDirectory{},
+		artistIdList:     []string{},
+		starIdList:       map[string]struct{}{},
+		playlists:        *playlists,
+		connection:       connection,
+		player:           player,
+		logger:           logger,
+	}
 
-	app := tview.NewApplication()
-	pages := tview.NewPages()
-	// player queue
-	queueList := tview.NewList().ShowSecondaryText(false)
-	// list of playlists
-	playlistList := tview.NewList().ShowSecondaryText(false).
-		SetSelectedFocusOnly(true)
-	// same as 'playlistList' except for the addToPlaylistModal
-	// - we need a specific version of this because we need different keybinds
-	addToPlaylistList := tview.NewList().ShowSecondaryText(false)
-	// songs in the selected playlist
-	selectedPlaylist := tview.NewList().ShowSecondaryText(false)
+	ui.app = tview.NewApplication()
+	ui.pages = tview.NewPages()
+
 	// status text at the top
-	startStopStatus := tview.NewTextView().SetText("[::b]stmp: [red]stopped").
+	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmp: [red]stopped").
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
-	currentPage := tview.NewTextView().SetText("Browser").
+	ui.currentPage = tview.NewTextView().SetText("Browser").
 		SetTextAlign(tview.AlignCenter).
 		SetDynamicColors(true)
-	playerStatus := tview.NewTextView().SetText("[::b][100%][0:00/0:00]").
+	ui.playerStatus = tview.NewTextView().SetText("[::b][100%][0:00/0:00]").
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true)
-	newPlaylistInput := tview.NewInputField().
+
+	// same as 'playlistList' except for the addToPlaylistModal
+	// - we need a specific version of this because we need different keybinds
+	ui.addToPlaylistList = tview.NewList().ShowSecondaryText(false)
+	// songs in the selected playlist
+	ui.selectedPlaylist = tview.NewList().ShowSecondaryText(false)
+	ui.newPlaylistInput = tview.NewInputField().
 		SetLabel("Playlist name:").
 		SetFieldWidth(50)
-	logs := tview.NewList().ShowSecondaryText(false)
-	var currentDirectory *subsonic.SubsonicDirectory
-	var artistIdList []string
-	// Stores the song IDs
-	var starIdList = map[string]struct{}{}
 
-	// create reused timer to scrobble after delay
-	scrobbleTimer := time.NewTimer(0)
-	if !scrobbleTimer.Stop() {
-		<-scrobbleTimer.C
-	}
-
-	ui := &Ui{
-		app:               app,
-		pages:             pages,
-		queueList:         queueList,
-		playlistList:      playlistList,
-		addToPlaylistList: addToPlaylistList,
-		selectedPlaylist:  selectedPlaylist,
-		newPlaylistInput:  newPlaylistInput,
-		startStopStatus:   startStopStatus,
-		currentPage:       currentPage,
-		playerStatus:      playerStatus,
-		logList:           logs,
-
-		currentDirectory: currentDirectory,
-		artistIdList:     artistIdList,
-		starIdList:       starIdList,
-		playlists:        *playlists,
-
-		connection: connection,
-		player:     player,
-		logger:     logger,
-
-		scrobbleTimer: scrobbleTimer,
-	}
-
-	ui.addStarredToList()
-
-	go func() {
-		for {
-			select {
-			case msg := <-ui.logger.Prints:
-				ui.app.QueueUpdate(func() {
-					ui.logList.AddItem(msg, "", 0, nil)
-					// Make sure the log list doesn't grow infinitely
-					for ui.logList.GetItemCount() > 200 {
-						ui.logList.RemoveItem(0)
-					}
-				})
-
-			case <-scrobbleTimer.C:
-				// scrobble submission delay elapsed
-				paused, err := ui.player.IsPaused()
-				ui.logger.Printf("scrobbler event: paused %v, err %v, qlen %d", paused, err, len(ui.player.Queue))
-				isPlaying := err == nil && !paused
-				if len(ui.player.Queue) > 0 && isPlaying {
-					// it's still playing, submit it
-					currentSong := ui.player.Queue[0]
-					ui.connection.ScrobbleSubmission(currentSong.Id, true)
-				}
-			}
-		}
-	}()
-
-	// create components shared by pages
-
-	//title row flex
+	// top row
 	titleFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(ui.startStopStatus, 0, 1, false).
 		AddItem(ui.currentPage, 0, 1, false).
 		AddItem(ui.playerStatus, 0, 1, false)
 
+	// browser page
 	browserFlex, addToPlaylistModal := ui.createBrowserPage(titleFlex, indexes)
+
+	// queue page
 	queueFlex := ui.createQueuePage(titleFlex)
+
+	// playlist page
 	playlistFlex, deletePlaylistModal := ui.createPlaylistPage(titleFlex)
-	logListFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(titleFlex, 1, 0, false).
-		AddItem(ui.logList, 0, 1, true)
+
+	// log page
+	logListFlex := ui.createLogPage(titleFlex)
 
 	ui.pages.AddPage("browser", browserFlex, true, true).
 		AddPage("queue", queueFlex, true, false).
@@ -161,19 +116,20 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	// add page input handler
 	ui.pages.SetInputCapture(ui.handlePageInput)
 
-	// run mpv event handler
-	go ui.handleMpvEvents()
-
 	ui.app.SetRoot(ui.pages, true).
 		SetFocus(ui.pages).
 		EnableMouse(true)
 
-	// run main loop
-	if err := ui.app.Run(); err != nil {
-		panic(err)
-	}
-
 	return ui
+}
+
+func (ui *Ui) Run() error {
+	ui.runEventLoops()
+
+	// run mpv event handler
+	go ui.handleMpvEvents()
+
+	return ui.app.Run()
 }
 
 func (ui *Ui) handleMpvEvents() {
@@ -221,7 +177,8 @@ func (ui *Ui) handleMpvEvents() {
 						}
 						scrobbleDuration := time.Duration(scrobbleDelay) * time.Second
 
-						ui.scrobbleTimer.Reset(scrobbleDuration)
+						// HACK
+						ui.eventLoop.scrobbleTimer.Reset(scrobbleDuration)
 						ui.logger.Printf("scrobbler: timer started, %v", scrobbleDuration)
 					} else {
 						ui.logger.Printf("scrobbler: track too short")

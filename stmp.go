@@ -70,7 +70,7 @@ func main() {
 	}
 
 	if *enableMpris {
-		mpris, err := RegisterPlayer(player, logger)
+		mpris, err := RegisterMprisPlayer(player, logger)
 		if err != nil {
 			fmt.Printf("Unable to register MPRIS with DBUS: %s\n", err)
 			fmt.Println("Try running without MPRIS")
@@ -79,9 +79,14 @@ func main() {
 		defer mpris.Close()
 	}
 
-	InitGui(&indexResponse.Indexes.Index,
+	ui := InitGui(&indexResponse.Indexes.Index,
 		&playlistResponse.Playlists.Playlists,
 		connection,
 		player,
 		logger)
+
+	// run main loop
+	if err := ui.Run(); err != nil {
+		panic(err)
+	}
 }

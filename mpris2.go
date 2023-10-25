@@ -19,63 +19,12 @@ type MprisPlayer struct {
 	lastVolume float64
 }
 
-// Mandatory functions
-func (mpp MprisPlayer) Stop() {
-	if err := mpp.player.Stop(); err != nil {
-		mpp.logger.Printf(err.Error())
-	}
-}
-func (mpp MprisPlayer) Next() {
-	mpp.player.PlayNextTrack()
-}
-func (mpp MprisPlayer) Pause() {
-	psd, err := mpp.player.IsPaused()
-	if err != nil {
-		mpp.logger.Printf(err.Error())
-		return
-	}
-	if !psd {
-		if _, err = mpp.player.Pause(); err != nil {
-			mpp.logger.Printf(err.Error())
-		}
-	}
-}
-func (mpp MprisPlayer) Play() {
-	psd, err := mpp.player.IsPaused()
-	if err != nil {
-		mpp.logger.Printf(err.Error())
-		return
-	}
-	if psd {
-		if _, err = mpp.player.Pause(); err != nil {
-			mpp.logger.Printf(err.Error())
-		}
-	}
-}
-func (mpp MprisPlayer) PlayPause() {
-	mpp.player.Pause()
-}
-func (mpp MprisPlayer) OpenUri(string) {
-	// TODO not implemented
-}
-func (mpp MprisPlayer) Previous() {
-	// TODO not implemented
-}
-func (mpp MprisPlayer) Seek(int) {
-	// TODO not implemented
-}
-func (mpp MprisPlayer) Seeked(int) {
-	// TODO not implemented
-}
-func (mpp MprisPlayer) SetPosition(string, int) {
-	// TODO not implemented
-}
-
-func RegisterPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
+func RegisterMprisPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		return MprisPlayer{}, err
 	}
+
 	parts := []string{"", "org", "mpris", "MediaPlayer2", "Player"}
 	name := strings.Join(parts[1:], ".")
 	mpp := MprisPlayer{
@@ -83,6 +32,7 @@ func RegisterPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
 		player: p,
 		logger: l,
 	}
+
 	err = conn.ExportAll(mpp, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player")
 	if err != nil {
 		return MprisPlayer{}, err
@@ -137,10 +87,12 @@ func RegisterPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
 			"PlaybackStatus": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		},
 	}
+
 	props, err := prop.Export(conn, "/org/mpris/MediaPlayer2", propSpec)
 	if err != nil {
 		return MprisPlayer{}, err
 	}
+
 	n := &introspect.Node{
 		Name: "/org/mpris/MediaPlayer2",
 		Interfaces: []introspect.Interface{
@@ -157,6 +109,7 @@ func RegisterPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
 	if err != nil {
 		return MprisPlayer{}, err
 	}
+
 	reply, err := conn.RequestName(name, dbus.NameFlagDoNotQueue)
 	if err != nil {
 		return MprisPlayer{}, err
@@ -164,9 +117,66 @@ func RegisterPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
 	if reply != dbus.RequestNameReplyPrimaryOwner {
 		return MprisPlayer{}, fmt.Errorf("name already owned")
 	}
+
 	return mpp, nil
 }
 
 func (m MprisPlayer) Close() {
 	m.conn.Close()
+}
+
+// Mandatory functions
+func (mpp MprisPlayer) Stop() {
+	if err := mpp.player.Stop(); err != nil {
+		mpp.logger.Printf(err.Error())
+	}
+}
+
+func (mpp MprisPlayer) Next() {
+	mpp.player.PlayNextTrack()
+}
+
+func (mpp MprisPlayer) Pause() {
+	psd, err := mpp.player.IsPaused()
+	if err != nil {
+		mpp.logger.Printf(err.Error())
+		return
+	}
+	if !psd {
+		if _, err = mpp.player.Pause(); err != nil {
+			mpp.logger.Printf(err.Error())
+		}
+	}
+}
+
+func (mpp MprisPlayer) Play() {
+	psd, err := mpp.player.IsPaused()
+	if err != nil {
+		mpp.logger.Printf(err.Error())
+		return
+	}
+	if psd {
+		if _, err = mpp.player.Pause(); err != nil {
+			mpp.logger.Printf(err.Error())
+		}
+	}
+}
+
+func (mpp MprisPlayer) PlayPause() {
+	mpp.player.Pause()
+}
+func (mpp MprisPlayer) OpenUri(string) {
+	// TODO not implemented
+}
+func (mpp MprisPlayer) Previous() {
+	// TODO not implemented
+}
+func (mpp MprisPlayer) Seek(int) {
+	// TODO not implemented
+}
+func (mpp MprisPlayer) Seeked(int) {
+	// TODO not implemented
+}
+func (mpp MprisPlayer) SetPosition(string, int) {
+	// TODO not implemented
 }
