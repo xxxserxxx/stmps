@@ -7,17 +7,20 @@ import (
 )
 
 type eventLoop struct {
-	scrobbleTimer *time.Timer
+	scrobbleNowPlaying      chan string
+	scrobbleSubmissionTimer *time.Timer
 }
 
 func (ui *Ui) initEventLoops() {
-	el := &eventLoop{}
+	el := &eventLoop{
+		scrobbleNowPlaying: make(chan string, 5),
+	}
 	ui.eventLoop = el
 
 	// create reused timer to scrobble after delay
-	el.scrobbleTimer = time.NewTimer(0)
-	if !el.scrobbleTimer.Stop() {
-		<-el.scrobbleTimer.C
+	el.scrobbleSubmissionTimer = time.NewTimer(0)
+	if !el.scrobbleSubmissionTimer.Stop() {
+		<-el.scrobbleSubmissionTimer.C
 	}
 }
 
@@ -48,23 +51,35 @@ func (ui *Ui) guiEventLoop() {
 				}
 				statusData := mpvEvent.Data.(mpv.StatusData) // TODO is this safe to access? maybe we need a copy
 
-				ui.app.QueueUpdate(func() {
+				ui.app.QueueUpdateDraw(func() {
 					ui.playerStatus.SetText(formatPlayerStatus(statusData.Volume, statusData.Position, statusData.Duration))
-					ui.app.Draw()
 				})
 
 			case mpv.EventStopped:
-				ui.startStopStatus.SetText("[::b]stmp: [red]stopped")
-				updateQueueList(ui.player, ui.queueList, ui.starIdList)
+				ui.app.QueueUpdateDraw(func() {
+					ui.startStopStatus.SetText("[::b]stmp: [red]Stopped")
+					updateQueueList(ui.player, ui.queueList, ui.starIdList)
+				})
 
 			case mpv.EventPlaying:
 				if mpvEvent.Data != nil {
 					currentSong := mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
-					ui.startStopStatus.SetText("[::b]stmp: [green]playing " + currentSong.Title)
+					statusText := "[::b]stmp: [green]Playing"
+					if currentSong.Title != "" {
+						statusText += " [white]" + currentSong.Title
+					}
+					if currentSong.Artist != "" {
+						statusText += " [gray]by [white]" + currentSong.Artist
+					}
+
+					ui.app.QueueUpdateDraw(func() {
+						ui.startStopStatus.SetText(statusText)
+						updateQueueList(ui.player, ui.queueList, ui.starIdList)
+					})
 
 					if ui.connection.Scrobble {
-						// scrobble "now playing" event
-						ui.connection.ScrobbleSubmission(currentSong.Id, false) // TODO make this a background event
+						// scrobble "now playing" event (delegate to background event loop)
+						ui.eventLoop.scrobbleNowPlaying <- currentSong.Id
 
 						// scrobble "submission" after song has been playing a bit
 						// see: https://www.last.fm/api/scrobbling
@@ -78,17 +93,18 @@ func (ui *Ui) guiEventLoop() {
 							}
 							scrobbleDuration := time.Duration(scrobbleDelay) * time.Second
 
-							// HACK
-							ui.eventLoop.scrobbleTimer.Reset(scrobbleDuration)
+							ui.eventLoop.scrobbleSubmissionTimer.Reset(scrobbleDuration)
 							ui.logger.Printf("scrobbler: timer started, %v", scrobbleDuration)
 						} else {
 							ui.logger.Printf("scrobbler: track too short")
 						}
 					}
 				} else {
-					ui.startStopStatus.SetText("[::b]stmp: [green]playing")
+					ui.app.QueueUpdateDraw(func() {
+						ui.startStopStatus.SetText("[::b]stmp: [green]playing")
+						updateQueueList(ui.player, ui.queueList, ui.starIdList)
+					})
 				}
-				updateQueueList(ui.player, ui.queueList, ui.starIdList)
 			}
 		}
 	}
@@ -96,13 +112,16 @@ func (ui *Ui) guiEventLoop() {
 
 // loop for blocking background tasks that would otherwise block the ui
 func (ui *Ui) backgroundEventLoop() {
-	//lint:ignore S1000 // additional cases may be added later
-	//nolint:gosimple
 	for {
 		select {
-		case <-ui.eventLoop.scrobbleTimer.C:
+		case songId := <-ui.eventLoop.scrobbleNowPlaying:
+			// scrobble now playing
+			ui.connection.ScrobbleSubmission(songId, false)
+
+		case <-ui.eventLoop.scrobbleSubmissionTimer.C:
 			// scrobble submission delay elapsed
 			if currentSong, err := ui.player.GetPlayingTrack(); err != nil {
+				// user paused/stopped
 				ui.logger.Printf("not scrobbling: %v", err)
 			} else {
 				// it's still playing

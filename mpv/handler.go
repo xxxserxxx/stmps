@@ -16,16 +16,15 @@ func (p *Player) EventLoop() {
 		} else if evt.Event_Id == mpv.EVENT_END_FILE && !p.replaceInProgress {
 			// we don't want to update anything if we're in the process of replacing the current track
 
-			/* TODO do we want this?
 			if len(p.queue) > 0 {
 				p.queue = p.queue[1:]
+			} else {
+				p.sendGuiEvent(EventStopped)
 			}
 
 			if err := p.PlayNextTrack(); err != nil {
 				p.logger.Printf("handleMpvEvents: PlayNextTrack -- %s", err.Error())
-			}*/
-
-			p.sendGuiEvent(EventStopped)
+			}
 		} else if evt.Event_Id == mpv.EVENT_START_FILE {
 			p.replaceInProgress = false
 
