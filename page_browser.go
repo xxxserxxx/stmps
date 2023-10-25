@@ -6,7 +6,7 @@ import (
 	"github.com/wildeyedskies/stmp/subsonic"
 )
 
-func (ui *Ui) createBrowserPage(titleFlex *tview.Flex, indexes *[]subsonic.SubsonicIndex) (*tview.Flex, tview.Primitive) {
+func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex, tview.Primitive) {
 	// artist list
 	ui.artistList = tview.NewList().
 		ShowSecondaryText(false)
@@ -50,7 +50,6 @@ func (ui *Ui) createBrowserPage(titleFlex *tview.Flex, indexes *[]subsonic.Subso
 		AddItem(ui.entityList, 0, 1, false)
 
 	browserFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(titleFlex, 1, 0, false).
 		AddItem(artistFlex, 0, 1, true).
 		AddItem(ui.searchField, 1, 0, false)
 

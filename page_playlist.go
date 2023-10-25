@@ -5,7 +5,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (ui *Ui) createPlaylistPage(titleFlex *tview.Flex) (*tview.Flex, tview.Primitive) {
+func (ui *Ui) createPlaylistPage() (*tview.Flex, tview.Primitive) {
 	ui.playlistList = tview.NewList().
 		ShowSecondaryText(false).
 		SetSelectedFocusOnly(true)
@@ -24,21 +24,18 @@ func (ui *Ui) createPlaylistPage(titleFlex *tview.Flex) (*tview.Flex, tview.Prim
 		AddItem(ui.selectedPlaylist, 0, 1, false)
 
 	playlistFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(titleFlex, 1, 0, false).
 		AddItem(playlistColFlex, 0, 1, true)
 
 	ui.newPlaylistInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
 			ui.newPlaylist(ui.newPlaylistInput.GetText())
 			playlistFlex.Clear()
-			playlistFlex.AddItem(titleFlex, 1, 0, false)
 			playlistFlex.AddItem(playlistColFlex, 0, 1, true)
 			ui.app.SetFocus(ui.playlistList)
 			return nil
 		}
 		if event.Key() == tcell.KeyEscape {
 			playlistFlex.Clear()
-			playlistFlex.AddItem(titleFlex, 1, 0, false)
 			playlistFlex.AddItem(playlistColFlex, 0, 1, true)
 			ui.app.SetFocus(ui.playlistList)
 			return nil

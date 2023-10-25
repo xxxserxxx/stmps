@@ -5,11 +5,10 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (ui *Ui) createQueuePage(titleFlex *tview.Flex) *tview.Flex {
+func (ui *Ui) createQueuePage() *tview.Flex {
 	ui.queueList = tview.NewList().ShowSecondaryText(false)
 
 	queueFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(titleFlex, 1, 0, false).
 		AddItem(ui.queueList, 0, 1, true)
 
 	ui.queueList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

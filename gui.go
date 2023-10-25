@@ -76,11 +76,12 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmp").
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
-	ui.currentPage = tview.NewTextView().SetText("Browser").
-		SetTextAlign(tview.AlignCenter).
-		SetDynamicColors(true)
 	ui.playerStatus = tview.NewTextView().SetText("[100%][::b][0:00/0:00]").
 		SetTextAlign(tview.AlignRight).
+		SetDynamicColors(true)
+
+	ui.currentPage = tview.NewTextView().SetText("Browser").
+		SetTextAlign(tview.AlignCenter).
 		SetDynamicColors(true)
 
 	// same as 'playlistList' except for the addToPlaylistModal
@@ -93,22 +94,25 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		SetFieldWidth(50)
 
 	// top row
-	titleFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
+	top1Flex := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(ui.startStopStatus, 0, 1, false).
-		AddItem(ui.currentPage, 0, 1, false).
-		AddItem(ui.playerStatus, 0, 1, false)
+		AddItem(ui.playerStatus, 20, 0, false)
+
+	// 2nd row
+	top2Flex := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(ui.currentPage, 0, 1, false)
 
 	// browser page
-	browserFlex, addToPlaylistModal := ui.createBrowserPage(titleFlex, indexes)
+	browserFlex, addToPlaylistModal := ui.createBrowserPage(indexes)
 
 	// queue page
-	queueFlex := ui.createQueuePage(titleFlex)
+	queueFlex := ui.createQueuePage()
 
 	// playlist page
-	playlistFlex, deletePlaylistModal := ui.createPlaylistPage(titleFlex)
+	playlistFlex, deletePlaylistModal := ui.createPlaylistPage()
 
 	// log page
-	logListFlex := ui.createLogPage(titleFlex)
+	logListFlex := ui.createLogPage()
 
 	ui.pages.AddPage("browser", browserFlex, true, true).
 		AddPage("queue", queueFlex, true, false).
@@ -120,8 +124,14 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	// add page input handler
 	ui.pages.SetInputCapture(ui.handlePageInput)
 
-	ui.app.SetRoot(ui.pages, true).
-		SetFocus(ui.pages).
+	rootFlex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(top1Flex, 1, 0, false).
+		AddItem(top2Flex, 1, 0, false).
+		AddItem(ui.pages, 0, 1, true)
+
+	ui.app.SetRoot(rootFlex, true).
+		SetFocus(rootFlex).
 		EnableMouse(true)
 
 	return ui
