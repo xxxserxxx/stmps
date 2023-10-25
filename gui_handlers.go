@@ -21,46 +21,41 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	case '1':
 		ui.pages.SwitchToPage("browser")
 		ui.currentPage.SetText("Browser")
+
 	case '2':
 		ui.pages.SwitchToPage("queue")
 		ui.currentPage.SetText("Queue")
+
 	case '3':
 		ui.pages.SwitchToPage("playlists")
 		ui.currentPage.SetText("Playlists")
+
 	case '4':
 		ui.pages.SwitchToPage("log")
 		ui.currentPage.SetText("Log")
+
 	case 'Q':
 		ui.player.Quit()
 		ui.app.Stop()
+
 	case 's':
 		ui.handleAddRandomSongs()
+
 	case 'D':
 		ui.player.ClearQueue()
 		err := ui.player.Stop()
 		if err != nil {
-			ui.logger.Printf("handlePageInput: Stop -- %s", err.Error())
+			ui.logger.PrintError("handlePageInput: Stop", err)
 		}
 		updateQueueList(ui.player, ui.queueList, ui.starIdList)
+
 	case 'p':
-		status, err := ui.player.Pause()
+		err := ui.player.Pause()
 		if err != nil {
-			ui.logger.Printf("handlePageInput: Pause -- %s", err.Error())
-			ui.startStopStatus.SetText("[::b]stmp: [red]error")
-			return nil
-		}
-		if status == mpv.PlayerStopped {
-			ui.startStopStatus.SetText("[::b]stmp: [red]stopped")
-		} else if status == mpv.PlayerPlaying {
-			if currentSong, err := ui.player.GetPlayingTrack(); err != nil {
-				ui.startStopStatus.SetText("[::b]stmp: [green]playing " + currentSong.Title)
-			} else {
-				ui.logger.PrintError("handlePageInput", err)
-			}
-		} else if status == mpv.PlayerPaused {
-			ui.startStopStatus.SetText("[::b]stmp: [yellow]paused")
+			ui.logger.PrintError("handlePageInput: Pause", err)
 		}
 		return nil
+
 	case '-':
 		if err := ui.player.AdjustVolume(-5); err != nil {
 			ui.logger.Printf("handlePageInput: AdjustVolume %d -- %s", -5, err.Error())
@@ -78,6 +73,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 			ui.logger.Printf("handlePageInput: Seek %d -- %s", 10, err.Error())
 		}
 		return nil
+
 	case ',':
 		if err := ui.player.Seek(-10); err != nil {
 			ui.logger.Printf("handlePageInput: Seek %d -- %s", -10, err.Error())

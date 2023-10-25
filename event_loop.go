@@ -7,6 +7,7 @@ import (
 )
 
 type eventLoop struct {
+	// scrobbles are handled by background loop
 	scrobbleNowPlaying      chan string
 	scrobbleSubmissionTimer *time.Timer
 }
@@ -29,21 +30,26 @@ func (ui *Ui) runEventLoops() {
 	go ui.backgroundEventLoop()
 }
 
+// handle ui updates
 func (ui *Ui) guiEventLoop() {
 	ui.addStarredToList()
 
 	for {
 		select {
 		case msg := <-ui.logger.Prints:
+			// handle log page output
 			ui.app.QueueUpdate(func() {
-				ui.logList.AddItem(msg, "", 0, nil)
+				line := time.Now().Local().Format("(15:04:05) ") + msg
+				ui.logList.InsertItem(0, line, "", 0, nil)
+
 				// Make sure the log list doesn't grow infinitely
-				for ui.logList.GetItemCount() > 200 {
-					ui.logList.RemoveItem(0)
+				for ui.logList.GetItemCount() > 100 {
+					ui.logList.RemoveItem(-1)
 				}
 			})
 
 		case mpvEvent := <-ui.mpvEvents:
+			// handle events from mpv wrapper
 			switch mpvEvent.Type {
 			case mpv.EventStatus:
 				if mpvEvent.Data == nil {
@@ -62,20 +68,12 @@ func (ui *Ui) guiEventLoop() {
 				})
 
 			case mpv.EventPlaying:
-				if mpvEvent.Data != nil {
-					currentSong := mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
-					statusText := "[::b]stmp: [green]Playing"
-					if currentSong.Title != "" {
-						statusText += " [white]" + currentSong.Title
-					}
-					if currentSong.Artist != "" {
-						statusText += " [gray]by [white]" + currentSong.Artist
-					}
+				statusText := "[::b]stmp: [green]Playing"
 
-					ui.app.QueueUpdateDraw(func() {
-						ui.startStopStatus.SetText(statusText)
-						updateQueueList(ui.player, ui.queueList, ui.starIdList)
-					})
+				var currentSong mpv.QueueItem
+				if mpvEvent.Data != nil {
+					currentSong = mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
+					statusText += formatSongForStatusBar(&currentSong)
 
 					if ui.connection.Scrobble {
 						// scrobble "now playing" event (delegate to background event loop)
@@ -99,12 +97,41 @@ func (ui *Ui) guiEventLoop() {
 							ui.logger.Printf("scrobbler: track too short")
 						}
 					}
-				} else {
-					ui.app.QueueUpdateDraw(func() {
-						ui.startStopStatus.SetText("[::b]stmp: [green]playing")
-						updateQueueList(ui.player, ui.queueList, ui.starIdList)
-					})
 				}
+
+				ui.app.QueueUpdateDraw(func() {
+					ui.startStopStatus.SetText(statusText)
+					updateQueueList(ui.player, ui.queueList, ui.starIdList)
+				})
+
+			case mpv.EventPaused:
+				statusText := "[::b]stmp: [yellow]Paused"
+
+				var currentSong mpv.QueueItem
+				if mpvEvent.Data != nil {
+					currentSong = mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
+					statusText += formatSongForStatusBar(&currentSong)
+				}
+
+				ui.app.QueueUpdateDraw(func() {
+					ui.startStopStatus.SetText(statusText)
+				})
+
+			case mpv.EventUnpaused:
+				statusText := "[::b]stmp: [green]Playing"
+
+				var currentSong mpv.QueueItem
+				if mpvEvent.Data != nil {
+					currentSong = mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
+					statusText += formatSongForStatusBar(&currentSong)
+				}
+
+				ui.app.QueueUpdateDraw(func() {
+					ui.startStopStatus.SetText(statusText)
+				})
+
+			default:
+				ui.logger.Printf("guiEventLoop: unhandled mpvEvent %v", mpvEvent)
 			}
 		}
 	}
@@ -130,4 +157,17 @@ func (ui *Ui) backgroundEventLoop() {
 			}
 		}
 	}
+}
+
+func formatSongForStatusBar(currentSong *mpv.QueueItem) (text string) {
+	if currentSong == nil {
+		return
+	}
+	if currentSong.Title != "" {
+		text += "[::-] [white]" + currentSong.Title
+	}
+	if currentSong.Artist != "" {
+		text += " [gray]by [white]" + currentSong.Artist
+	}
+	return
 }

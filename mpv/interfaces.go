@@ -7,6 +7,9 @@ const (
 	EventStopped UiEventType = iota
 	// new song started playing, data: QueueItem
 	EventPlaying
+	// unpaused/paused song, data: QueueItem
+	EventUnpaused
+	EventPaused
 	// UI status update, data: StatusData
 	EventStatus
 )

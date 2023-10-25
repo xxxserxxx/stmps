@@ -73,13 +73,13 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.pages = tview.NewPages()
 
 	// status text at the top
-	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmp: [red]stopped").
+	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmp").
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
 	ui.currentPage = tview.NewTextView().SetText("Browser").
 		SetTextAlign(tview.AlignCenter).
 		SetDynamicColors(true)
-	ui.playerStatus = tview.NewTextView().SetText("[::b][100%][0:00/0:00]").
+	ui.playerStatus = tview.NewTextView().SetText("[100%][::b][0:00/0:00]").
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true)
 

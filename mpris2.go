@@ -144,7 +144,7 @@ func (mpp MprisPlayer) Pause() {
 		return
 	}
 	if !psd {
-		if _, err = mpp.player.Pause(); err != nil {
+		if err = mpp.player.Pause(); err != nil {
 			mpp.logger.Printf(err.Error())
 		}
 	}
@@ -157,7 +157,7 @@ func (mpp MprisPlayer) Play() {
 		return
 	}
 	if psd {
-		if _, err = mpp.player.Pause(); err != nil {
+		if err = mpp.player.Pause(); err != nil {
 			mpp.logger.Printf(err.Error())
 		}
 	}

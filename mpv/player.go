@@ -103,33 +103,47 @@ func (p *Player) IsPaused() (bool, error) {
 // Pause toggles playing music
 // If a song is playing, it is paused. If a song is paused, playing resumes. The
 // state after the toggle is returned, or an error.
-func (p *Player) Pause() (int, error) {
+func (p *Player) Pause() (err error) {
 	loaded, err := p.IsSongLoaded()
 	if err != nil {
-		return PlayerError, err
+		return
 	}
-	pause, err := p.IsPaused()
+	paused, err := p.IsPaused()
 	if err != nil {
-		return PlayerError, err
+		return
 	}
 
 	if loaded {
-		err := p.instance.Command([]string{"cycle", "pause"})
+		err = p.instance.Command([]string{"cycle", "pause"})
 		if err != nil {
-			return PlayerError, err
+			return
 		}
-		if pause {
-			return PlayerPlaying, nil
+		paused = !paused
+
+		currentSong := QueueItem{}
+		if len(p.queue) > 0 {
+			currentSong = p.queue[0]
 		}
-		return PlayerPaused, nil
-	} else {
-		if len(p.queue) != 0 {
-			err := p.instance.Command([]string{"loadfile", p.queue[0].Uri})
-			return PlayerPlaying, err
+
+		if paused {
+			p.sendGuiDataEvent(EventPaused, currentSong)
 		} else {
-			return PlayerStopped, nil
+			p.sendGuiDataEvent(EventUnpaused, currentSong)
+		}
+	} else {
+		if len(p.queue) > 0 {
+			err = p.instance.Command([]string{"loadfile", p.queue[0].Uri})
+			if err != nil {
+				return
+			}
+
+			p.sendGuiDataEvent(EventUnpaused, p.queue[0])
+		} else {
+			p.sendGuiEvent(EventStopped)
 		}
 	}
+
+	return
 }
 
 func (p *Player) SetVolume(percentValue int64) error {
