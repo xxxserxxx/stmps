@@ -38,7 +38,9 @@ type Ui struct {
 	currentDirectory *subsonic.SubsonicDirectory
 	artistIdList     []string
 	starIdList       map[string]struct{}
-	eventLoop        *eventLoop
+
+	eventLoop *eventLoop
+	mpvEvents chan mpv.UiEvent
 
 	playlists  []subsonic.SubsonicPlaylist
 	connection *subsonic.SubsonicConnection
@@ -55,11 +57,17 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		currentDirectory: &subsonic.SubsonicDirectory{},
 		artistIdList:     []string{},
 		starIdList:       map[string]struct{}{},
-		playlists:        *playlists,
-		connection:       connection,
-		player:           player,
-		logger:           logger,
+
+		eventLoop: nil, // initialized by initEventLoops()
+		mpvEvents: make(chan mpv.UiEvent, 5),
+
+		playlists:  *playlists,
+		connection: connection,
+		player:     player,
+		logger:     logger,
 	}
+
+	ui.initEventLoops()
 
 	ui.app = tview.NewApplication()
 	ui.pages = tview.NewPages()
@@ -120,6 +128,9 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 }
 
 func (ui *Ui) Run() error {
+	// receive events from mpv wrapper
+	ui.player.RegisterEventConsumer(ui)
+
 	// run gui/background event handler
 	ui.runEventLoops()
 

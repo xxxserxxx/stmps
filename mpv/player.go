@@ -9,27 +9,22 @@ import (
 )
 
 const (
+	// TODO make private?
 	PlayerStopped = iota
 	PlayerPlaying
 	PlayerPaused
 	PlayerError
 )
 
-type QueueItem struct {
-	Id       string
-	Uri      string
-	Title    string
-	Artist   string
-	Duration int
-}
-
 type PlayerQueue []QueueItem
 
 type Player struct {
 	instance          *mpv.Mpv
-	eventChannel      chan *mpv.Event
+	mpvEvents         chan *mpv.Event
+	eventConsumer     EventConsumer
 	queue             PlayerQueue
-	ReplaceInProgress bool
+	logger            logger.LoggerInterface
+	replaceInProgress bool
 }
 
 func eventListener(m *mpv.Mpv) chan *mpv.Event {
@@ -43,25 +38,36 @@ func eventListener(m *mpv.Mpv) chan *mpv.Event {
 	return c
 }
 
-func NewPlayer(logger logger.LoggerInterface) (*Player, error) {
+func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 	mpvInstance := mpv.Create()
 
 	// TODO figure out what other mpv options we need
 	mpvInstance.SetOptionString("audio-display", "no")
 	mpvInstance.SetOptionString("video", "no")
 
-	err := mpvInstance.Initialize()
-	if err != nil {
+	if err = mpvInstance.Initialize(); err != nil {
 		mpvInstance.TerminateDestroy()
-		return nil, err
+		return
 	}
 
-	return &Player{mpvInstance, eventListener(mpvInstance), make([]QueueItem, 0), false}, nil
+	player = &Player{
+		instance:          mpvInstance,
+		mpvEvents:         eventListener(mpvInstance),
+		eventConsumer:     nil, // must be set by calling RegisterEventConsumer()
+		queue:             make([]QueueItem, 0),
+		logger:            logger,
+		replaceInProgress: false,
+	}
+	return
 }
 
 func (p *Player) Quit() {
-	p.eventChannel <- nil
+	p.mpvEvents <- nil
 	p.instance.TerminateDestroy()
+}
+
+func (p *Player) RegisterEventConsumer(consumer EventConsumer) {
+	p.eventConsumer = consumer
 }
 
 func (p *Player) PlayNextTrack() error {
@@ -73,7 +79,7 @@ func (p *Player) PlayNextTrack() error {
 
 func (p *Player) Play(id string, uri string, title string, artist string, duration int) error {
 	p.queue = []QueueItem{{id, uri, title, artist, duration}}
-	p.ReplaceInProgress = true
+	p.replaceInProgress = true
 	if ip, e := p.IsPaused(); ip && e == nil {
 		p.Pause()
 	}

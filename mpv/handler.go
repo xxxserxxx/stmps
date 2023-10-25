@@ -1,8 +1,6 @@
 package mpv
 
 import (
-	"time"
-
 	"github.com/wildeyedskies/go-mpv/mpv"
 )
 
@@ -11,86 +9,84 @@ func (p *Player) EventLoop() {
 	p.instance.ObserveProperty(0, "duration", mpv.FORMAT_DOUBLE)
 	p.instance.ObserveProperty(0, "volume", mpv.FORMAT_INT64)
 
-	for evt := range p.eventChannel {
+	for evt := range p.mpvEvents {
 		if evt == nil {
 			// quit signal
 			break
-		} else if evt.Event_Id == mpv.EVENT_END_FILE && !p.ReplaceInProgress {
+		} else if evt.Event_Id == mpv.EVENT_END_FILE && !p.replaceInProgress {
 			// we don't want to update anything if we're in the process of replacing the current track
-			ui.startStopStatus.SetText("[::b]stmp: [red]stopped")
 
-			// TODO it's gross that this is here, need better event handling
-			if len(p.Queue) > 0 {
-				p.Queue = p.Queue[1:]
+			/* TODO do we want this?
+			if len(p.queue) > 0 {
+				p.queue = p.queue[1:]
 			}
-			updateQueueList(p, ui.queueList, ui.starIdList)
-			err := p.PlayNextTrack()
-			if err != nil {
-				ui.logger.Printf("handleMpvEvents: PlayNextTrack -- %s", err.Error())
-			}
+
+			if err := p.PlayNextTrack(); err != nil {
+				p.logger.Printf("handleMpvEvents: PlayNextTrack -- %s", err.Error())
+			}*/
+
+			p.sendGuiEvent(EventStopped)
 		} else if evt.Event_Id == mpv.EVENT_START_FILE {
-			p.ReplaceInProgress = false
-			updateQueueList(p, ui.queueList, ui.starIdList)
+			p.replaceInProgress = false
 
-			if len(p.Queue) > 0 {
-				currentSong := p.Queue[0]
-				ui.startStopStatus.SetText("[::b]stmp: [green]playing " + currentSong.Title)
-
-				if ui.connection.Scrobble {
-					// scrobble "now playing" event
-					ui.connection.ScrobbleSubmission(currentSong.Id, false)
-
-					// scrobble "submission" after song has been playing a bit
-					// see: https://www.last.fm/api/scrobbling
-					// A track should only be scrobbled when the following conditions have been met:
-					// The track must be longer than 30 seconds. And the track has been played for
-					// at least half its duration, or for 4 minutes (whichever occurs earlier.)
-					if currentSong.Duration > 30 {
-						scrobbleDelay := currentSong.Duration / 2
-						if scrobbleDelay > 240 {
-							scrobbleDelay = 240
-						}
-						scrobbleDuration := time.Duration(scrobbleDelay) * time.Second
-
-						// HACK
-						ui.eventLoop.scrobbleTimer.Reset(scrobbleDuration)
-						ui.logger.Printf("scrobbler: timer started, %v", scrobbleDuration)
-					} else {
-						ui.logger.Printf("scrobbler: track too short")
-					}
-				}
+			currentSong := QueueItem{}
+			if len(p.queue) > 0 {
+				currentSong = p.queue[0]
 			}
+			p.sendGuiDataEvent(EventPlaying, currentSong)
 		} else if evt.Event_Id == mpv.EVENT_IDLE || evt.Event_Id == mpv.EVENT_NONE {
 			continue
 		}
 
 		position, err := p.instance.GetProperty("time-pos", mpv.FORMAT_DOUBLE)
 		if err != nil {
-			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "time-pos", err.Error())
+			p.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "time-pos", err.Error())
 		}
 		// TODO only update these as needed
 		duration, err := p.instance.GetProperty("duration", mpv.FORMAT_DOUBLE)
 		if err != nil {
-			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "duration", err.Error())
+			p.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "duration", err.Error())
 		}
 		volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
 		if err != nil {
-			ui.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "volume", err.Error())
+			p.logger.Printf("handleMpvEvents (%s): GetProperty %s -- %s", evt.Event_Id.String(), "volume", err.Error())
 		}
 
 		if position == nil {
 			position = 0.0
 		}
-
 		if duration == nil {
 			duration = 0.0
 		}
-
 		if volume == nil {
 			volume = 0
 		}
 
-		pStatus.SetText(formatPlayerStatus(volume.(int64), position.(float64), duration.(float64)))
-		ui.app.Draw()
+		statusData := StatusData{
+			Volume:   volume.(int64),
+			Position: position.(float64),
+			Duration: duration.(float64),
+		}
+		p.sendGuiDataEvent(EventStatus, statusData)
 	}
+}
+
+func (p *Player) sendGuiEvent(typ UiEventType) {
+	if p.eventConsumer == nil {
+		return
+	}
+	p.eventConsumer.SendEvent(UiEvent{
+		Type: typ,
+		Data: nil,
+	})
+}
+
+func (p *Player) sendGuiDataEvent(typ UiEventType, data interface{}) {
+	if p.eventConsumer == nil {
+		return
+	}
+	p.eventConsumer.SendEvent(UiEvent{
+		Type: typ,
+		Data: data,
+	})
 }
