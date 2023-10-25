@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/wildeyedskies/stmp/logger"
 )
 
 type SubsonicConnection struct {
@@ -16,11 +18,11 @@ type SubsonicConnection struct {
 	PlaintextAuth bool
 	Scrobble      bool
 
-	logger         LoggerInterface
+	logger         logger.LoggerInterface
 	directoryCache map[string]SubsonicResponse
 }
 
-func Init(logger LoggerInterface) *SubsonicConnection {
+func Init(logger logger.LoggerInterface) *SubsonicConnection {
 	return &SubsonicConnection{
 		logger:         logger,
 		directoryCache: make(map[string]SubsonicResponse),

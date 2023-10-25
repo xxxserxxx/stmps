@@ -1,9 +1,10 @@
-package main
+package mpv
 
 import (
 	"strconv"
 
 	"github.com/wildeyedskies/go-mpv/mpv"
+	"github.com/wildeyedskies/stmp/logger"
 )
 
 const (
@@ -39,7 +40,7 @@ func eventListener(m *mpv.Mpv) chan *mpv.Event {
 	return c
 }
 
-func InitPlayer() (*Player, error) {
+func NewPlayer(logger logger.LoggerInterface) (*Player, error) {
 	mpvInstance := mpv.Create()
 
 	// TODO figure out what other mpv options we need

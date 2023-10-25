@@ -9,17 +9,18 @@ import (
 	"github.com/godbus/dbus/v5/introspect"
 	"github.com/godbus/dbus/v5/prop"
 	"github.com/wildeyedskies/stmp/logger"
+	"github.com/wildeyedskies/stmp/mpv"
 )
 
 type MprisPlayer struct {
 	conn   *dbus.Conn
-	player *Player
+	player *mpv.Player
 	logger *logger.Logger
 
 	lastVolume float64
 }
 
-func RegisterMprisPlayer(p *Player, l *logger.Logger) (MprisPlayer, error) {
+func RegisterMprisPlayer(p *mpv.Player, l *logger.Logger) (MprisPlayer, error) {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		return MprisPlayer{}, err

@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/wildeyedskies/stmp/logger"
+	"github.com/wildeyedskies/stmp/mpv"
 	"github.com/wildeyedskies/stmp/subsonic"
 )
 
@@ -63,7 +64,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	player, err := InitPlayer()
+	player, err := mpv.NewPlayer()
 	if err != nil {
 		fmt.Println("Unable to initialize mpv. Is mpv installed?")
 		os.Exit(1)
