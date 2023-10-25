@@ -27,17 +27,6 @@ type Player struct {
 	replaceInProgress bool
 }
 
-func eventListener(m *mpv.Mpv) chan *mpv.Event {
-	c := make(chan *mpv.Event)
-	go func() {
-		for {
-			e := m.WaitEvent(1)
-			c <- e
-		}
-	}()
-	return c
-}
-
 func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 	mpvInstance := mpv.Create()
 
@@ -52,13 +41,22 @@ func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 
 	player = &Player{
 		instance:          mpvInstance,
-		mpvEvents:         eventListener(mpvInstance),
+		mpvEvents:         make(chan *mpv.Event),
 		eventConsumer:     nil, // must be set by calling RegisterEventConsumer()
 		queue:             make([]QueueItem, 0),
 		logger:            logger,
 		replaceInProgress: false,
 	}
+
+	go player.mpvEngineEventHandler(mpvInstance)
 	return
+}
+
+func (p *Player) mpvEngineEventHandler(instance *mpv.Mpv) {
+	for {
+		evt := instance.WaitEvent(-1) // wait infinitely
+		p.mpvEvents <- evt
+	}
 }
 
 func (p *Player) Quit() {
