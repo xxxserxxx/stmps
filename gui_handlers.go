@@ -163,7 +163,7 @@ func (ui *Ui) handleAddRandomSongs() {
 
 func (ui *Ui) handleToggleStar() {
 	currentIndex := ui.queueList.GetCurrentItem()
-	if currentIndex == -1 /*|| len(ui.player.Queue) < currentIndex*/ {
+	if currentIndex < 0 /*|| len(ui.player.Queue) < currentIndex*/ {
 		return
 	}
 
@@ -196,6 +196,10 @@ func (ui *Ui) handleToggleStar() {
 
 func (ui *Ui) handleAddEntityToQueue() {
 	currentIndex := ui.entityList.GetCurrentItem()
+	if currentIndex < 0 {
+		return
+	}
+
 	if currentIndex+1 < ui.entityList.GetItemCount() {
 		ui.entityList.SetCurrentItem(currentIndex + 1)
 	}
@@ -223,6 +227,9 @@ func (ui *Ui) handleAddEntityToQueue() {
 
 func (ui *Ui) handleToggleEntityStar() {
 	currentIndex := ui.entityList.GetCurrentItem()
+	if currentIndex < 0 {
+		return
+	}
 
 	var entity = ui.currentDirectory.Entities[currentIndex-1]
 
@@ -259,6 +266,11 @@ func updateEntityListItem(entityList *tview.List, id int, text string) {
 func (ui *Ui) handleAddPlaylistSongToQueue() {
 	playlistIndex := ui.playlistList.GetCurrentItem()
 	entityIndex := ui.selectedPlaylist.GetCurrentItem()
+
+	if playlistIndex < 0 || entityIndex < 0 {
+		return
+	}
+
 	if entityIndex+1 < ui.selectedPlaylist.GetItemCount() {
 		ui.selectedPlaylist.SetCurrentItem(entityIndex + 1)
 	}
@@ -276,6 +288,11 @@ func (ui *Ui) handleAddPlaylistSongToQueue() {
 
 func (ui *Ui) handleAddPlaylistToQueue() {
 	currentIndex := ui.playlistList.GetCurrentItem()
+	if currentIndex < 0 || currentIndex >= ui.playlistList.GetItemCount() {
+		return
+	}
+
+	// focus next entry
 	if currentIndex+1 < ui.playlistList.GetItemCount() {
 		ui.playlistList.SetCurrentItem(currentIndex + 1)
 	}
@@ -298,7 +315,7 @@ func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
 		currentIndex--
 	}
 
-	if currentIndex == -1 || len(ui.currentDirectory.Entities) < currentIndex {
+	if currentIndex < 0 || len(ui.currentDirectory.Entities) < currentIndex {
 		return
 	}
 
@@ -443,7 +460,7 @@ func (ui *Ui) newPlaylist(name string) {
 }
 
 func (ui *Ui) deletePlaylist(index int) {
-	if index == -1 || len(ui.playlists) < index {
+	if index == -1 || len(ui.playlists) <= index {
 		return
 	}
 
