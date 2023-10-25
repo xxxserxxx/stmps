@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/rivo/tview"
+	"github.com/wildeyedskies/stmp/mpv"
 )
 
 func makeModal(p tview.Primitive, width, height int) tview.Primitive {
@@ -25,6 +26,19 @@ func formatPlayerStatus(volume int64, position float64, duration float64) string
 	positionMin, positionSec := secondsToMinAndSec(position)
 	durationMin, durationSec := secondsToMinAndSec(duration)
 
-	return fmt.Sprintf("[::b][%d%%][%02d:%02d/%02d:%02d]", volume,
+	return fmt.Sprintf("[%d%%][::b][%02d:%02d/%02d:%02d]", volume,
 		positionMin, positionSec, durationMin, durationSec)
+}
+
+func formatSongForStatusBar(currentSong *mpv.QueueItem) (text string) {
+	if currentSong == nil {
+		return
+	}
+	if currentSong.Title != "" {
+		text += "[::-] [white]" + currentSong.Title
+	}
+	if currentSong.Artist != "" {
+		text += " [gray]by [white]" + currentSong.Artist
+	}
+	return
 }

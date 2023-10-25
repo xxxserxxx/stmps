@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/wildeyedskies/stmp/logger"
 	"github.com/wildeyedskies/stmp/mpv"
@@ -31,9 +32,12 @@ type Ui struct {
 	// log page
 	logList *tview.List
 
+	// modals
 	addToPlaylistList *tview.List
-	selectedPlaylist  *tview.List
 	newPlaylistInput  *tview.InputField
+	messageBox        *tview.TextView
+
+	selectedPlaylist *tview.List
 
 	currentDirectory *subsonic.SubsonicDirectory
 	artistIdList     []string
@@ -76,7 +80,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmp").
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
-	ui.playerStatus = tview.NewTextView().SetText("[100%][::b][0:00/0:00]").
+	ui.playerStatus = tview.NewTextView().SetText("[100%][::b][00:00/00:00]").
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true)
 
@@ -92,6 +96,21 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.newPlaylistInput = tview.NewInputField().
 		SetLabel("Playlist name:").
 		SetFieldWidth(50)
+
+	// message box for small notes
+	ui.messageBox = tview.NewTextView().SetText("hi there").
+		SetTextAlign(tview.AlignCenter).
+		SetDynamicColors(true)
+	messageBoxFlex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(ui.messageBox, 0, 1, true)
+	messageBoxFlex.Box.SetBorder(true)
+	messageBoxModal := makeModal(messageBoxFlex, 70, 10)
+
+	ui.messageBox.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		ui.pages.HidePage("messageBox")
+		return event
+	})
 
 	// top row
 	top1Flex := tview.NewFlex().SetDirection(tview.FlexColumn).
@@ -119,6 +138,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		AddPage("playlists", playlistFlex, true, false).
 		AddPage("addToPlaylist", addToPlaylistModal, true, false).
 		AddPage("deletePlaylist", deletePlaylistModal, true, false).
+		AddPage("messageBox", messageBoxModal, true, false).
 		AddPage("log", logListFlex, true, false)
 
 	// add page input handler

@@ -158,16 +158,3 @@ func (ui *Ui) backgroundEventLoop() {
 		}
 	}
 }
-
-func formatSongForStatusBar(currentSong *mpv.QueueItem) (text string) {
-	if currentSong == nil {
-		return
-	}
-	if currentSong.Title != "" {
-		text += "[::-] [white]" + currentSong.Title
-	}
-	if currentSong.Artist != "" {
-		text += " [gray]by [white]" + currentSong.Artist
-	}
-	return
-}
