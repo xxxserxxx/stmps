@@ -54,7 +54,7 @@ func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 
 func (p *Player) mpvEngineEventHandler(instance *mpv.Mpv) {
 	for {
-		evt := instance.WaitEvent(-1) // wait infinitely
+		evt := instance.WaitEvent(1)
 		p.mpvEvents <- evt
 	}
 }

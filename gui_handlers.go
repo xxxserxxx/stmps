@@ -94,8 +94,13 @@ func (ui *Ui) handleEntitySelected(directoryId string) {
 	ui.currentDirectory = &response.Directory
 	ui.entityList.Clear()
 	if response.Directory.Parent != "" {
+		// has parent entity
+		ui.entityList.Box.SetTitle(" song ")
 		ui.entityList.AddItem(tview.Escape("[..]"), "", 0,
 			ui.makeEntityHandler(response.Directory.Parent))
+	} else {
+		// no parent
+		ui.entityList.Box.SetTitle(" album ")
 	}
 
 	for _, entity := range response.Directory.Entities {

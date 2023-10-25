@@ -141,14 +141,14 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		AddPage("messageBox", messageBoxModal, true, false).
 		AddPage("log", logListFlex, true, false)
 
-	// add page input handler
-	ui.pages.SetInputCapture(ui.handlePageInput)
-
 	rootFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(top1Flex, 1, 0, false).
 		AddItem(top2Flex, 1, 0, false).
 		AddItem(ui.pages, 0, 1, true)
+
+	// add main input handler
+	rootFlex.SetInputCapture(ui.handlePageInput)
 
 	ui.app.SetRoot(rootFlex, true).
 		SetFocus(rootFlex).
