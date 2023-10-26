@@ -135,6 +135,7 @@ func (mpp MprisPlayer) Stop() {
 
 func (mpp MprisPlayer) Next() {
 	mpp.player.PlayNextTrack()
+	//TODO updateQueueList(ui.player, ui.queueList, ui.starIdList)
 }
 
 func (mpp MprisPlayer) Pause() {

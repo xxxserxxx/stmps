@@ -70,9 +70,13 @@ func (p *Player) PlayNextTrack() error {
 
 		if len(p.queue) > 0 {
 			// replace currently playing song with next song
-			p.replaceInProgress = true
-			p.temporaryStop()
-			return p.instance.Command([]string{"loadfile", p.queue[0].Uri})
+			if loaded, err := p.IsSongLoaded(); err != nil {
+				p.logger.PrintError("PlayNextTrack", err)
+			} else if loaded {
+				p.replaceInProgress = true
+				p.temporaryStop()
+				return p.instance.Command([]string{"loadfile", p.queue[0].Uri})
+			}
 		} else {
 			// stop with empty queue
 			p.Stop()
@@ -119,8 +123,9 @@ func (p *Player) Test() {
 }
 
 // Pause toggles playing music
-// If a song is playing, it is paused. If a song is paused, playing resumes. The
-// state after the toggle is returned, or an error.
+// If a song is playing, it is paused. If a song is paused, playing resumes.
+// If stopped, the song starts playing.
+// The state after the toggle is returned, or an error.
 func (p *Player) Pause() (err error) {
 	loaded, err := p.IsSongLoaded()
 	if err != nil {
@@ -131,9 +136,11 @@ func (p *Player) Pause() (err error) {
 		return
 	}
 
-	if loaded {
+	if loaded && !p.stopped {
+		// toggle pause if not stopped
 		err = p.instance.Command([]string{"cycle", "pause"})
 		if err != nil {
+			p.logger.PrintError("cycle pause", err)
 			return
 		}
 		paused = !paused
@@ -150,13 +157,26 @@ func (p *Player) Pause() (err error) {
 		}
 	} else {
 		if len(p.queue) > 0 {
-			err = p.instance.Command([]string{"loadfile", p.queue[0].Uri})
+			currentSong := p.queue[0]
+			err = p.instance.Command([]string{"loadfile", currentSong.Uri})
 			if err != nil {
+				p.logger.PrintError("loadfile", err)
 				return
 			}
 
-			p.sendGuiDataEvent(EventUnpaused, p.queue[0])
+			if p.stopped {
+				p.stopped = false
+				if err = p.instance.SetProperty("pause", mpv.FORMAT_FLAG, false); err != nil {
+					p.logger.PrintError("setprop pause", err)
+				}
+
+				// mpv will send start file event which also sends the gui event
+				//p.sendGuiDataEvent(EventPlaying, currentSong)
+			} else {
+				p.sendGuiDataEvent(EventUnpaused, currentSong)
+			}
 		} else {
+			p.stopped = true
 			p.sendGuiEvent(EventStopped)
 		}
 	}

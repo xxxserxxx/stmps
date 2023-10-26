@@ -103,6 +103,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		if err := ui.player.PlayNextTrack(); err != nil {
 			ui.logger.PrintError("handlePageInput: Next", err)
 		}
+		updateQueueList(ui.player, ui.queueList, ui.starIdList)
 	}
 
 	return event
