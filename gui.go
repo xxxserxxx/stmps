@@ -170,3 +170,9 @@ func (ui *Ui) Run() error {
 	// gui main loop (blocking)
 	return ui.app.Run()
 }
+
+func (ui *Ui) showMessageBox(text string) {
+	ui.pages.ShowPage("messageBox")
+	ui.messageBox.SetText(text)
+	ui.app.SetFocus(ui.messageBox)
+}

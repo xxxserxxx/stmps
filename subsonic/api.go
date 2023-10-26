@@ -235,7 +235,7 @@ func (connection *SubsonicConnection) GetRandomSongs() (*SubsonicResponse, error
 	return resp, nil
 }
 
-func (connection *SubsonicConnection) ScrobbleSubmission(id string, isSubmission bool) (*SubsonicResponse, error) {
+func (connection *SubsonicConnection) ScrobbleSubmission(id string, isSubmission bool) (resp *SubsonicResponse, err error) {
 	query := defaultQuery(connection)
 	query.Set("id", id)
 
@@ -243,12 +243,8 @@ func (connection *SubsonicConnection) ScrobbleSubmission(id string, isSubmission
 	query.Set("submission", strconv.FormatBool(isSubmission))
 
 	requestUrl := connection.Host + "/rest/scrobble" + "?" + query.Encode()
-	resp, err := connection.getResponse("ScrobbleSubmission", requestUrl)
-	if err != nil {
-		connection.logger.Printf("ScrobbleSubmission error: %v", err)
-		return resp, err
-	}
-	return resp, nil
+	resp, err = connection.getResponse("ScrobbleSubmission", requestUrl)
+	return
 }
 
 func (connection *SubsonicConnection) GetStarred() (*SubsonicResponse, error) {

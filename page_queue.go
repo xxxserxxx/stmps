@@ -59,7 +59,10 @@ func (ui *Ui) handleToggleStar() {
 	_, remove := ui.starIdList[entity.Id]
 
 	// resp, _ := ui.connection.ToggleStar(entity.Id, remove)
-	ui.connection.ToggleStar(entity.Id, ui.starIdList)
+	if _, err = ui.connection.ToggleStar(entity.Id, ui.starIdList); err != nil {
+		ui.showMessageBox("ToggleStar failed")
+		return
+	}
 
 	if remove {
 		delete(ui.starIdList, entity.Id)

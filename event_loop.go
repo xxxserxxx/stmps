@@ -147,7 +147,9 @@ func (ui *Ui) backgroundEventLoop() {
 		select {
 		case songId := <-ui.eventLoop.scrobbleNowPlaying:
 			// scrobble now playing
-			ui.connection.ScrobbleSubmission(songId, false)
+			if _, err := ui.connection.ScrobbleSubmission(songId, false); err != nil {
+				ui.logger.PrintError("scrobble nowplaying", err)
+			}
 
 		case <-ui.eventLoop.scrobbleSubmissionTimer.C:
 			// scrobble submission delay elapsed
@@ -157,7 +159,9 @@ func (ui *Ui) backgroundEventLoop() {
 			} else {
 				// it's still playing
 				ui.logger.Printf("scrobbling: %s", currentSong.Id)
-				ui.connection.ScrobbleSubmission(currentSong.Id, true)
+				if _, err := ui.connection.ScrobbleSubmission(currentSong.Id, true); err != nil {
+					ui.logger.PrintError("scrobble submission", err)
+				}
 			}
 		}
 	}

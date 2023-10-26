@@ -65,26 +65,14 @@ func RegisterMprisPlayer(player *mpvplayer.Player, logger_ logger.LoggerInterfac
 
 	propSpec := map[string]map[string]*prop.Prop{
 		"org.mpris.MediaPlayer2.Player": {
-			"CanControl":    {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanGoNext":     {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanPause":      {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanPlay":       {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanSeek":       {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanGoPrevious": {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"Metadata":      {Value: metadata, Writable: false, Emit: prop.EmitTrue, Callback: nil},
-			"Volume": {Value: float64(0.0), Writable: true, Emit: prop.EmitTrue, Callback: func(c *prop.Change) *dbus.Error {
-				// get volume change value as float where 1.0 = 100%
-				fVol := c.Value.(float64)
-				fDelta := fVol - mpp.lastVolume
-				mpp.lastVolume = fVol
-
-				// convert to %
-				pcDelta := int64(math.Round(fDelta * 100))
-				mpp.player.AdjustVolume(pcDelta)
-				mpp.logger.Printf("mpris: adjust volume %f d%f -> %d%%", fVol, fDelta, pcDelta)
-				return nil
-			},
-			},
+			"CanControl":     {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+			"CanGoNext":      {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+			"CanPause":       {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+			"CanPlay":        {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+			"CanSeek":        {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+			"CanGoPrevious":  {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+			"Metadata":       {Value: metadata, Writable: false, Emit: prop.EmitTrue, Callback: nil},
+			"Volume":         {Value: float64(0.0), Writable: true, Emit: prop.EmitTrue, Callback: mpp.volumeChange},
 			"PlaybackStatus": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		},
 	}
@@ -184,4 +172,20 @@ func (m *MprisPlayer) Seeked(int) {
 }
 func (m *MprisPlayer) SetPosition(string, int) {
 	// TODO not implemented
+}
+
+func (m *MprisPlayer) volumeChange(c *prop.Change) *dbus.Error {
+	// get volume change value as float where 1.0 = 100%
+	fVol := c.Value.(float64)
+	fDelta := fVol - m.lastVolume
+	m.lastVolume = fVol
+
+	// convert to %
+	pcDelta := int64(math.Round(fDelta * 100))
+	if err := m.player.AdjustVolume(pcDelta); err != nil {
+		m.logger.PrintError("volumeChange", err)
+	} else {
+		m.logger.Printf("mpris: adjust volume %f d%f -> %d%%", fVol, fDelta, pcDelta)
+	}
+	return nil
 }

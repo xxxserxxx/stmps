@@ -145,9 +145,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 				ui.pages.ShowPage("addToPlaylist")
 				ui.app.SetFocus(ui.addToPlaylistList)
 			} else {
-				ui.pages.ShowPage("messageBox")
-				ui.messageBox.SetText("No playlists available. Create one first.")
-				ui.app.SetFocus(ui.messageBox)
+				ui.showMessageBox("No playlists available. Create one first.")
 			}
 			return nil
 		}
