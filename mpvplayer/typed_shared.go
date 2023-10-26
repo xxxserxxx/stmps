@@ -1,4 +1,4 @@
-package mpv
+package mpvplayer
 
 type QueueItem struct {
 	Id       string

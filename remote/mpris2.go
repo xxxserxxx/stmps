@@ -1,7 +1,7 @@
-package main
+package remote
 
 import (
-	"fmt"
+	"errors"
 	"math"
 	"strings"
 
@@ -9,34 +9,34 @@ import (
 	"github.com/godbus/dbus/v5/introspect"
 	"github.com/godbus/dbus/v5/prop"
 	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/mpv"
+	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
 type MprisPlayer struct {
-	conn   *dbus.Conn
-	player *mpv.Player
-	logger *logger.Logger
+	dbus   *dbus.Conn
+	player *mpvplayer.Player
+	logger logger.LoggerInterface
 
 	lastVolume float64
 }
 
-func RegisterMprisPlayer(p *mpv.Player, l *logger.Logger) (MprisPlayer, error) {
+func RegisterMprisPlayer(player *mpvplayer.Player, logger_ logger.LoggerInterface) (mpp *MprisPlayer, err error) {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
-		return MprisPlayer{}, err
+		return
 	}
 
 	parts := []string{"", "org", "mpris", "MediaPlayer2", "Player"}
 	name := strings.Join(parts[1:], ".")
-	mpp := MprisPlayer{
-		conn:   conn,
-		player: p,
-		logger: l,
+	mpp = &MprisPlayer{
+		dbus:   conn,
+		player: player,
+		logger: logger_,
 	}
 
 	err = conn.ExportAll(mpp, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player")
 	if err != nil {
-		return MprisPlayer{}, err
+		return
 	}
 	/*
 		func (mpp MprisPlayer) Metadata() string {
@@ -91,7 +91,7 @@ func RegisterMprisPlayer(p *mpv.Player, l *logger.Logger) (MprisPlayer, error) {
 
 	props, err := prop.Export(conn, "/org/mpris/MediaPlayer2", propSpec)
 	if err != nil {
-		return MprisPlayer{}, err
+		return
 	}
 
 	n := &introspect.Node{
@@ -108,77 +108,80 @@ func RegisterMprisPlayer(p *mpv.Player, l *logger.Logger) (MprisPlayer, error) {
 	}
 	err = conn.Export(introspect.NewIntrospectable(n), "/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Introspectable")
 	if err != nil {
-		return MprisPlayer{}, err
+		return
 	}
 
 	reply, err := conn.RequestName(name, dbus.NameFlagDoNotQueue)
 	if err != nil {
-		return MprisPlayer{}, err
+		return
 	}
 	if reply != dbus.RequestNameReplyPrimaryOwner {
-		return MprisPlayer{}, fmt.Errorf("name already owned")
+		err = errors.New("name already owned")
+		return
 	}
-
-	return mpp, nil
+	return
 }
 
-func (m MprisPlayer) Close() {
-	m.conn.Close()
+func (m *MprisPlayer) Close() {
+	if err := m.dbus.Close(); err != nil {
+		m.logger.PrintError("mpp Close", err)
+	}
 }
 
 // Mandatory functions
-func (mpp MprisPlayer) Stop() {
-	if err := mpp.player.Stop(); err != nil {
-		mpp.logger.Printf(err.Error())
+func (m *MprisPlayer) Stop() {
+	if err := m.player.Stop(); err != nil {
+		m.logger.PrintError("mpp Stop", err)
 	}
 }
 
-func (mpp MprisPlayer) Next() {
-	mpp.player.PlayNextTrack()
+func (m *MprisPlayer) Next() {
+	if err := m.player.PlayNextTrack(); err != nil {
+		m.logger.PrintError("mpp PlayNextTrack", err)
+	}
 	//TODO updateQueueList(ui.player, ui.queueList, ui.starIdList)
 }
 
-func (mpp MprisPlayer) Pause() {
-	psd, err := mpp.player.IsPaused()
-	if err != nil {
-		mpp.logger.Printf(err.Error())
-		return
-	}
-	if !psd {
-		if err = mpp.player.Pause(); err != nil {
-			mpp.logger.Printf(err.Error())
+// set paused
+func (m *MprisPlayer) Pause() {
+	if paused, err := m.player.IsPaused(); err != nil {
+		m.logger.PrintError("mpp IsPaused", err)
+	} else if !paused {
+		if err = m.player.Pause(); err != nil {
+			m.logger.PrintError("mpp Pause", err)
 		}
 	}
 }
 
-func (mpp MprisPlayer) Play() {
-	psd, err := mpp.player.IsPaused()
-	if err != nil {
-		mpp.logger.Printf(err.Error())
-		return
-	}
-	if psd {
-		if err = mpp.player.Pause(); err != nil {
-			mpp.logger.Printf(err.Error())
+// set playing
+func (m *MprisPlayer) Play() {
+	if playing, err := m.player.IsPlaying(); err != nil {
+		m.logger.PrintError("mpp IsPlaying", err)
+	} else if !playing {
+		if err = m.player.Pause(); err != nil {
+			m.logger.PrintError("mpp Pause", err)
 		}
 	}
 }
 
-func (mpp MprisPlayer) PlayPause() {
-	mpp.player.Pause()
+func (m *MprisPlayer) PlayPause() {
+	if err := m.player.Pause(); err != nil {
+		m.logger.PrintError("mpp Pause", err)
+	}
 }
-func (mpp MprisPlayer) OpenUri(string) {
+
+func (m *MprisPlayer) OpenUri(string) {
 	// TODO not implemented
 }
-func (mpp MprisPlayer) Previous() {
+func (m *MprisPlayer) Previous() {
 	// TODO not implemented
 }
-func (mpp MprisPlayer) Seek(int) {
+func (m *MprisPlayer) Seek(int) {
 	// TODO not implemented
 }
-func (mpp MprisPlayer) Seeked(int) {
+func (m *MprisPlayer) Seeked(int) {
 	// TODO not implemented
 }
-func (mpp MprisPlayer) SetPosition(string, int) {
+func (m *MprisPlayer) SetPosition(string, int) {
 	// TODO not implemented
 }

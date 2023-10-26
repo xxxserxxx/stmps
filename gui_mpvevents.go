@@ -1,7 +1,7 @@
 package main
 
-import "github.com/wildeyedskies/stmp/mpv"
+import "github.com/wildeyedskies/stmp/mpvplayer"
 
-func (ui *Ui) SendEvent(event mpv.UiEvent) {
+func (ui *Ui) SendEvent(event mpvplayer.UiEvent) {
 	ui.mpvEvents <- event
 }

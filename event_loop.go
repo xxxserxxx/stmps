@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/wildeyedskies/stmp/mpv"
+	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
 type eventLoop struct {
@@ -51,30 +51,30 @@ func (ui *Ui) guiEventLoop() {
 		case mpvEvent := <-ui.mpvEvents:
 			// handle events from mpv wrapper
 			switch mpvEvent.Type {
-			case mpv.EventStatus:
+			case mpvplayer.EventStatus:
 				if mpvEvent.Data == nil {
 					continue
 				}
-				statusData := mpvEvent.Data.(mpv.StatusData) // TODO is this safe to access? maybe we need a copy
+				statusData := mpvEvent.Data.(mpvplayer.StatusData) // TODO is this safe to access? maybe we need a copy
 
 				ui.app.QueueUpdateDraw(func() {
 					ui.playerStatus.SetText(formatPlayerStatus(statusData.Volume, statusData.Position, statusData.Duration))
 				})
 
-			case mpv.EventStopped:
+			case mpvplayer.EventStopped:
 				ui.logger.Print("mpvEvent: stopped")
 				ui.app.QueueUpdateDraw(func() {
 					ui.startStopStatus.SetText("[::b]stmp: [red]Stopped")
 					updateQueueList(ui.player, ui.queueList, ui.starIdList)
 				})
 
-			case mpv.EventPlaying:
+			case mpvplayer.EventPlaying:
 				ui.logger.Print("mpvEvent: playing")
 				statusText := "[::b]stmp: [green]Playing"
 
-				var currentSong mpv.QueueItem
+				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
-					currentSong = mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
+					currentSong = mpvEvent.Data.(mpvplayer.QueueItem) // TODO is this safe to access? maybe we need a copy
 					statusText += formatSongForStatusBar(&currentSong)
 
 					if ui.connection.Scrobble {
@@ -106,13 +106,13 @@ func (ui *Ui) guiEventLoop() {
 					updateQueueList(ui.player, ui.queueList, ui.starIdList)
 				})
 
-			case mpv.EventPaused:
+			case mpvplayer.EventPaused:
 				ui.logger.Print("mpvEvent: paused")
 				statusText := "[::b]stmp: [yellow]Paused"
 
-				var currentSong mpv.QueueItem
+				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
-					currentSong = mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
+					currentSong = mpvEvent.Data.(mpvplayer.QueueItem) // TODO is this safe to access? maybe we need a copy
 					statusText += formatSongForStatusBar(&currentSong)
 				}
 
@@ -120,13 +120,13 @@ func (ui *Ui) guiEventLoop() {
 					ui.startStopStatus.SetText(statusText)
 				})
 
-			case mpv.EventUnpaused:
+			case mpvplayer.EventUnpaused:
 				ui.logger.Print("mpvEvent: unpaused")
 				statusText := "[::b]stmp: [green]Playing"
 
-				var currentSong mpv.QueueItem
+				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
-					currentSong = mpvEvent.Data.(mpv.QueueItem) // TODO is this safe to access? maybe we need a copy
+					currentSong = mpvEvent.Data.(mpvplayer.QueueItem) // TODO is this safe to access? maybe we need a copy
 					statusText += formatSongForStatusBar(&currentSong)
 				}
 

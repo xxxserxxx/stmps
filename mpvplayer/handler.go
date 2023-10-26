@@ -1,4 +1,4 @@
-package mpv
+package mpvplayer
 
 import (
 	"github.com/wildeyedskies/go-mpv/mpv"

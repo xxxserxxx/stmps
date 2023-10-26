@@ -7,7 +7,8 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/mpv"
+	"github.com/wildeyedskies/stmp/mpvplayer"
+	"github.com/wildeyedskies/stmp/remote"
 	"github.com/wildeyedskies/stmp/subsonic"
 )
 
@@ -64,14 +65,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	player, err := mpv.NewPlayer(logger)
+	player, err := mpvplayer.NewPlayer(logger)
 	if err != nil {
 		fmt.Println("Unable to initialize mpv. Is mpv installed?")
 		os.Exit(1)
 	}
 
 	if *enableMpris {
-		mpris, err := RegisterMprisPlayer(player, logger)
+		mpris, err := remote.RegisterMprisPlayer(player, logger)
 		if err != nil {
 			fmt.Printf("Unable to register MPRIS with DBUS: %s\n", err)
 			fmt.Println("Try running without MPRIS")

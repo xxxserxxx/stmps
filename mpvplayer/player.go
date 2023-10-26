@@ -1,4 +1,4 @@
-package mpv
+package mpvplayer
 
 import (
 	"errors"
@@ -115,6 +115,15 @@ func (p *Player) IsSongLoaded() (bool, error) {
 func (p *Player) IsPaused() (bool, error) {
 	pause, err := p.instance.GetProperty("pause", mpv.FORMAT_FLAG)
 	return pause.(bool), err
+}
+
+func (p *Player) IsPlaying() (playing bool, err error) {
+	if idle, err := p.instance.GetProperty("idle-active", mpv.FORMAT_FLAG); err != nil {
+	} else if paused, err := p.instance.GetProperty("pause", mpv.FORMAT_FLAG); err != nil {
+	} else {
+		playing = !idle.(bool) && !paused.(bool)
+	}
+	return
 }
 
 func (p *Player) Test() {

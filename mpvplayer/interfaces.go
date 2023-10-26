@@ -1,4 +1,4 @@
-package mpv
+package mpvplayer
 
 type UiEventType int
 

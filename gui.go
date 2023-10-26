@@ -4,7 +4,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/mpv"
+	"github.com/wildeyedskies/stmp/mpvplayer"
 	"github.com/wildeyedskies/stmp/subsonic"
 )
 
@@ -44,18 +44,18 @@ type Ui struct {
 	starIdList       map[string]struct{}
 
 	eventLoop *eventLoop
-	mpvEvents chan mpv.UiEvent
+	mpvEvents chan mpvplayer.UiEvent
 
 	playlists  []subsonic.SubsonicPlaylist
 	connection *subsonic.SubsonicConnection
-	player     *mpv.Player
+	player     *mpvplayer.Player
 	logger     *logger.Logger
 }
 
 func InitGui(indexes *[]subsonic.SubsonicIndex,
 	playlists *[]subsonic.SubsonicPlaylist,
 	connection *subsonic.SubsonicConnection,
-	player *mpv.Player,
+	player *mpvplayer.Player,
 	logger *logger.Logger) (ui *Ui) {
 	ui = &Ui{
 		currentDirectory: &subsonic.SubsonicDirectory{},
@@ -63,7 +63,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		starIdList:       map[string]struct{}{},
 
 		eventLoop: nil, // initialized by initEventLoops()
-		mpvEvents: make(chan mpv.UiEvent, 5),
+		mpvEvents: make(chan mpvplayer.UiEvent, 5),
 
 		playlists:  *playlists,
 		connection: connection,

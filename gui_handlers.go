@@ -6,7 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/wildeyedskies/stmp/mpv"
+	"github.com/wildeyedskies/stmp/mpvplayer"
 	"github.com/wildeyedskies/stmp/subsonic"
 )
 
@@ -409,7 +409,7 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 
 	var id = entity.Id
 
-	queueItem := &mpv.QueueItem{
+	queueItem := &mpvplayer.QueueItem{
 		Id:       id,
 		Uri:      uri,
 		Title:    entity.GetSongTitle(),
@@ -452,7 +452,7 @@ func (ui *Ui) deletePlaylist(index int) {
 }
 
 func makeSongHandler(id string, uri string, title string, artist string, duration int,
-	player *mpv.Player, queueList *tview.List, starIdList map[string]struct{}) func() {
+	player *mpvplayer.Player, queueList *tview.List, starIdList map[string]struct{}) func() {
 	return func() {
 		player.Play(id, uri, title, artist, duration)
 		updateQueueList(player, queueList, starIdList)
@@ -465,7 +465,7 @@ func (ui *Ui) makeEntityHandler(directoryId string) func() {
 	}
 }
 
-func queueListTextFormat(queueItem mpv.QueueItem, starredItems map[string]struct{}) string {
+func queueListTextFormat(queueItem mpvplayer.QueueItem, starredItems map[string]struct{}) string {
 	min, sec := iSecondsToMinAndSec(queueItem.Duration)
 	var star = ""
 	_, hasStar := starredItems[queueItem.Id]
@@ -480,7 +480,7 @@ func updateQueueListItem(queueList *tview.List, id int, text string) {
 	queueList.SetItemText(id, text, "")
 }
 
-func updateQueueList(player *mpv.Player, queueList *tview.List, starredItems map[string]struct{}) {
+func updateQueueList(player *mpvplayer.Player, queueList *tview.List, starredItems map[string]struct{}) {
 	queueList.Clear()
 	for _, queueItem := range player.GetQueueCopy() { // TODO find a way without a deepcopy
 		queueList.AddItem(queueListTextFormat(queueItem, starredItems), "", 0, nil)

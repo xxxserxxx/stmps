@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/rivo/tview"
-	"github.com/wildeyedskies/stmp/mpv"
+	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
 func makeModal(p tview.Primitive, width, height int) tview.Primitive {
@@ -30,7 +30,7 @@ func formatPlayerStatus(volume int64, position float64, duration float64) string
 		positionMin, positionSec, durationMin, durationSec)
 }
 
-func formatSongForStatusBar(currentSong *mpv.QueueItem) (text string) {
+func formatSongForStatusBar(currentSong *mpvplayer.QueueItem) (text string) {
 	if currentSong == nil {
 		return
 	}
