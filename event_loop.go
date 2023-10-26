@@ -38,7 +38,7 @@ func (ui *Ui) guiEventLoop() {
 		select {
 		case msg := <-ui.logger.Prints:
 			// handle log page output
-			ui.app.QueueUpdate(func() {
+			ui.app.QueueUpdateDraw(func() {
 				line := time.Now().Local().Format("(15:04:05) ") + msg
 				ui.logList.InsertItem(0, line, "", 0, nil)
 
