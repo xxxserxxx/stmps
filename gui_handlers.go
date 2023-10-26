@@ -209,7 +209,10 @@ func (ui *Ui) handleToggleEntityStar() {
 	// If the song is already in the star list, remove it
 	_, remove := ui.starIdList[entity.Id]
 
-	ui.connection.ToggleStar(entity.Id, ui.starIdList)
+	if _, err := ui.connection.ToggleStar(entity.Id, ui.starIdList); err != nil {
+		ui.logger.PrintError("ToggleStar", err)
+		return
+	}
 
 	if remove {
 		delete(ui.starIdList, entity.Id)
@@ -295,12 +298,15 @@ func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
 	entity := ui.currentDirectory.Entities[currentIndex]
 
 	if !entity.IsDirectory {
-		ui.connection.AddSongToPlaylist(string(playlist.Id), entity.Id)
+		if err := ui.connection.AddSongToPlaylist(string(playlist.Id), entity.Id); err != nil {
+			ui.logger.PrintError("AddSongToPlaylist", err)
+			return
+		}
 	}
 	// update the playlists
 	response, err := ui.connection.GetPlaylists()
 	if err != nil {
-		ui.logger.Printf("handleAddSongToPlaylist: GetPlaylists -- %s", err.Error())
+		ui.logger.PrintError("GetPlaylists", err)
 	}
 	ui.playlists = response.Playlists.Playlists
 
@@ -448,13 +454,16 @@ func (ui *Ui) deletePlaylist(index int) {
 
 	ui.playlistList.RemoveItem(index)
 	ui.addToPlaylistList.RemoveItem(index)
-	ui.connection.DeletePlaylist(string(playlist.Id))
+	if err := ui.connection.DeletePlaylist(string(playlist.Id)); err != nil {
+		ui.logger.PrintError("deletePlaylist", err)
+	}
 }
 
 func makeSongHandler(id string, uri string, title string, artist string, duration int,
 	player *mpvplayer.Player, queueList *tview.List, starIdList map[string]struct{}) func() {
 	return func() {
-		player.Play(id, uri, title, artist, duration)
+		// there's no good way to output an error here
+		_ = player.Play(id, uri, title, artist, duration)
 		updateQueueList(player, queueList, starIdList)
 	}
 }

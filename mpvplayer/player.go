@@ -25,8 +25,14 @@ func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 	mpvInstance := mpv.Create()
 
 	// TODO figure out what other mpv options we need
-	mpvInstance.SetOptionString("audio-display", "no")
-	mpvInstance.SetOptionString("video", "no")
+	if err = mpvInstance.SetOptionString("audio-display", "no"); err != nil {
+		mpvInstance.TerminateDestroy()
+		return
+	}
+	if err = mpvInstance.SetOptionString("video", "no"); err != nil {
+		mpvInstance.TerminateDestroy()
+		return
+	}
 
 	if err = mpvInstance.Initialize(); err != nil {
 		mpvInstance.TerminateDestroy()
@@ -74,16 +80,22 @@ func (p *Player) PlayNextTrack() error {
 				p.logger.PrintError("PlayNextTrack", err)
 			} else if loaded {
 				p.replaceInProgress = true
-				p.temporaryStop()
+				if err := p.temporaryStop(); err != nil {
+					p.logger.PrintError("temporaryStop", err)
+				}
 				return p.instance.Command([]string{"loadfile", p.queue[0].Uri})
 			}
 		} else {
 			// stop with empty queue
-			p.Stop()
+			if err := p.Stop(); err != nil {
+				p.logger.PrintError("Stop", err)
+			}
 		}
 	} else {
 		// queue empty
-		p.Stop()
+		if err := p.Stop(); err != nil {
+			p.logger.PrintError("Stop", err)
+		}
 	}
 	return nil
 }
@@ -92,7 +104,9 @@ func (p *Player) Play(id string, uri string, title string, artist string, durati
 	p.queue = []QueueItem{{id, uri, title, artist, duration}}
 	p.replaceInProgress = true
 	if ip, e := p.IsPaused(); ip && e == nil {
-		p.Pause()
+		if err := p.Pause(); err != nil {
+			p.logger.PrintError("Pause", err)
+		}
 	}
 	return p.instance.Command([]string{"loadfile", uri})
 }
@@ -229,7 +243,9 @@ func (p *Player) Seek(increment int) error {
 
 // accessed from gui context
 func (p *Player) ClearQueue() {
-	p.Stop()
+	if err := p.Stop(); err != nil {
+		p.logger.PrintError("Stop", err)
+	}
 	p.queue = make([]QueueItem, 0) // TODO mutex queue access
 }
 
@@ -237,7 +253,9 @@ func (p *Player) DeleteQueueItem(index int) {
 	// TODO mutex queue access
 	if len(p.queue) > 1 {
 		if index == 0 {
-			p.PlayNextTrack()
+			if err := p.PlayNextTrack(); err != nil {
+				p.logger.PrintError("PlayNextTrack", err)
+			}
 		} else {
 			p.queue = append(p.queue[:index], p.queue[index+1:]...)
 		}

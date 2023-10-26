@@ -5,9 +5,15 @@ import (
 )
 
 func (p *Player) EventLoop() {
-	p.instance.ObserveProperty(0, "time-pos", mpv.FORMAT_DOUBLE)
-	p.instance.ObserveProperty(0, "duration", mpv.FORMAT_DOUBLE)
-	p.instance.ObserveProperty(0, "volume", mpv.FORMAT_INT64)
+	if err := p.instance.ObserveProperty(0, "time-pos", mpv.FORMAT_DOUBLE); err != nil {
+		p.logger.PrintError("Observe1", err)
+	}
+	if err := p.instance.ObserveProperty(0, "duration", mpv.FORMAT_DOUBLE); err != nil {
+		p.logger.PrintError("Observe2", err)
+	}
+	if err := p.instance.ObserveProperty(0, "volume", mpv.FORMAT_INT64); err != nil {
+		p.logger.PrintError("Observe3", err)
+	}
 
 	for evt := range p.mpvEvents {
 		if evt == nil {
