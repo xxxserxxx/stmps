@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/gdamore/tcell/v2"
@@ -45,7 +44,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	case 'D':
 		// clear queue and stop playing
 		ui.player.ClearQueue()
-		updateQueueList(ui.player, ui.queueList, ui.starIdList)
+		ui.updateQueue()
 
 	case 'p':
 		// toggle playing/pause
@@ -104,7 +103,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		if err := ui.player.PlayNextTrack(); err != nil {
 			ui.logger.PrintError("handlePageInput: Next", err)
 		}
-		updateQueueList(ui.player, ui.queueList, ui.starIdList)
+		ui.updateQueue()
 	}
 
 	return event
@@ -140,7 +139,7 @@ func (ui *Ui) handleEntitySelected(directoryId string) {
 			title = entityListTextFormat(entity, ui.starIdList)
 			handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity),
 				title, stringOr(entity.Artist, response.Directory.Name),
-				entity.Duration, ui.player, ui.queueList, ui.starIdList)
+				entity.Duration, ui)
 		}
 
 		ui.entityList.AddItem(title, "", 0, handler)
@@ -157,7 +156,7 @@ func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 		var id = entity.Id
 
 		title = entity.GetSongTitle()
-		handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity), title, entity.Artist, entity.Duration, ui.player, ui.queueList, ui.starIdList)
+		handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity), title, entity.Artist, entity.Duration, ui)
 
 		ui.selectedPlaylist.AddItem(title, "", 0, handler)
 	}
@@ -165,7 +164,7 @@ func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 
 func (ui *Ui) handleAddRandomSongs() {
 	ui.addRandomSongsToQueue()
-	updateQueueList(ui.player, ui.queueList, ui.starIdList)
+	ui.updateQueue()
 }
 
 func (ui *Ui) handleAddEntityToQueue() {
@@ -196,7 +195,7 @@ func (ui *Ui) handleAddEntityToQueue() {
 		ui.addSongToQueue(&entity)
 	}
 
-	updateQueueList(ui.player, ui.queueList, ui.starIdList)
+	ui.updateQueue()
 }
 
 func (ui *Ui) handleToggleEntityStar() {
@@ -223,7 +222,7 @@ func (ui *Ui) handleToggleEntityStar() {
 
 	var text = entityListTextFormat(entity, ui.starIdList)
 	updateEntityListItem(ui.entityList, currentIndex, text)
-	updateQueueList(ui.player, ui.queueList, ui.starIdList)
+	ui.updateQueue()
 }
 
 func entityListTextFormat(queueItem subsonic.SubsonicEntity, starredItems map[string]struct{}) string {
@@ -260,7 +259,7 @@ func (ui *Ui) handleAddPlaylistSongToQueue() {
 	entity := ui.playlists[playlistIndex].Entries[entityIndex]
 	ui.addSongToQueue(&entity)
 
-	updateQueueList(ui.player, ui.queueList, ui.starIdList)
+	ui.updateQueue()
 }
 
 func (ui *Ui) handleAddPlaylistToQueue() {
@@ -280,7 +279,7 @@ func (ui *Ui) handleAddPlaylistToQueue() {
 		ui.addSongToQueue(&entity)
 	}
 
-	updateQueueList(ui.player, ui.queueList, ui.starIdList)
+	ui.updateQueue()
 }
 
 func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
@@ -461,38 +460,16 @@ func (ui *Ui) deletePlaylist(index int) {
 }
 
 func makeSongHandler(id string, uri string, title string, artist string, duration int,
-	player *mpvplayer.Player, queueList *tview.List, starIdList map[string]struct{}) func() {
+	ui *Ui) func() {
 	return func() {
 		// there's no good way to output an error here
-		_ = player.Play(id, uri, title, artist, duration)
-		updateQueueList(player, queueList, starIdList)
+		_ = ui.player.Play(id, uri, title, artist, duration)
+		ui.updateQueue()
 	}
 }
 
 func (ui *Ui) makeEntityHandler(directoryId string) func() {
 	return func() {
 		ui.handleEntitySelected(directoryId)
-	}
-}
-
-func queueListTextFormat(queueItem mpvplayer.QueueItem, starredItems map[string]struct{}) string {
-	min, sec := iSecondsToMinAndSec(queueItem.Duration)
-	var star = ""
-	_, hasStar := starredItems[queueItem.Id]
-	if hasStar {
-		star = " [red]♥"
-	}
-	return fmt.Sprintf("%s - %s - %02d:%02d %s", queueItem.Title, queueItem.Artist, min, sec, star)
-}
-
-// Just update the text of a specific row
-func updateQueueListItem(queueList *tview.List, id int, text string) {
-	queueList.SetItemText(id, text, "")
-}
-
-func updateQueueList(player *mpvplayer.Player, queueList *tview.List, starredItems map[string]struct{}) {
-	queueList.Clear()
-	for _, queueItem := range player.GetQueueCopy() { // TODO find a way without a deepcopy
-		queueList.AddItem(queueListTextFormat(queueItem, starredItems), "", 0, nil)
 	}
 }

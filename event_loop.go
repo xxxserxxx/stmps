@@ -65,7 +65,7 @@ func (ui *Ui) guiEventLoop() {
 				ui.logger.Print("mpvEvent: stopped")
 				ui.app.QueueUpdateDraw(func() {
 					ui.startStopStatus.SetText("[::b]stmp: [red]Stopped")
-					updateQueueList(ui.player, ui.queueList, ui.starIdList)
+					ui.updateQueue()
 				})
 
 			case mpvplayer.EventPlaying:
@@ -103,7 +103,7 @@ func (ui *Ui) guiEventLoop() {
 
 				ui.app.QueueUpdateDraw(func() {
 					ui.startStopStatus.SetText(statusText)
-					updateQueueList(ui.player, ui.queueList, ui.starIdList)
+					ui.updateQueue()
 				})
 
 			case mpvplayer.EventPaused:

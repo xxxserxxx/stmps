@@ -24,7 +24,8 @@ type Ui struct {
 	searchField *tview.InputField
 
 	// queue page
-	queueList *tview.List
+	queueList *tview.Table
+	queueData queueData
 
 	// playlist page
 	playlistList *tview.List
