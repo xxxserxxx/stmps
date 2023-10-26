@@ -8,23 +8,17 @@ import (
 	"github.com/wildeyedskies/stmp/logger"
 )
 
-const (
-	// TODO make private?
-	PlayerStopped = iota
-	PlayerPlaying
-	PlayerPaused
-	PlayerError
-)
-
 type PlayerQueue []QueueItem
 
 type Player struct {
-	instance          *mpv.Mpv
-	mpvEvents         chan *mpv.Event
-	eventConsumer     EventConsumer
-	queue             PlayerQueue
-	logger            logger.LoggerInterface
+	instance      *mpv.Mpv
+	mpvEvents     chan *mpv.Event
+	eventConsumer EventConsumer
+	queue         PlayerQueue
+	logger        logger.LoggerInterface
+
 	replaceInProgress bool
+	stopped           bool
 }
 
 func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
@@ -46,6 +40,7 @@ func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 		queue:             make([]QueueItem, 0),
 		logger:            logger,
 		replaceInProgress: false,
+		stopped:           true,
 	}
 
 	go player.mpvEngineEventHandler(mpvInstance)
@@ -69,8 +64,22 @@ func (p *Player) RegisterEventConsumer(consumer EventConsumer) {
 }
 
 func (p *Player) PlayNextTrack() error {
-	if len(p.queue) > 0 {
-		return p.instance.Command([]string{"loadfile", p.queue[0].Uri})
+	if len(p.queue) >= 1 {
+		// advance queue if any tracks left
+		p.queue = p.queue[1:]
+
+		if len(p.queue) > 0 {
+			// replace currently playing song with next song
+			p.replaceInProgress = true
+			p.temporaryStop()
+			return p.instance.Command([]string{"loadfile", p.queue[0].Uri})
+		} else {
+			// stop with empty queue
+			p.Stop()
+		}
+	} else {
+		// queue empty
+		p.Stop()
 	}
 	return nil
 }
@@ -85,6 +94,12 @@ func (p *Player) Play(id string, uri string, title string, artist string, durati
 }
 
 func (p *Player) Stop() error {
+	p.logger.Printf("stopping (user)")
+	p.stopped = true
+	return p.instance.Command([]string{"stop"})
+}
+
+func (p *Player) temporaryStop() error {
 	return p.instance.Command([]string{"stop"})
 }
 
@@ -96,6 +111,11 @@ func (p *Player) IsSongLoaded() (bool, error) {
 func (p *Player) IsPaused() (bool, error) {
 	pause, err := p.instance.GetProperty("pause", mpv.FORMAT_FLAG)
 	return pause.(bool), err
+}
+
+func (p *Player) Test() {
+	res, err := p.instance.GetProperty("idle-active", mpv.FORMAT_FLAG)
+	p.logger.Printf("res %v err %v", res, err)
 }
 
 // Pause toggles playing music
@@ -180,15 +200,20 @@ func (p *Player) Seek(increment int) error {
 
 // accessed from gui context
 func (p *Player) ClearQueue() {
+	p.Stop()
 	p.queue = make([]QueueItem, 0) // TODO mutex queue access
 }
 
 func (p *Player) DeleteQueueItem(index int) {
 	// TODO mutex queue access
 	if len(p.queue) > 1 {
-		p.queue = append(p.queue[:index], p.queue[index+1:]...)
+		if index == 0 {
+			p.PlayNextTrack()
+		} else {
+			p.queue = append(p.queue[:index], p.queue[index+1:]...)
+		}
 	} else {
-		p.queue = make([]QueueItem, 0)
+		p.ClearQueue()
 	}
 }
 

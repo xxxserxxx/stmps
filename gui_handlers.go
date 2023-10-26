@@ -38,47 +38,71 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.player.Quit()
 		ui.app.Stop()
 
-	case 's':
+	case 'r':
+		// add random songs to queue
 		ui.handleAddRandomSongs()
 
 	case 'D':
+		// clear queue and stop playing
 		ui.player.ClearQueue()
-		err := ui.player.Stop()
-		if err != nil {
-			ui.logger.PrintError("handlePageInput: Stop", err)
-		}
 		updateQueueList(ui.player, ui.queueList, ui.starIdList)
 
 	case 'p':
+		// toggle playing/pause
 		err := ui.player.Pause()
 		if err != nil {
 			ui.logger.PrintError("handlePageInput: Pause", err)
 		}
 		return nil
 
+	case 'P':
+		// stop playing without changes to queue
+		ui.logger.Print("key stop")
+		err := ui.player.Stop()
+		if err != nil {
+			ui.logger.PrintError("handlePageInput: Stop", err)
+		}
+		return nil
+
+	case 'X':
+		// debug stuff
+		ui.logger.Print("test")
+		ui.player.Test()
+		return nil
+
 	case '-':
+		// volume-
 		if err := ui.player.AdjustVolume(-5); err != nil {
-			ui.logger.Printf("handlePageInput: AdjustVolume %d -- %s", -5, err.Error())
+			ui.logger.PrintError("handlePageInput: AdjustVolume-", err)
 		}
 		return nil
 
 	case '=':
+		// volume+
 		if err := ui.player.AdjustVolume(5); err != nil {
-			ui.logger.Printf("handlePageInput: AdjustVolume %d -- %s", 5, err.Error())
+			ui.logger.PrintError("handlePageInput: AdjustVolume+", err)
 		}
 		return nil
 
 	case '.':
+		// <<
 		if err := ui.player.Seek(10); err != nil {
-			ui.logger.Printf("handlePageInput: Seek %d -- %s", 10, err.Error())
+			ui.logger.PrintError("handlePageInput: Seek+", err)
 		}
 		return nil
 
 	case ',':
+		// >>
 		if err := ui.player.Seek(-10); err != nil {
-			ui.logger.Printf("handlePageInput: Seek %d -- %s", -10, err.Error())
+			ui.logger.PrintError("handlePageInput: Seek-", err)
 		}
 		return nil
+
+	case '>':
+		// skip to next track
+		if err := ui.player.PlayNextTrack(); err != nil {
+			ui.logger.PrintError("handlePageInput: Next", err)
+		}
 	}
 
 	return event

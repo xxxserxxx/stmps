@@ -69,7 +69,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 		case 'N':
 			ui.searchPrev()
 			return nil
-		case 'r':
+		case 'R':
 			goBackTo := ui.artistList.GetCurrentItem()
 			// REFRESH artists
 			indexResponse, err := ui.connection.GetIndexes()

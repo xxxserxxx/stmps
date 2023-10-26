@@ -37,16 +37,6 @@ func (ui *Ui) handleDeleteFromQueue() {
 		return
 	}
 
-	// if the deleted item was the first one, and the player is loaded
-	// remove the track. Removing the track auto starts the next one
-	if currentIndex == 0 {
-		if isSongLoaded, err := ui.player.IsSongLoaded(); err != nil {
-			ui.logger.Printf("handleDeleteFromQueue: IsSongLoaded -- %s", err.Error())
-		} else if isSongLoaded {
-			ui.player.Stop()
-		}
-	}
-
 	// remove the item from the queue
 	ui.player.DeleteQueueItem(currentIndex)
 

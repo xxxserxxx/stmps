@@ -65,10 +65,13 @@ scrobble = true   # Use Subsonic scrobbling for last.fm/ListenBrainz (default: f
 * D - remove all songs from queue
 * a - add album or song to queue
 * p - play/pause
+* P - stop
+* &gt; - next song
 * -/= volume down/volume up
+* ,/. seek -10/+10 seconds
 * / - Search artists
 * n - Continue search forward
 * N - Continue search backwards
-* r - refresh the list (if in artist directory, only refreshes that artist)
-* s - add 50 random songs to the queue
+* R - refresh the list (if in artist directory, only refreshes that artist)
+* r - add 50 random songs to the queue
 * y - toggle star on song

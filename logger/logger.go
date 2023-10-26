@@ -10,6 +10,10 @@ func Init() *Logger {
 	return &Logger{make(chan string, 100)}
 }
 
+func (l *Logger) Print(s string) {
+	l.Prints <- s
+}
+
 func (l *Logger) Printf(s string, as ...interface{}) {
 	l.Prints <- fmt.Sprintf(s, as...)
 }
