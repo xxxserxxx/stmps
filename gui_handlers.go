@@ -137,66 +137,9 @@ func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 	}
 }
 
-func (ui *Ui) handleDeleteFromQueue() {
-	currentIndex := ui.queueList.GetCurrentItem()
-
-	if currentIndex == -1 /*|| len(ui.player.Queue) < currentIndex*/ {
-		return
-	}
-
-	// if the deleted item was the first one, and the player is loaded
-	// remove the track. Removing the track auto starts the next one
-	if currentIndex == 0 {
-		if isSongLoaded, err := ui.player.IsSongLoaded(); err != nil {
-			ui.logger.Printf("handleDeleteFromQueue: IsSongLoaded -- %s", err.Error())
-		} else if isSongLoaded {
-			ui.player.Stop()
-		}
-		return
-	}
-
-	// remove the item from the queue
-	ui.player.DeleteQueueItem(currentIndex)
-
-	updateQueueList(ui.player, ui.queueList, ui.starIdList)
-}
-
 func (ui *Ui) handleAddRandomSongs() {
 	ui.addRandomSongsToQueue()
 	updateQueueList(ui.player, ui.queueList, ui.starIdList)
-}
-
-func (ui *Ui) handleToggleStar() {
-	currentIndex := ui.queueList.GetCurrentItem()
-	if currentIndex < 0 /*|| len(ui.player.Queue) < currentIndex*/ {
-		return
-	}
-
-	entity, err := ui.player.GetQueueItem(currentIndex)
-	if err != nil {
-		ui.logger.PrintError("handleToggleStar", err)
-		return
-	}
-
-	// If the song is already in the star list, remove it
-	_, remove := ui.starIdList[entity.Id]
-
-	// resp, _ := ui.connection.ToggleStar(entity.Id, remove)
-	ui.connection.ToggleStar(entity.Id, ui.starIdList)
-
-	if remove {
-		delete(ui.starIdList, entity.Id)
-	} else {
-		ui.starIdList[entity.Id] = struct{}{}
-	}
-
-	var text = queueListTextFormat(entity, ui.starIdList)
-	updateQueueListItem(ui.queueList, currentIndex, text)
-	// Update the entity list to reflect any changes
-	ui.logger.Printf("entity test %v", ui.currentDirectory)
-	if ui.currentDirectory != nil {
-		ui.handleEntitySelected(ui.currentDirectory.Id)
-	}
 }
 
 func (ui *Ui) handleAddEntityToQueue() {
