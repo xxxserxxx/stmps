@@ -34,6 +34,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 	// search bar
 	ui.searchField = tview.NewInputField().
 		SetLabel("search:").
+		SetFieldBackgroundColor(tcell.ColorBlack).
 		SetChangedFunc(func(s string) {
 			idxs := ui.artistList.FindItems(s, "", false, true)
 			if len(idxs) == 0 {

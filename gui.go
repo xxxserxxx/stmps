@@ -35,7 +35,7 @@ type Ui struct {
 	// modals
 	addToPlaylistList *tview.List
 	newPlaylistInput  *tview.InputField
-	messageBox        *tview.TextView
+	messageBox        *tview.Modal
 
 	selectedPlaylist *tview.List
 
@@ -98,15 +98,9 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		SetFieldWidth(50)
 
 	// message box for small notes
-	ui.messageBox = tview.NewTextView().SetText("hi there").
-		SetTextAlign(tview.AlignCenter).
-		SetDynamicColors(true)
-	messageBoxFlex := tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(ui.messageBox, 0, 1, true)
-	messageBoxFlex.Box.SetBorder(true)
-	messageBoxModal := makeModal(messageBoxFlex, 70, 10)
-
+	ui.messageBox = tview.NewModal().
+		SetText("hi there").
+		SetBackgroundColor(tcell.ColorBlack)
 	ui.messageBox.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		ui.pages.HidePage("messageBox")
 		return event
@@ -138,7 +132,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		AddPage("playlists", playlistFlex, true, false).
 		AddPage("addToPlaylist", addToPlaylistModal, true, false).
 		AddPage("deletePlaylist", deletePlaylistModal, true, false).
-		AddPage("messageBox", messageBoxModal, true, false).
+		AddPage("messageBox", ui.messageBox, true, false).
 		AddPage("log", logListFlex, true, false)
 
 	rootFlex := tview.NewFlex().
