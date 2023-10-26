@@ -17,7 +17,7 @@ A terminal client for *sonic music servers. Inspired by ncmpcpp.
 
 Go build dependencies
 
-* Go 1.16+
+* Go 1.19+
 * [tview](https://github.com/rivo/tview)
 * [go-mpv](https://github.com/yourok/go-mpv/mpv)
 
