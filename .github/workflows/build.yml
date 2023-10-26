@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Library dependencies
-        run: sudo apt-get install libmpv-dev libgl1
+        run: sudo apt-get install libmpv-dev libglx-dev libgl-dev
 
       - uses: actions/checkout@v4
 
