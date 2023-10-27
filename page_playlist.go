@@ -14,7 +14,9 @@ type PlaylistPage struct {
 	Root                *tview.Flex
 	DeletePlaylistModal tview.Primitive
 
-	playlistList *tview.List
+	playlistList     *tview.List
+	newPlaylistInput *tview.InputField
+	selectedPlaylist *tview.List
 
 	// external refs
 	ui     *Ui
@@ -42,14 +44,14 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 
 	playlistColFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(playlistPage.playlistList, 0, 1, true).
-		AddItem(ui.selectedPlaylist, 0, 1, false)
+		AddItem(playlistPage.selectedPlaylist, 0, 1, false)
 
 	playlistPage.Root = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(playlistColFlex, 0, 1, true)
 
-	ui.newPlaylistInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	playlistPage.newPlaylistInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
-			playlistPage.newPlaylist(ui.newPlaylistInput.GetText())
+			playlistPage.newPlaylist(playlistPage.newPlaylistInput.GetText())
 			playlistPage.Root.Clear()
 			playlistPage.Root.AddItem(playlistColFlex, 0, 1, true)
 			ui.app.SetFocus(playlistPage.playlistList)
@@ -66,7 +68,7 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 
 	playlistPage.playlistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRight {
-			ui.app.SetFocus(ui.selectedPlaylist)
+			ui.app.SetFocus(playlistPage.selectedPlaylist)
 			return nil
 		}
 		if event.Rune() == 'a' {
@@ -74,8 +76,8 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 			return nil
 		}
 		if event.Rune() == 'n' {
-			playlistPage.Root.AddItem(ui.newPlaylistInput, 0, 1, true)
-			ui.app.SetFocus(ui.newPlaylistInput)
+			playlistPage.Root.AddItem(playlistPage.newPlaylistInput, 0, 1, true)
+			ui.app.SetFocus(playlistPage.newPlaylistInput)
 		}
 		if event.Rune() == 'd' {
 			ui.pages.ShowPage("deletePlaylist")
@@ -83,7 +85,7 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 		return event
 	})
 
-	ui.selectedPlaylist.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	playlistPage.selectedPlaylist.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyLeft {
 			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
@@ -124,7 +126,17 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 
 	playlistPage.DeletePlaylistModal = makeModal(deletePlaylistFlex, 20, 3)
 
+	// songs in the selected playlist
+	playlistPage.selectedPlaylist = tview.NewList().ShowSecondaryText(false)
+	playlistPage.newPlaylistInput = tview.NewInputField().
+		SetLabel("Playlist name:").
+		SetFieldWidth(50)
+
 	return &playlistPage
+}
+
+func (p *PlaylistPage) IsNewPlaylistInputFocused(focused tview.Primitive) bool {
+	return focused == p.newPlaylistInput
 }
 
 func (p *PlaylistPage) GetCount() int {
@@ -149,14 +161,14 @@ func (p *PlaylistPage) UpdatePlaylists() {
 
 func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
 	playlistIndex := p.playlistList.GetCurrentItem()
-	entityIndex := p.ui.selectedPlaylist.GetCurrentItem()
+	entityIndex := p.selectedPlaylist.GetCurrentItem()
 
 	if playlistIndex < 0 || entityIndex < 0 {
 		return
 	}
 
-	if entityIndex+1 < p.ui.selectedPlaylist.GetItemCount() {
-		p.ui.selectedPlaylist.SetCurrentItem(entityIndex + 1)
+	if entityIndex+1 < p.selectedPlaylist.GetItemCount() {
+		p.selectedPlaylist.SetCurrentItem(entityIndex + 1)
 	}
 
 	// TODO add some bounds checking here
@@ -191,12 +203,12 @@ func (p *PlaylistPage) handleAddPlaylistToQueue() {
 }
 
 func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
-	p.ui.selectedPlaylist.Clear()
+	p.selectedPlaylist.Clear()
 
 	for _, entity := range playlist.Entries {
 		handler := makeSongHandler(&entity, p.ui, entity.Artist)
 		title := entity.GetSongTitle()
-		p.ui.selectedPlaylist.AddItem(tview.Escape(title), "", 0, handler)
+		p.selectedPlaylist.AddItem(tview.Escape(title), "", 0, handler)
 	}
 }
 

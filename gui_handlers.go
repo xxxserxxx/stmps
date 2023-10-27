@@ -12,7 +12,7 @@ import (
 func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	// we don't want any of these firing if we're trying to add a new playlist
 	focused := ui.app.GetFocus()
-	if focused == ui.newPlaylistInput || ui.browserPage.IsSearchFocused(focused) {
+	if ui.playlistPage.IsNewPlaylistInputFocused(focused) || ui.browserPage.IsSearchFocused(focused) {
 		return event
 	}
 

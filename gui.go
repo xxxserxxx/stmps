@@ -35,10 +35,7 @@ type Ui struct {
 
 	// modals
 	addToPlaylistList *tview.List
-	newPlaylistInput  *tview.InputField
 	messageBox        *tview.Modal
-
-	selectedPlaylist *tview.List
 
 	starIdList map[string]struct{}
 
@@ -88,11 +85,6 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	// same as 'playlistList' except for the addToPlaylistModal
 	// - we need a specific version of this because we need different keybinds
 	ui.addToPlaylistList = tview.NewList().ShowSecondaryText(false)
-	// songs in the selected playlist
-	ui.selectedPlaylist = tview.NewList().ShowSecondaryText(false)
-	ui.newPlaylistInput = tview.NewInputField().
-		SetLabel("Playlist name:").
-		SetFieldWidth(50)
 
 	// message box for small notes
 	ui.messageBox = tview.NewModal().
