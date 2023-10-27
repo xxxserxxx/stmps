@@ -181,7 +181,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			return nil
 		}
 		// REFRESH only the artist
-		if event.Rune() == 'r' {
+		if event.Rune() == 'R' {
 			artistIdx := browserPage.artistList.GetCurrentItem()
 			entity := browserPage.artistIdList[artistIdx]
 			//ui.logger.Printf("refreshing artist idx %d, entity %s (%s)", artistIdx, entity, ui.connection.directoryCache[entity].Directory.Name)

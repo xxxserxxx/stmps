@@ -60,18 +60,38 @@ scrobble = true   # Use Subsonic scrobbling for last.fm/ListenBrainz (default: f
 * 2 - queue view
 * 3 - playlist view
 * 4 - log (errors, etc) view
-* enter - play song (clears current queue)
-* d/delete - remove currently selected song from the queue
-* D - remove all songs from queue
-* a - add album or song to queue
+* Escape/Return - close modal if open
+
+### Playback
+
+These are accessible in every view.
+
 * p - play/pause
 * P - stop
 * &gt; - next song
 * -/= volume down/volume up
 * ,/. seek -10/+10 seconds
+* r - add 50 random songs to the queue
+
+### Browser
+
+* Enter - play song (clears current queue)
+* a - add album or song to queue
+* y - toggle star on song/album
+* A - add song to playlist
+* R - refresh the list (if in artist directory, only refreshes that artist)
 * / - Search artists
 * n - Continue search forward
 * N - Continue search backwards
-* R - refresh the list (if in artist directory, only refreshes that artist)
-* r - add 50 random songs to the queue
+
+### Queue
+
+* d/Delete - remove currently selected song from the queue
+* D - remove all songs from queue
 * y - toggle star on song
+
+### Playlist
+
+* n - new playlist
+* d - delete playlist
+* a - add playlist or song to queue
