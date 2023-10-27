@@ -12,7 +12,7 @@ import (
 func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	// we don't want any of these firing if we're trying to add a new playlist
 	focused := ui.app.GetFocus()
-	if focused == ui.newPlaylistInput || focused == ui.searchField {
+	if focused == ui.newPlaylistInput || ui.browserPage.IsSearchFocused(focused) {
 		return event
 	}
 
@@ -128,20 +128,11 @@ func (ui *Ui) addRandomSongsToQueue() {
 func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 	uri := ui.connection.GetPlayUrl(entity)
 
-	var artist string
-	if ui.currentDirectory == nil {
-		artist = entity.Artist
-	} else {
-		artist = stringOr(entity.Artist, ui.currentDirectory.Name)
-	}
-
-	var id = entity.Id
-
 	queueItem := &mpvplayer.QueueItem{
-		Id:       id,
+		Id:       entity.Id,
 		Uri:      uri,
 		Title:    entity.GetSongTitle(),
-		Artist:   artist,
+		Artist:   entity.Artist,
 		Duration: entity.Duration,
 	}
 	ui.player.AddToQueue(queueItem)

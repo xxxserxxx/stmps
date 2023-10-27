@@ -22,9 +22,7 @@ type Ui struct {
 	playerStatus    *tview.TextView
 
 	// browser page
-	artistList  *tview.List
-	entityList  *tview.List
-	searchField *tview.InputField
+	browserPage BrowserPage
 
 	// queue page
 	queuePage *QueuePage
@@ -42,9 +40,7 @@ type Ui struct {
 
 	selectedPlaylist *tview.List
 
-	currentDirectory *subsonic.SubsonicDirectory
-	artistIdList     []string
-	starIdList       map[string]struct{}
+	starIdList map[string]struct{}
 
 	eventLoop *eventLoop
 	mpvEvents chan mpvplayer.UiEvent
@@ -61,9 +57,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	player *mpvplayer.Player,
 	logger *logger.Logger) (ui *Ui) {
 	ui = &Ui{
-		currentDirectory: &subsonic.SubsonicDirectory{},
-		artistIdList:     []string{},
-		starIdList:       map[string]struct{}{},
+		starIdList: map[string]struct{}{},
 
 		eventLoop: nil, // initialized by initEventLoops()
 		mpvEvents: make(chan mpvplayer.UiEvent, 5),
@@ -166,6 +160,11 @@ func (ui *Ui) Run() error {
 
 	// gui main loop (blocking)
 	return ui.app.Run()
+}
+
+func (ui *Ui) StarsWereUpdated() {
+	ui.queuePage.UpdateQueue()
+	ui.browserPage.UpdateStars()
 }
 
 func (ui *Ui) showMessageBox(text string) {

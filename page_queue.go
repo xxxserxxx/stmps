@@ -130,12 +130,7 @@ func (q *QueuePage) handleToggleStar() {
 		starIdList[entity.Id] = struct{}{}
 	}
 
-	q.updateQueue()
-
-	// HACK Update the entity list to reflect any changes
-	if q.ui.currentDirectory != nil {
-		q.ui.handleEntitySelected(q.ui.currentDirectory.Id)
-	}
+	q.ui.StarsWereUpdated()
 }
 
 func (q *QueuePage) updateQueue() {

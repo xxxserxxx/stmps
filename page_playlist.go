@@ -169,47 +169,6 @@ func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 	}
 }
 
-func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
-	currentIndex := ui.entityList.GetCurrentItem()
-
-	// if we have a parent directory subtract 1 to account for the [..]
-	// which would be index 0 in that case with index 1 being the first entity
-	if ui.currentDirectory.Parent != "" {
-		currentIndex--
-	}
-
-	if currentIndex < 0 || len(ui.currentDirectory.Entities) < currentIndex {
-		return
-	}
-
-	entity := ui.currentDirectory.Entities[currentIndex]
-
-	if !entity.IsDirectory {
-		if err := ui.connection.AddSongToPlaylist(string(playlist.Id), entity.Id); err != nil {
-			ui.logger.PrintError("AddSongToPlaylist", err)
-			return
-		}
-	}
-	// update the playlists
-	response, err := ui.connection.GetPlaylists()
-	if err != nil {
-		ui.logger.PrintError("GetPlaylists", err)
-	}
-	ui.playlists = response.Playlists.Playlists
-
-	ui.playlistList.Clear()
-	ui.addToPlaylistList.Clear()
-
-	for _, playlist := range ui.playlists {
-		ui.playlistList.AddItem(playlist.Name, "", 0, nil)
-		ui.addToPlaylistList.AddItem(playlist.Name, "", 0, nil)
-	}
-
-	if currentIndex+1 < ui.entityList.GetItemCount() {
-		ui.entityList.SetCurrentItem(currentIndex + 1)
-	}
-}
-
 func (ui *Ui) newPlaylist(name string) {
 	response, err := ui.connection.CreatePlaylist(name)
 	if err != nil {
