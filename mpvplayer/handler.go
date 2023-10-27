@@ -25,9 +25,9 @@ func (p *Player) EventLoop() {
 		} else if evt.Event_Id == mpv.EVENT_PROPERTY_CHANGE {
 			// one of our observed properties changed. which one is probably extractable from evt.Data.. somehow.
 
-			position, err := p.instance.GetProperty("time-pos", mpv.FORMAT_INT64)
+			position, err := p.instance.GetProperty("playback-time", mpv.FORMAT_INT64)
 			if err != nil {
-				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "time-pos", err.Error())
+				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "playback-time", err.Error())
 			}
 			duration, err := p.instance.GetProperty("duration", mpv.FORMAT_INT64)
 			if err != nil {
