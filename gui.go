@@ -27,8 +27,7 @@ type Ui struct {
 	searchField *tview.InputField
 
 	// queue page
-	queueList *tview.Table
-	queueData queueData
+	queuePage *QueuePage
 
 	// playlist page
 	playlistList *tview.List
@@ -123,7 +122,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	browserFlex, addToPlaylistModal := ui.createBrowserPage(indexes)
 
 	// queue page
-	queueFlex := ui.createQueuePage()
+	ui.queuePage = ui.createQueuePage()
 
 	// playlist page
 	playlistFlex, deletePlaylistModal := ui.createPlaylistPage()
@@ -132,7 +131,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	logListFlex := ui.createLogPage()
 
 	ui.pages.AddPage("browser", browserFlex, true, true).
-		AddPage("queue", queueFlex, true, false).
+		AddPage("queue", ui.queuePage.Root, true, false).
 		AddPage("playlists", playlistFlex, true, false).
 		AddPage("addToPlaylist", addToPlaylistModal, true, false).
 		AddPage("deletePlaylist", deletePlaylistModal, true, false).

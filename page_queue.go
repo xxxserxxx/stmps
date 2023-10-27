@@ -9,6 +9,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/wildeyedskies/stmp/logger"
 	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
@@ -19,38 +20,68 @@ type queueData struct {
 	tview.TableContentReadOnly
 
 	playerQueue mpvplayer.PlayerQueue
-	starIdList  *map[string]struct{}
+	starIdList  map[string]struct{}
 }
 
-func (ui *Ui) createQueuePage() *tview.Flex {
-	ui.queueList = tview.NewTable().
+type QueuePage struct {
+	Root *tview.Flex
+
+	queueList *tview.Table
+	queueData queueData
+
+	// external refs
+	ui     *Ui
+	logger logger.LoggerInterface
+}
+
+func (ui *Ui) createQueuePage() *QueuePage {
+	queuePage := QueuePage{
+		ui:     ui,
+		logger: ui.logger,
+	}
+
+	// main table
+	queuePage.queueList = tview.NewTable().
 		SetSelectable(true, false). // rows selectable
 		SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorLightGray).Foreground(tcell.ColorBlack))
-	ui.queueList.Box.
+	queuePage.queueList.Box.
 		SetTitle(" queue ").
 		SetTitleAlign(tview.AlignLeft).
 		SetBorder(true)
-
-	queueFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(ui.queueList, 0, 1, true)
-
-	ui.queueList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	queuePage.queueList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyDelete || event.Rune() == 'd' {
-			ui.handleDeleteFromQueue()
+			queuePage.handleDeleteFromQueue()
 			return nil
 		} else if event.Rune() == 'y' {
-			ui.handleToggleStar()
+			queuePage.handleToggleStar()
 			return nil
 		}
 
 		return event
 	})
 
-	return queueFlex
+	// flex wrapper
+	queuePage.Root = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(queuePage.queueList, 0, 1, true)
+
+	// private data
+	queuePage.queueData = queueData{
+		starIdList: ui.starIdList,
+	}
+
+	return &queuePage
 }
 
-func (ui *Ui) queueGetSelectedItem() (index int, err error) {
-	index, _ = ui.queueList.GetSelection()
+// HACK legacy
+func (ui *Ui) updateQueue() {
+	ui.queuePage.UpdateQueue()
+}
+func (q *QueuePage) UpdateQueue() {
+	q.updateQueue()
+}
+
+func (q *QueuePage) GetSelectedItem() (index int, err error) {
+	index, _ = q.queueList.GetSelection()
 	if index < 0 {
 		err = errors.New("invalid index")
 		return
@@ -58,58 +89,59 @@ func (ui *Ui) queueGetSelectedItem() (index int, err error) {
 	return
 }
 
-func (ui *Ui) handleDeleteFromQueue() {
-	currentIndex, err := ui.queueGetSelectedItem()
+func (q *QueuePage) handleDeleteFromQueue() {
+	currentIndex, err := q.GetSelectedItem()
 	if err != nil {
 		return
 	}
 
 	// remove the item from the queue
-	ui.player.DeleteQueueItem(currentIndex)
-	ui.updateQueue()
+	q.ui.player.DeleteQueueItem(currentIndex)
+	q.updateQueue()
 }
 
-func (ui *Ui) handleToggleStar() {
-	currentIndex, err := ui.queueGetSelectedItem()
+func (q *QueuePage) handleToggleStar() {
+	currentIndex, err := q.GetSelectedItem()
 	if err != nil {
-		ui.logger.PrintError("handleToggleStar", err)
+		q.logger.PrintError("handleToggleStar", err)
 		return
 	}
 
-	entity, err := ui.player.GetQueueItem(currentIndex)
+	entity, err := q.ui.player.GetQueueItem(currentIndex)
 	if err != nil {
-		ui.logger.PrintError("handleToggleStar", err)
+		q.logger.PrintError("handleToggleStar", err)
 		return
+	}
+
+	// update on server
+	starIdList := q.queueData.starIdList
+	if _, err = q.ui.connection.ToggleStar(entity.Id, starIdList); err != nil {
+		q.ui.showMessageBox("ToggleStar failed")
+		return // fail, assume not toggled
 	}
 
 	// If the song is already in the star list, remove it
-	_, remove := ui.starIdList[entity.Id]
-
-	if _, err = ui.connection.ToggleStar(entity.Id, ui.starIdList); err != nil {
-		ui.showMessageBox("ToggleStar failed")
-		return
-	}
-
+	_, remove := starIdList[entity.Id]
 	if remove {
-		delete(ui.starIdList, entity.Id)
+		delete(starIdList, entity.Id)
 	} else {
-		ui.starIdList[entity.Id] = struct{}{}
+		starIdList[entity.Id] = struct{}{}
 	}
 
-	ui.updateQueue()
+	q.updateQueue()
 
-	// Update the entity list to reflect any changes
-	if ui.currentDirectory != nil {
-		ui.handleEntitySelected(ui.currentDirectory.Id)
+	// HACK Update the entity list to reflect any changes
+	if q.ui.currentDirectory != nil {
+		q.ui.handleEntitySelected(q.ui.currentDirectory.Id)
 	}
 }
 
-func (ui *Ui) updateQueue() {
-	ui.queueData.playerQueue = ui.player.GetQueueCopy()
-	ui.queueData.starIdList = &ui.starIdList
-	ui.queueList.SetContent(&ui.queueData)
+func (q *QueuePage) updateQueue() {
+	q.queueData.playerQueue = q.ui.player.GetQueueCopy()
+	q.queueList.SetContent(&q.queueData)
 }
 
+// queueData methods
 func (q *queueData) GetCell(row, column int) *tview.TableCell {
 	if row >= len(q.playerQueue) || column >= queueDataColumns {
 		return nil
@@ -120,7 +152,7 @@ func (q *queueData) GetCell(row, column int) *tview.TableCell {
 	case 0: // star
 		text := " "
 		color := tcell.ColorDefault
-		if _, starred := (*q.starIdList)[song.Id]; starred {
+		if _, starred := q.starIdList[song.Id]; starred {
 			text = starIcon
 			color = tcell.ColorRed
 		}
