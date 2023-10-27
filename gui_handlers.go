@@ -170,37 +170,6 @@ func (ui *Ui) handleAddRandomSongs() {
 	ui.updateQueue()
 }
 
-func (ui *Ui) handleAddEntityToQueue() {
-	currentIndex := ui.entityList.GetCurrentItem()
-	if currentIndex < 0 {
-		return
-	}
-
-	if currentIndex+1 < ui.entityList.GetItemCount() {
-		ui.entityList.SetCurrentItem(currentIndex + 1)
-	}
-
-	// if we have a parent directory subtract 1 to account for the [..]
-	// which would be index 0 in that case with index 1 being the first entity
-	if ui.currentDirectory.Parent != "" {
-		currentIndex--
-	}
-
-	if currentIndex == -1 || len(ui.currentDirectory.Entities) <= currentIndex {
-		return
-	}
-
-	entity := ui.currentDirectory.Entities[currentIndex]
-
-	if entity.IsDirectory {
-		ui.addDirectoryToQueue(&entity)
-	} else {
-		ui.addSongToQueue(&entity)
-	}
-
-	ui.updateQueue()
-}
-
 func (ui *Ui) handleToggleEntityStar() {
 	currentIndex := ui.entityList.GetCurrentItem()
 	if currentIndex < 0 {

@@ -23,7 +23,8 @@ type queueData struct {
 
 func (ui *Ui) createQueuePage() *tview.Flex {
 	ui.queueList = tview.NewTable().
-		SetSelectable(true, false) // rows selectable
+		SetSelectable(true, false). // rows selectable
+		SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGray).Foreground(tcell.ColorBlack))
 	ui.queueList.Box.
 		SetTitle(" queue ").
 		SetTitleAlign(tview.AlignLeft).
@@ -48,15 +49,13 @@ func (ui *Ui) createQueuePage() *tview.Flex {
 }
 
 func (ui *Ui) handleDeleteFromQueue() {
-	/*
-		currentIndex := ui.queueList.GetCurrentItem()
-		if currentIndex == -1 {
-			return
-		}
+	currentIndex, _ := ui.queueList.GetSelection()
+	if currentIndex < 0 {
+		return
+	}
 
-		// remove the item from the queue
-		ui.player.DeleteQueueItem(currentIndex)
-	*/
+	// remove the item from the queue
+	ui.player.DeleteQueueItem(currentIndex)
 	ui.updateQueue()
 }
 

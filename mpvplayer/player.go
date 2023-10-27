@@ -254,7 +254,9 @@ func (p *Player) ClearQueue() {
 
 func (p *Player) DeleteQueueItem(index int) {
 	// TODO mutex queue access
-	if len(p.queue) > 1 {
+	if index >= len(p.queue) {
+		p.logger.Printf("DeleteQueueItem bad index %d (len %d)", index, len(p.queue))
+	} else if len(p.queue) > 1 {
 		if index == 0 {
 			if err := p.PlayNextTrack(); err != nil {
 				p.logger.PrintError("PlayNextTrack", err)
