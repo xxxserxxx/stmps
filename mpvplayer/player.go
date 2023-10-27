@@ -25,25 +25,31 @@ type Player struct {
 }
 
 func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
-	mpvInstance := mpv.Create()
+	m := mpv.Create()
 
-	// TODO figure out what other mpv options we need
-	if err = mpvInstance.SetOptionString("audio-display", "no"); err != nil {
-		mpvInstance.TerminateDestroy()
+	// cargo-cult what supersonic does
+	if err = m.SetOptionString("audio-display", "no"); err != nil {
 		return
 	}
-	if err = mpvInstance.SetOptionString("video", "no"); err != nil {
-		mpvInstance.TerminateDestroy()
+	if err = m.SetOptionString("video", "no"); err != nil {
+		return
+	}
+	if err = m.SetOptionString("terminal", "no"); err != nil {
+		return
+	}
+	if err = m.SetOptionString("demuxer-max-bytes", "30MiB"); err != nil {
+		return
+	}
+	if err = m.SetOptionString("audio-client-name", "stmp"); err != nil {
 		return
 	}
 
-	if err = mpvInstance.Initialize(); err != nil {
-		mpvInstance.TerminateDestroy()
+	if err = m.Initialize(); err != nil {
 		return
 	}
 
 	player = &Player{
-		instance:          mpvInstance,
+		instance:          m,
 		mpvEvents:         make(chan *mpv.Event),
 		eventConsumer:     nil, // must be set by calling RegisterEventConsumer()
 		queue:             make([]QueueItem, 0),
@@ -52,7 +58,7 @@ func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 		stopped:           true,
 	}
 
-	go player.mpvEngineEventHandler(mpvInstance)
+	go player.mpvEngineEventHandler(m)
 	return
 }
 

@@ -17,13 +17,13 @@ func makeModal(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(p, 1, 1, 1, 1, 0, 0, true)
 }
 
-func formatPlayerStatus(volume int64, position float64, duration float64) string {
+func formatPlayerStatus(volume int64, position int64, duration int64) string {
 	if position < 0 {
-		position = 0.0
+		position = 0
 	}
 
 	if duration < 0 {
-		duration = 0.0
+		duration = 0
 	}
 
 	positionMin, positionSec := secondsToMinAndSec(position)

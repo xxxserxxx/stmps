@@ -13,8 +13,8 @@ func stringOr(firstChoice string, secondChoice string) string {
 	return secondChoice
 }
 
-func secondsToMinAndSec(seconds float64) (int, int) {
-	minutes := math.Floor(seconds / 60)
+func secondsToMinAndSec(seconds int64) (int, int) {
+	minutes := math.Floor(float64(seconds) / 60)
 	remainingSeconds := int(seconds) % 60
 	return int(minutes), remainingSeconds
 }

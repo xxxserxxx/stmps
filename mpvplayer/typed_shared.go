@@ -14,6 +14,6 @@ type QueueItem struct {
 // StatusData is a player progress report for the UI
 type StatusData struct {
 	Volume   int64
-	Position float64
-	Duration float64
+	Position int64
+	Duration int64
 }

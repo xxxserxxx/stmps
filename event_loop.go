@@ -36,9 +36,18 @@ func (ui *Ui) runEventLoops() {
 // handle ui updates
 func (ui *Ui) guiEventLoop() {
 	ui.addStarredToList()
+	events := 0.0
+	fpsTimer := time.NewTimer(0)
 
 	for {
+		events++
+
 		select {
+		case <-fpsTimer.C:
+			fpsTimer.Reset(10 * time.Second)
+			ui.logger.Printf("guiEventLoop: %f events per second", events/10.0)
+			events = 0
+
 		case msg := <-ui.logger.Prints:
 			// handle log page output
 			ui.app.QueueUpdateDraw(func() {
@@ -52,6 +61,8 @@ func (ui *Ui) guiEventLoop() {
 			})
 
 		case mpvEvent := <-ui.mpvEvents:
+			events++
+
 			// handle events from mpv wrapper
 			switch mpvEvent.Type {
 			case mpvplayer.EventStatus:

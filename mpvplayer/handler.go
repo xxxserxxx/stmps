@@ -8,10 +8,10 @@ import (
 )
 
 func (p *Player) EventLoop() {
-	if err := p.instance.ObserveProperty(0, "time-pos", mpv.FORMAT_DOUBLE); err != nil {
+	if err := p.instance.ObserveProperty(0, "playback-time", mpv.FORMAT_INT64); err != nil {
 		p.logger.PrintError("Observe1", err)
 	}
-	if err := p.instance.ObserveProperty(0, "duration", mpv.FORMAT_DOUBLE); err != nil {
+	if err := p.instance.ObserveProperty(0, "duration", mpv.FORMAT_INT64); err != nil {
 		p.logger.PrintError("Observe2", err)
 	}
 	if err := p.instance.ObserveProperty(0, "volume", mpv.FORMAT_INT64); err != nil {
@@ -22,6 +22,38 @@ func (p *Player) EventLoop() {
 		if evt == nil {
 			// quit signal
 			break
+		} else if evt.Event_Id == mpv.EVENT_PROPERTY_CHANGE {
+			// one of our observed properties changed. which one is probably extractable from evt.Data.. somehow.
+
+			position, err := p.instance.GetProperty("time-pos", mpv.FORMAT_INT64)
+			if err != nil {
+				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "time-pos", err.Error())
+			}
+			duration, err := p.instance.GetProperty("duration", mpv.FORMAT_INT64)
+			if err != nil {
+				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "duration", err.Error())
+			}
+			volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
+			if err != nil {
+				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "volume", err.Error())
+			}
+
+			if position == nil {
+				position = int64(0)
+			}
+			if duration == nil {
+				duration = int64(0)
+			}
+			if volume == nil {
+				volume = int64(0)
+			}
+
+			statusData := StatusData{
+				Volume:   volume.(int64),
+				Position: position.(int64),
+				Duration: duration.(int64),
+			}
+			p.sendGuiDataEvent(EventStatus, statusData)
 		} else if evt.Event_Id == mpv.EVENT_END_FILE && !p.replaceInProgress {
 			// we don't want to update anything if we're in the process of replacing the current track
 
@@ -66,38 +98,10 @@ func (p *Player) EventLoop() {
 			}
 		} else if evt.Event_Id == mpv.EVENT_IDLE || evt.Event_Id == mpv.EVENT_NONE {
 			continue
+		} else {
+			p.logger.Printf("mpv.EventLoop: unhandled event id %v", evt.Event_Id)
+			continue
 		}
-
-		position, err := p.instance.GetProperty("time-pos", mpv.FORMAT_DOUBLE)
-		if err != nil {
-			p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "time-pos", err.Error())
-		}
-		// TODO only update these as needed
-		duration, err := p.instance.GetProperty("duration", mpv.FORMAT_DOUBLE)
-		if err != nil {
-			p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "duration", err.Error())
-		}
-		volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
-		if err != nil {
-			p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "volume", err.Error())
-		}
-
-		if position == nil {
-			position = 0.0
-		}
-		if duration == nil {
-			duration = 0.0
-		}
-		if volume == nil {
-			volume = 0
-		}
-
-		statusData := StatusData{
-			Volume:   volume.(int64),
-			Position: position.(float64),
-			Duration: duration.(float64),
-		}
-		p.sendGuiDataEvent(EventStatus, statusData)
 	}
 }
 
