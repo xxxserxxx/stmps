@@ -20,7 +20,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 
 	for _, index := range *indexes {
 		for _, artist := range index.Artists {
-			ui.artistList.AddItem(artist.Name, "", 0, nil)
+			ui.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
 			ui.artistIdList = append(ui.artistIdList, artist.Id)
 		}
 	}
@@ -85,7 +85,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 			ui.connection.ClearCache()
 			for _, index := range indexResponse.Indexes.Index {
 				for _, artist := range index.Artists {
-					ui.artistList.AddItem(artist.Name, "", 0, nil)
+					ui.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
 					ui.artistIdList = append(ui.artistIdList, artist.Id)
 				}
 			}
@@ -103,7 +103,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 
 	// "add to playlist" modal
 	for _, playlist := range ui.playlists {
-		ui.addToPlaylistList.AddItem(playlist.Name, "", 0, nil)
+		ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
 	}
 	ui.addToPlaylistList.SetBorder(true).
 		SetTitle("Add to Playlist")

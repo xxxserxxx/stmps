@@ -145,7 +145,7 @@ func (ui *Ui) handleEntitySelected(directoryId string) {
 				entity.Duration, ui)
 		}
 
-		ui.entityList.AddItem(title, "", 0, handler)
+		ui.entityList.AddItem(tview.Escape(title), "", 0, handler)
 	}
 }
 

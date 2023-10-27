@@ -124,13 +124,13 @@ func (q *queueData) GetCell(row, column int) *tview.TableCell {
 		}
 	case 1: // title
 		return &tview.TableCell{
-			Text:        song.Title,
+			Text:        tview.Escape(song.Title),
 			Expansion:   1,
 			Transparent: true,
 		}
 	case 2: // artist
 		return &tview.TableCell{
-			Text:        song.Artist,
+			Text:        tview.Escape(song.Artist),
 			Expansion:   1,
 			Transparent: true,
 		}
