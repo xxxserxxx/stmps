@@ -11,16 +11,19 @@ import (
 	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
-const queueDataColumns = 3
+const queueDataColumns = 4
+const starIcon = "♥"
 
 type queueData struct {
 	tview.TableContentReadOnly
 
 	playerQueue mpvplayer.PlayerQueue
+	starIdList  *map[string]struct{}
 }
 
 func (ui *Ui) createQueuePage() *tview.Flex {
-	ui.queueList = tview.NewTable()
+	ui.queueList = tview.NewTable().
+		SetSelectable(true, false) // rows selectable
 	ui.queueList.Box.
 		SetTitle(" queue ").
 		SetTitleAlign(tview.AlignLeft).
@@ -95,6 +98,7 @@ func (ui *Ui) handleToggleStar() {
 
 func (ui *Ui) updateQueue() {
 	ui.queueData.playerQueue = ui.player.GetQueueCopy()
+	ui.queueData.starIdList = &ui.starIdList
 	ui.queueList.SetContent(&ui.queueData)
 }
 
@@ -105,26 +109,40 @@ func (q *queueData) GetCell(row, column int) *tview.TableCell {
 	song := q.playerQueue[row]
 
 	switch column {
-	case 0:
-		return &tview.TableCell{
-			Text:          song.Title,
-			Expansion:     3,
-			NotSelectable: true,
+	case 0: // star
+		text := ""
+		if _, starred := (*q.starIdList)[song.Id]; starred {
+			text = starIcon
 		}
-	case 1:
 		return &tview.TableCell{
-			Text:          song.Artist,
-			Expansion:     2,
+			Text:          text,
+			Color:         tcell.ColorRed,
+			Expansion:     0,
+			MaxWidth:      1,
 			NotSelectable: true,
+			Transparent:   true,
 		}
-	case 2:
+	case 1: // title
+		return &tview.TableCell{
+			Text:        song.Title,
+			Expansion:   1,
+			Transparent: true,
+		}
+	case 2: // artist
+		return &tview.TableCell{
+			Text:        song.Artist,
+			Expansion:   1,
+			Transparent: true,
+		}
+	case 3: // duration
 		min, sec := iSecondsToMinAndSec(song.Duration)
 		text := fmt.Sprintf("%3d:%02d", min, sec)
 		return &tview.TableCell{
-			Text:          text,
-			Expansion:     0,
-			MaxWidth:      6,
-			NotSelectable: true,
+			Text:        text,
+			Align:       tview.AlignRight,
+			Expansion:   0,
+			MaxWidth:    6,
+			Transparent: true,
 		}
 	}
 
