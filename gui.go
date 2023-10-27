@@ -162,11 +162,6 @@ func (ui *Ui) Run() error {
 	return ui.app.Run()
 }
 
-func (ui *Ui) StarsWereUpdated() {
-	ui.queuePage.UpdateQueue()
-	ui.browserPage.UpdateStars()
-}
-
 func (ui *Ui) showMessageBox(text string) {
 	ui.pages.ShowPage("messageBox")
 	ui.messageBox.SetText(text)

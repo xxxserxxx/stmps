@@ -199,6 +199,7 @@ func (b *BrowserPage) IsSearchFocused(focused tview.Primitive) bool {
 }
 
 func (b *BrowserPage) UpdateStars() {
+	// reload album/song list if one is open
 	if b.currentDirectory != nil {
 		b.handleEntitySelected(b.currentDirectory.Id)
 	}
@@ -236,39 +237,44 @@ func (b *BrowserPage) handleAddEntityToQueue() {
 }
 
 func (b *BrowserPage) handleEntitySelected(directoryId string) {
-	response, err := b.ui.connection.GetMusicDirectory(directoryId)
-	if err != nil {
-		b.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %s", directoryId, err.Error())
+	if response, err := b.ui.connection.GetMusicDirectory(directoryId); err != nil {
+		b.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %v", directoryId, err)
+		return
+	} else {
+		sort.Sort(response.Directory.Entities)
+		b.currentDirectory = &response.Directory
 	}
-	sort.Sort(response.Directory.Entities)
 
-	b.currentDirectory = &response.Directory
 	b.entityList.Clear()
-	if response.Directory.Parent != "" {
+	if b.currentDirectory.Parent != "" {
 		// has parent entity
 		b.entityList.Box.SetTitle(" song ")
-		b.entityList.AddItem(tview.Escape("[..]"), "", 0,
-			b.makeEntityHandler(response.Directory.Parent))
+		b.entityList.AddItem(
+			tview.Escape("[..]"), "", 0,
+			b.makeEntityHandler(b.currentDirectory.Parent))
 	} else {
 		// no parent
 		b.entityList.Box.SetTitle(" album ")
 	}
 
-	for _, entity := range response.Directory.Entities {
+	for _, entity := range b.currentDirectory.Entities {
 		var title string
 		var id = entity.Id
 		var handler func()
+
 		if entity.IsDirectory {
+			// it's an album/directory
 			title = tview.Escape("[" + entity.Title + "]")
 			handler = b.makeEntityHandler(entity.Id)
 		} else {
+			// it's a song
 			title = entityListTextFormat(entity, b.ui.starIdList)
 			handler = makeSongHandler(id, b.ui.connection.GetPlayUrl(&entity),
-				title, stringOr(entity.Artist, response.Directory.Name),
+				title, stringOr(entity.Artist, b.currentDirectory.Name),
 				entity.Duration, b.ui)
 		}
 
-		b.entityList.AddItem(tview.Escape(title), "", 0, handler)
+		b.entityList.AddItem(title, "", 0, handler)
 	}
 }
 
@@ -280,11 +286,16 @@ func (b *BrowserPage) makeEntityHandler(directoryId string) func() {
 
 func (b *BrowserPage) handleToggleEntityStar() {
 	currentIndex := b.entityList.GetCurrentItem()
+	originalIndex := currentIndex
+	if b.currentDirectory.Parent != "" {
+		// account for [..] entry that we show, see handleEntitySelected()
+		currentIndex--
+	}
 	if currentIndex < 0 {
 		return
 	}
 
-	var entity = b.currentDirectory.Entities[currentIndex-1]
+	entity := b.currentDirectory.Entities[currentIndex]
 
 	// If the song is already in the star list, remove it
 	_, remove := b.ui.starIdList[entity.Id]
@@ -300,10 +311,11 @@ func (b *BrowserPage) handleToggleEntityStar() {
 		b.ui.starIdList[entity.Id] = struct{}{}
 	}
 
-	var text = entityListTextFormat(entity, b.ui.starIdList)
-	updateEntityListItem(b.entityList, currentIndex, text)
+	// update entity list entry
+	text := entityListTextFormat(entity, b.ui.starIdList)
+	b.entityList.SetItemText(originalIndex, text, "")
 
-	b.ui.StarsWereUpdated()
+	b.ui.queuePage.UpdateQueue()
 }
 
 func entityListTextFormat(queueItem subsonic.SubsonicEntity, starredItems map[string]struct{}) string {
@@ -312,12 +324,7 @@ func entityListTextFormat(queueItem subsonic.SubsonicEntity, starredItems map[st
 	if hasStar {
 		star = " [red]♥"
 	}
-	return queueItem.Title + star
-}
-
-// Just update the text of a specific row
-func updateEntityListItem(entityList *tview.List, id int, text string) {
-	entityList.SetItemText(id, text, "")
+	return tview.Escape(queueItem.Title) + star
 }
 
 func (b *BrowserPage) addDirectoryToQueue(entity *subsonic.SubsonicEntity) {

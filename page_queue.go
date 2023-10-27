@@ -103,6 +103,8 @@ func (q *QueuePage) handleDeleteFromQueue() {
 }
 
 func (q *QueuePage) handleToggleStar() {
+	starIdList := q.queueData.starIdList
+
 	currentIndex, err := q.getSelectedItem()
 	if err != nil {
 		q.logger.PrintError("handleToggleStar", err)
@@ -115,22 +117,22 @@ func (q *QueuePage) handleToggleStar() {
 		return
 	}
 
+	// If the song is already in the star list, remove it
+	_, remove := starIdList[entity.Id]
+
 	// update on server
-	starIdList := q.queueData.starIdList
 	if _, err = q.ui.connection.ToggleStar(entity.Id, starIdList); err != nil {
 		q.ui.showMessageBox("ToggleStar failed")
 		return // fail, assume not toggled
 	}
 
-	// If the song is already in the star list, remove it
-	_, remove := starIdList[entity.Id]
 	if remove {
 		delete(starIdList, entity.Id)
 	} else {
 		starIdList[entity.Id] = struct{}{}
 	}
 
-	q.ui.StarsWereUpdated()
+	q.ui.browserPage.UpdateStars()
 }
 
 func (q *QueuePage) updateQueue() {
