@@ -192,6 +192,11 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 		return event
 	})
 
+	// open first artist by default so we don't get stuck when there's only one artist
+	if len(browserPage.artistIdList) > 0 {
+		browserPage.handleEntitySelected(browserPage.artistIdList[0])
+	}
+
 	return &browserPage
 }
 

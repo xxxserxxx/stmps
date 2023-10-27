@@ -44,7 +44,12 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 	}
 
 	// right half: songs of selected playlist
-	playlistPage.selectedPlaylist = tview.NewList().ShowSecondaryText(false)
+	playlistPage.selectedPlaylist = tview.NewList().
+		ShowSecondaryText(false)
+	playlistPage.selectedPlaylist.Box.
+		SetTitle(" songs ").
+		SetTitleAlign(tview.AlignLeft).
+		SetBorder(true)
 
 	// flex wrapper
 	playlistColFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
@@ -143,6 +148,11 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 		}
 		playlistPage.handlePlaylistSelected(ui.playlists[index])
 	})
+
+	// open first playlist by default so we don't get stuck when there's only one playlist
+	if len(ui.playlists) > 0 {
+		playlistPage.handlePlaylistSelected(ui.playlists[0])
+	}
 
 	return &playlistPage
 }
