@@ -82,7 +82,7 @@ func (q *QueuePage) UpdateQueue() {
 	q.updateQueue()
 }
 
-func (q *QueuePage) GetSelectedItem() (index int, err error) {
+func (q *QueuePage) getSelectedItem() (index int, err error) {
 	index, _ = q.queueList.GetSelection()
 	if index < 0 {
 		err = errors.New("invalid index")
@@ -92,7 +92,7 @@ func (q *QueuePage) GetSelectedItem() (index int, err error) {
 }
 
 func (q *QueuePage) handleDeleteFromQueue() {
-	currentIndex, err := q.GetSelectedItem()
+	currentIndex, err := q.getSelectedItem()
 	if err != nil {
 		return
 	}
@@ -103,7 +103,7 @@ func (q *QueuePage) handleDeleteFromQueue() {
 }
 
 func (q *QueuePage) handleToggleStar() {
-	currentIndex, err := q.GetSelectedItem()
+	currentIndex, err := q.getSelectedItem()
 	if err != nil {
 		q.logger.PrintError("handleToggleStar", err)
 		return
@@ -139,8 +139,16 @@ func (q *QueuePage) handleToggleStar() {
 }
 
 func (q *QueuePage) updateQueue() {
+	queueWasEmpty := len(q.queueData.playerQueue) == 0
+
+	// tell table to update its data
 	q.queueData.playerQueue = q.ui.player.GetQueueCopy()
 	q.queueList.SetContent(&q.queueData)
+
+	// by default we're scrolled down after initially adding rows, fix this
+	if queueWasEmpty {
+		q.queueList.ScrollToBeginning()
+	}
 }
 
 // queueData methods
