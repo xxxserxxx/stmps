@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
@@ -24,7 +25,7 @@ type queueData struct {
 func (ui *Ui) createQueuePage() *tview.Flex {
 	ui.queueList = tview.NewTable().
 		SetSelectable(true, false). // rows selectable
-		SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGray).Foreground(tcell.ColorBlack))
+		SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorLightGray).Foreground(tcell.ColorBlack))
 	ui.queueList.Box.
 		SetTitle(" queue ").
 		SetTitleAlign(tview.AlignLeft).
@@ -48,9 +49,18 @@ func (ui *Ui) createQueuePage() *tview.Flex {
 	return queueFlex
 }
 
+func (ui *Ui) queueGetSelectedItem() (index int, err error) {
+	index, _ = ui.queueList.GetSelection()
+	if index < 0 {
+		err = errors.New("invalid index")
+		return
+	}
+	return
+}
+
 func (ui *Ui) handleDeleteFromQueue() {
-	currentIndex, _ := ui.queueList.GetSelection()
-	if currentIndex < 0 {
+	currentIndex, err := ui.queueGetSelectedItem()
+	if err != nil {
 		return
 	}
 
@@ -60,8 +70,9 @@ func (ui *Ui) handleDeleteFromQueue() {
 }
 
 func (ui *Ui) handleToggleStar() {
-	/*currentIndex := ui.queueList.GetCurrentItem()
-	if currentIndex < 0 {
+	currentIndex, err := ui.queueGetSelectedItem()
+	if err != nil {
+		ui.logger.PrintError("handleToggleStar", err)
 		return
 	}
 
@@ -74,7 +85,6 @@ func (ui *Ui) handleToggleStar() {
 	// If the song is already in the star list, remove it
 	_, remove := ui.starIdList[entity.Id]
 
-	// resp, _ := ui.connection.ToggleStar(entity.Id, remove)
 	if _, err = ui.connection.ToggleStar(entity.Id, ui.starIdList); err != nil {
 		ui.showMessageBox("ToggleStar failed")
 		return
@@ -86,13 +96,12 @@ func (ui *Ui) handleToggleStar() {
 		ui.starIdList[entity.Id] = struct{}{}
 	}
 
-	var text = queueListTextFormat(entity, ui.starIdList)
-	updateQueueListItem(ui.queueList, currentIndex, text)
+	ui.updateQueue()
 
 	// Update the entity list to reflect any changes
 	if ui.currentDirectory != nil {
 		ui.handleEntitySelected(ui.currentDirectory.Id)
-	}*/
+	}
 }
 
 func (ui *Ui) updateQueue() {
@@ -109,17 +118,18 @@ func (q *queueData) GetCell(row, column int) *tview.TableCell {
 
 	switch column {
 	case 0: // star
-		text := ""
+		text := " "
+		color := tcell.ColorDefault
 		if _, starred := (*q.starIdList)[song.Id]; starred {
 			text = starIcon
+			color = tcell.ColorRed
 		}
 		return &tview.TableCell{
-			Text:          text,
-			Color:         tcell.ColorRed,
-			Expansion:     0,
-			MaxWidth:      1,
-			NotSelectable: true,
-			Transparent:   true,
+			Text:        text,
+			Color:       color,
+			Expansion:   0,
+			MaxWidth:    1,
+			Transparent: true,
 		}
 	case 1: // title
 		return &tview.TableCell{

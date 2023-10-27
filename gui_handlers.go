@@ -112,43 +112,6 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	return event
 }
 
-func (ui *Ui) handleEntitySelected(directoryId string) {
-	response, err := ui.connection.GetMusicDirectory(directoryId)
-	if err != nil {
-		ui.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %s", directoryId, err.Error())
-	}
-	sort.Sort(response.Directory.Entities)
-
-	ui.currentDirectory = &response.Directory
-	ui.entityList.Clear()
-	if response.Directory.Parent != "" {
-		// has parent entity
-		ui.entityList.Box.SetTitle(" song ")
-		ui.entityList.AddItem(tview.Escape("[..]"), "", 0,
-			ui.makeEntityHandler(response.Directory.Parent))
-	} else {
-		// no parent
-		ui.entityList.Box.SetTitle(" album ")
-	}
-
-	for _, entity := range response.Directory.Entities {
-		var title string
-		var id = entity.Id
-		var handler func()
-		if entity.IsDirectory {
-			title = tview.Escape("[" + entity.Title + "]")
-			handler = ui.makeEntityHandler(entity.Id)
-		} else {
-			title = entityListTextFormat(entity, ui.starIdList)
-			handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity),
-				title, stringOr(entity.Artist, response.Directory.Name),
-				entity.Duration, ui)
-		}
-
-		ui.entityList.AddItem(tview.Escape(title), "", 0, handler)
-	}
-}
-
 func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 	ui.selectedPlaylist.Clear()
 
@@ -209,49 +172,6 @@ func entityListTextFormat(queueItem subsonic.SubsonicEntity, starredItems map[st
 // Just update the text of a specific row
 func updateEntityListItem(entityList *tview.List, id int, text string) {
 	entityList.SetItemText(id, text, "")
-}
-
-func (ui *Ui) handleAddPlaylistSongToQueue() {
-	playlistIndex := ui.playlistList.GetCurrentItem()
-	entityIndex := ui.selectedPlaylist.GetCurrentItem()
-
-	if playlistIndex < 0 || entityIndex < 0 {
-		return
-	}
-
-	if entityIndex+1 < ui.selectedPlaylist.GetItemCount() {
-		ui.selectedPlaylist.SetCurrentItem(entityIndex + 1)
-	}
-
-	// TODO add some bounds checking here
-	if playlistIndex == -1 || entityIndex == -1 {
-		return
-	}
-
-	entity := ui.playlists[playlistIndex].Entries[entityIndex]
-	ui.addSongToQueue(&entity)
-
-	ui.updateQueue()
-}
-
-func (ui *Ui) handleAddPlaylistToQueue() {
-	currentIndex := ui.playlistList.GetCurrentItem()
-	if currentIndex < 0 || currentIndex >= ui.playlistList.GetItemCount() {
-		return
-	}
-
-	// focus next entry
-	if currentIndex+1 < ui.playlistList.GetItemCount() {
-		ui.playlistList.SetCurrentItem(currentIndex + 1)
-	}
-
-	playlist := ui.playlists[currentIndex]
-
-	for _, entity := range playlist.Entries {
-		ui.addSongToQueue(&entity)
-	}
-
-	ui.updateQueue()
 }
 
 func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {

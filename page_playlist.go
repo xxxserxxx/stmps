@@ -108,3 +108,46 @@ func (ui *Ui) createPlaylistPage() (*tview.Flex, tview.Primitive) {
 
 	return playlistFlex, deletePlaylistModal
 }
+
+func (ui *Ui) handleAddPlaylistSongToQueue() {
+	playlistIndex := ui.playlistList.GetCurrentItem()
+	entityIndex := ui.selectedPlaylist.GetCurrentItem()
+
+	if playlistIndex < 0 || entityIndex < 0 {
+		return
+	}
+
+	if entityIndex+1 < ui.selectedPlaylist.GetItemCount() {
+		ui.selectedPlaylist.SetCurrentItem(entityIndex + 1)
+	}
+
+	// TODO add some bounds checking here
+	if playlistIndex == -1 || entityIndex == -1 {
+		return
+	}
+
+	entity := ui.playlists[playlistIndex].Entries[entityIndex]
+	ui.addSongToQueue(&entity)
+
+	ui.updateQueue()
+}
+
+func (ui *Ui) handleAddPlaylistToQueue() {
+	currentIndex := ui.playlistList.GetCurrentItem()
+	if currentIndex < 0 || currentIndex >= ui.playlistList.GetItemCount() {
+		return
+	}
+
+	// focus next entry
+	if currentIndex+1 < ui.playlistList.GetItemCount() {
+		ui.playlistList.SetCurrentItem(currentIndex + 1)
+	}
+
+	playlist := ui.playlists[currentIndex]
+
+	for _, entity := range playlist.Entries {
+		ui.addSongToQueue(&entity)
+	}
+
+	ui.updateQueue()
+}

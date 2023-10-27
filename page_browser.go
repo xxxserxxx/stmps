@@ -4,6 +4,8 @@
 package main
 
 import (
+	"sort"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/wildeyedskies/stmp/subsonic"
@@ -197,4 +199,41 @@ func (ui *Ui) handleAddEntityToQueue() {
 	}
 
 	ui.updateQueue()
+}
+
+func (ui *Ui) handleEntitySelected(directoryId string) {
+	response, err := ui.connection.GetMusicDirectory(directoryId)
+	if err != nil {
+		ui.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %s", directoryId, err.Error())
+	}
+	sort.Sort(response.Directory.Entities)
+
+	ui.currentDirectory = &response.Directory
+	ui.entityList.Clear()
+	if response.Directory.Parent != "" {
+		// has parent entity
+		ui.entityList.Box.SetTitle(" song ")
+		ui.entityList.AddItem(tview.Escape("[..]"), "", 0,
+			ui.makeEntityHandler(response.Directory.Parent))
+	} else {
+		// no parent
+		ui.entityList.Box.SetTitle(" album ")
+	}
+
+	for _, entity := range response.Directory.Entities {
+		var title string
+		var id = entity.Id
+		var handler func()
+		if entity.IsDirectory {
+			title = tview.Escape("[" + entity.Title + "]")
+			handler = ui.makeEntityHandler(entity.Id)
+		} else {
+			title = entityListTextFormat(entity, ui.starIdList)
+			handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity),
+				title, stringOr(entity.Artist, response.Directory.Name),
+				entity.Duration, ui)
+		}
+
+		ui.entityList.AddItem(tview.Escape(title), "", 0, handler)
+	}
 }
