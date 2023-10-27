@@ -13,9 +13,11 @@ import (
 	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
+// columns: star, title, artist, duration
 const queueDataColumns = 4
 const starIcon = "♥"
 
+// data for rendering queue table
 type queueData struct {
 	tview.TableContentReadOnly
 

@@ -237,3 +237,108 @@ func (ui *Ui) handleEntitySelected(directoryId string) {
 		ui.entityList.AddItem(tview.Escape(title), "", 0, handler)
 	}
 }
+
+func (ui *Ui) makeEntityHandler(directoryId string) func() {
+	return func() {
+		ui.handleEntitySelected(directoryId)
+	}
+}
+
+func (ui *Ui) handleToggleEntityStar() {
+	currentIndex := ui.entityList.GetCurrentItem()
+	if currentIndex < 0 {
+		return
+	}
+
+	var entity = ui.currentDirectory.Entities[currentIndex-1]
+
+	// If the song is already in the star list, remove it
+	_, remove := ui.starIdList[entity.Id]
+
+	if _, err := ui.connection.ToggleStar(entity.Id, ui.starIdList); err != nil {
+		ui.logger.PrintError("ToggleStar", err)
+		return
+	}
+
+	if remove {
+		delete(ui.starIdList, entity.Id)
+	} else {
+		ui.starIdList[entity.Id] = struct{}{}
+	}
+
+	var text = entityListTextFormat(entity, ui.starIdList)
+	updateEntityListItem(ui.entityList, currentIndex, text)
+	ui.updateQueue()
+}
+
+func entityListTextFormat(queueItem subsonic.SubsonicEntity, starredItems map[string]struct{}) string {
+	var star = ""
+	_, hasStar := starredItems[queueItem.Id]
+	if hasStar {
+		star = " [red]♥"
+	}
+	return queueItem.Title + star
+}
+
+// Just update the text of a specific row
+func updateEntityListItem(entityList *tview.List, id int, text string) {
+	entityList.SetItemText(id, text, "")
+}
+
+func (ui *Ui) addDirectoryToQueue(entity *subsonic.SubsonicEntity) {
+	response, err := ui.connection.GetMusicDirectory(entity.Id)
+	if err != nil {
+		ui.logger.Printf("addDirectoryToQueue: GetMusicDirectory %s -- %s", entity.Id, err.Error())
+		return
+	}
+
+	sort.Sort(response.Directory.Entities)
+	for _, e := range response.Directory.Entities {
+		if e.IsDirectory {
+			ui.addDirectoryToQueue(&e)
+		} else {
+			ui.addSongToQueue(&e)
+		}
+	}
+}
+
+func (ui *Ui) search() {
+	name, _ := ui.pages.GetFrontPage()
+	if name != "browser" {
+		return
+	}
+	ui.searchField.SetText("")
+	ui.app.SetFocus(ui.searchField)
+}
+
+func (ui *Ui) searchNext() {
+	str := ui.searchField.GetText()
+	idxs := ui.artistList.FindItems(str, "", false, true)
+	if len(idxs) == 0 {
+		return
+	}
+	curIdx := ui.artistList.GetCurrentItem()
+	for _, nidx := range idxs {
+		if nidx > curIdx {
+			ui.artistList.SetCurrentItem(nidx)
+			return
+		}
+	}
+	ui.artistList.SetCurrentItem(idxs[0])
+}
+
+func (ui *Ui) searchPrev() {
+	str := ui.searchField.GetText()
+	idxs := ui.artistList.FindItems(str, "", false, true)
+	if len(idxs) == 0 {
+		return
+	}
+	curIdx := ui.artistList.GetCurrentItem()
+	for nidx := len(idxs) - 1; nidx >= 0; nidx-- {
+		if idxs[nidx] < curIdx {
+			ui.artistList.SetCurrentItem(idxs[nidx])
+			return
+		}
+	}
+	ui.artistList.SetCurrentItem(idxs[len(idxs)-1])
+}

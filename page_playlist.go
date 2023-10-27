@@ -6,6 +6,7 @@ package main
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/wildeyedskies/stmp/subsonic"
 )
 
 func (ui *Ui) createPlaylistPage() (*tview.Flex, tview.Primitive) {
@@ -150,4 +151,95 @@ func (ui *Ui) handleAddPlaylistToQueue() {
 	}
 
 	ui.updateQueue()
+}
+
+func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
+	ui.selectedPlaylist.Clear()
+
+	for _, entity := range playlist.Entries {
+		var title string
+		var handler func()
+
+		var id = entity.Id
+
+		title = entity.GetSongTitle()
+		handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity), title, entity.Artist, entity.Duration, ui)
+
+		ui.selectedPlaylist.AddItem(title, "", 0, handler)
+	}
+}
+
+func (ui *Ui) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
+	currentIndex := ui.entityList.GetCurrentItem()
+
+	// if we have a parent directory subtract 1 to account for the [..]
+	// which would be index 0 in that case with index 1 being the first entity
+	if ui.currentDirectory.Parent != "" {
+		currentIndex--
+	}
+
+	if currentIndex < 0 || len(ui.currentDirectory.Entities) < currentIndex {
+		return
+	}
+
+	entity := ui.currentDirectory.Entities[currentIndex]
+
+	if !entity.IsDirectory {
+		if err := ui.connection.AddSongToPlaylist(string(playlist.Id), entity.Id); err != nil {
+			ui.logger.PrintError("AddSongToPlaylist", err)
+			return
+		}
+	}
+	// update the playlists
+	response, err := ui.connection.GetPlaylists()
+	if err != nil {
+		ui.logger.PrintError("GetPlaylists", err)
+	}
+	ui.playlists = response.Playlists.Playlists
+
+	ui.playlistList.Clear()
+	ui.addToPlaylistList.Clear()
+
+	for _, playlist := range ui.playlists {
+		ui.playlistList.AddItem(playlist.Name, "", 0, nil)
+		ui.addToPlaylistList.AddItem(playlist.Name, "", 0, nil)
+	}
+
+	if currentIndex+1 < ui.entityList.GetItemCount() {
+		ui.entityList.SetCurrentItem(currentIndex + 1)
+	}
+}
+
+func (ui *Ui) newPlaylist(name string) {
+	response, err := ui.connection.CreatePlaylist(name)
+	if err != nil {
+		ui.logger.Printf("newPlaylist: CreatePlaylist %s -- %s", name, err.Error())
+		return
+	}
+
+	ui.playlists = append(ui.playlists, response.Playlist)
+
+	ui.playlistList.AddItem(response.Playlist.Name, "", 0, nil)
+	ui.addToPlaylistList.AddItem(response.Playlist.Name, "", 0, nil)
+}
+
+func (ui *Ui) deletePlaylist(index int) {
+	if index == -1 || len(ui.playlists) <= index {
+		return
+	}
+
+	playlist := ui.playlists[index]
+
+	if index == 0 {
+		ui.playlistList.SetCurrentItem(1)
+	}
+
+	// Removes item with specified index
+	ui.playlists = append(ui.playlists[:index], ui.playlists[index+1:]...)
+
+	ui.playlistList.RemoveItem(index)
+	ui.addToPlaylistList.RemoveItem(index)
+	if err := ui.connection.DeletePlaylist(string(playlist.Id)); err != nil {
+		ui.logger.PrintError("deletePlaylist", err)
+	}
 }
