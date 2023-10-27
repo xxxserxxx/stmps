@@ -157,15 +157,9 @@ func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 	ui.selectedPlaylist.Clear()
 
 	for _, entity := range playlist.Entries {
-		var title string
-		var handler func()
-
-		var id = entity.Id
-
-		title = entity.GetSongTitle()
-		handler = makeSongHandler(id, ui.connection.GetPlayUrl(&entity), title, entity.Artist, entity.Duration, ui)
-
-		ui.selectedPlaylist.AddItem(title, "", 0, handler)
+		handler := makeSongHandler(&entity, ui, entity.Artist)
+		title := entity.GetSongTitle()
+		ui.selectedPlaylist.AddItem(tview.Escape(title), "", 0, handler)
 	}
 }
 

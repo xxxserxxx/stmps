@@ -81,7 +81,9 @@ type SubsonicSongs struct {
 }
 
 type SubsonicStarred struct {
-	Starred SubsonicEntities `json:"starred"`
+	Artist SubsonicEntities `json:"artist"`
+	Album  SubsonicEntities `json:"album"`
+	Song   SubsonicEntities `json:"song"`
 }
 
 type SubsonicEntity struct {
@@ -167,7 +169,7 @@ type SubsonicResponse struct {
 	Indexes     SubsonicIndexes   `json:"indexes"`
 	Directory   SubsonicDirectory `json:"directory"`
 	RandomSongs SubsonicSongs     `json:"randomSongs"`
-	Starred     SubsonicSongs     `json:"starred"`
+	Starred     SubsonicStarred   `json:"starred"`
 	Playlists   SubsonicPlaylists `json:"playlists"`
 	Playlist    SubsonicPlaylist  `json:"playlist"`
 	Error       SubsonicError     `json:"error"`

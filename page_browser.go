@@ -258,20 +258,15 @@ func (b *BrowserPage) handleEntitySelected(directoryId string) {
 	}
 
 	for _, entity := range b.currentDirectory.Entities {
-		var title string
-		var id = entity.Id
 		var handler func()
+		title := entityListTextFormat(entity, b.ui.starIdList) // handles escaping
 
 		if entity.IsDirectory {
 			// it's an album/directory
-			title = tview.Escape("[" + entity.Title + "]")
 			handler = b.makeEntityHandler(entity.Id)
 		} else {
 			// it's a song
-			title = entityListTextFormat(entity, b.ui.starIdList)
-			handler = makeSongHandler(id, b.ui.connection.GetPlayUrl(&entity),
-				title, stringOr(entity.Artist, b.currentDirectory.Name),
-				entity.Duration, b.ui)
+			handler = makeSongHandler(&entity, b.ui, b.currentDirectory.Name)
 		}
 
 		b.entityList.AddItem(title, "", 0, handler)
@@ -318,13 +313,18 @@ func (b *BrowserPage) handleToggleEntityStar() {
 	b.ui.queuePage.UpdateQueue()
 }
 
-func entityListTextFormat(queueItem subsonic.SubsonicEntity, starredItems map[string]struct{}) string {
-	var star = ""
-	_, hasStar := starredItems[queueItem.Id]
+func entityListTextFormat(entity subsonic.SubsonicEntity, starredItems map[string]struct{}) string {
+	title := entity.Title
+	if entity.IsDirectory {
+		title = "[" + title + "]"
+	}
+
+	star := ""
+	_, hasStar := starredItems[entity.Id]
 	if hasStar {
 		star = " [red]♥"
 	}
-	return tview.Escape(queueItem.Title) + star
+	return tview.Escape(title) + star
 }
 
 func (b *BrowserPage) addDirectoryToQueue(entity *subsonic.SubsonicEntity) {

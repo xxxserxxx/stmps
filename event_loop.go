@@ -173,11 +173,18 @@ func (ui *Ui) backgroundEventLoop() {
 func (ui *Ui) addStarredToList() {
 	response, err := ui.connection.GetStarred()
 	if err != nil {
-		ui.logger.Printf("addStarredToList %s", err.Error())
+		ui.logger.PrintError("addStarredToList", err)
 	}
+
 	for _, e := range response.Starred.Song {
 		// We're storing empty struct as values as we only want the indexes
 		// It's faster having direct index access instead of looping through array values
+		ui.starIdList[e.Id] = struct{}{}
+	}
+	for _, e := range response.Starred.Album {
+		ui.starIdList[e.Id] = struct{}{}
+	}
+	for _, e := range response.Starred.Artist {
 		ui.starIdList[e.Id] = struct{}{}
 	}
 }

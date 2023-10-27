@@ -138,8 +138,14 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 	ui.player.AddToQueue(queueItem)
 }
 
-func makeSongHandler(id string, uri string, title string, artist string, duration int,
-	ui *Ui) func() {
+func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist string) func() {
+	// make copy of values so this function can be used inside a loop iterating over entities
+	id := entity.Id
+	uri := ui.connection.GetPlayUrl(entity)
+	title := entity.Title
+	artist := stringOr(entity.Artist, fallbackArtist)
+	duration := entity.Duration
+
 	return func() {
 		if err := ui.player.Play(id, uri, title, artist, duration); err != nil {
 			ui.logger.PrintError("SongHandler Play", err)
