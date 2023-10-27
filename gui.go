@@ -28,7 +28,7 @@ type Ui struct {
 	queuePage *QueuePage
 
 	// playlist page
-	playlistList *tview.List
+	playlistPage *PlaylistPage
 
 	// log page
 	logPage *LogPage
@@ -119,16 +119,16 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.queuePage = ui.createQueuePage()
 
 	// playlist page
-	playlistFlex, deletePlaylistModal := ui.createPlaylistPage()
+	ui.playlistPage = ui.createPlaylistPage()
 
 	// log page
 	ui.logPage = ui.createLogPage()
 
 	ui.pages.AddPage("browser", ui.browserPage.Root, true, true).
 		AddPage("queue", ui.queuePage.Root, true, false).
-		AddPage("playlists", playlistFlex, true, false).
+		AddPage("playlists", ui.playlistPage.Root, true, false).
 		AddPage("addToPlaylist", ui.browserPage.AddToPlaylistModal, true, false).
-		AddPage("deletePlaylist", deletePlaylistModal, true, false).
+		AddPage("deletePlaylist", ui.playlistPage.DeletePlaylistModal, true, false).
 		AddPage("messageBox", ui.messageBox, true, false).
 		AddPage("log", ui.logPage.Root, true, false)
 

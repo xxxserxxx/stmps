@@ -6,58 +6,75 @@ package main
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/wildeyedskies/stmp/logger"
 	"github.com/wildeyedskies/stmp/subsonic"
 )
 
-func (ui *Ui) createPlaylistPage() (*tview.Flex, tview.Primitive) {
-	ui.playlistList = tview.NewList().
+type PlaylistPage struct {
+	Root                *tview.Flex
+	DeletePlaylistModal tview.Primitive
+
+	playlistList *tview.List
+
+	// external refs
+	ui     *Ui
+	logger logger.LoggerInterface
+}
+
+func (ui *Ui) createPlaylistPage() *PlaylistPage {
+	playlistPage := PlaylistPage{
+		ui:     ui,
+		logger: ui.logger,
+	}
+
+	playlistPage.playlistList = tview.NewList().
 		ShowSecondaryText(false).
 		SetSelectedFocusOnly(true)
 
 	//add the playlists
 	for _, playlist := range ui.playlists {
-		ui.playlistList.AddItem(playlist.Name, "", 0, nil)
+		playlistPage.playlistList.AddItem(playlist.Name, "", 0, nil)
 	}
 
-	ui.playlistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
-		ui.handlePlaylistSelected(ui.playlists[index])
+	playlistPage.playlistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
+		playlistPage.handlePlaylistSelected(ui.playlists[index])
 	})
 
 	playlistColFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(ui.playlistList, 0, 1, true).
+		AddItem(playlistPage.playlistList, 0, 1, true).
 		AddItem(ui.selectedPlaylist, 0, 1, false)
 
-	playlistFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+	playlistPage.Root = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(playlistColFlex, 0, 1, true)
 
 	ui.newPlaylistInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
-			ui.newPlaylist(ui.newPlaylistInput.GetText())
-			playlistFlex.Clear()
-			playlistFlex.AddItem(playlistColFlex, 0, 1, true)
-			ui.app.SetFocus(ui.playlistList)
+			playlistPage.newPlaylist(ui.newPlaylistInput.GetText())
+			playlistPage.Root.Clear()
+			playlistPage.Root.AddItem(playlistColFlex, 0, 1, true)
+			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
 		}
 		if event.Key() == tcell.KeyEscape {
-			playlistFlex.Clear()
-			playlistFlex.AddItem(playlistColFlex, 0, 1, true)
-			ui.app.SetFocus(ui.playlistList)
+			playlistPage.Root.Clear()
+			playlistPage.Root.AddItem(playlistColFlex, 0, 1, true)
+			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
 		}
 		return event
 	})
 
-	ui.playlistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	playlistPage.playlistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRight {
 			ui.app.SetFocus(ui.selectedPlaylist)
 			return nil
 		}
 		if event.Rune() == 'a' {
-			ui.handleAddPlaylistToQueue()
+			playlistPage.handleAddPlaylistToQueue()
 			return nil
 		}
 		if event.Rune() == 'n' {
-			playlistFlex.AddItem(ui.newPlaylistInput, 0, 1, true)
+			playlistPage.Root.AddItem(ui.newPlaylistInput, 0, 1, true)
 			ui.app.SetFocus(ui.newPlaylistInput)
 		}
 		if event.Rune() == 'd' {
@@ -68,11 +85,11 @@ func (ui *Ui) createPlaylistPage() (*tview.Flex, tview.Primitive) {
 
 	ui.selectedPlaylist.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyLeft {
-			ui.app.SetFocus(ui.playlistList)
+			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
 		}
 		if event.Rune() == 'a' {
-			ui.handleAddPlaylistSongToQueue()
+			playlistPage.handleAddPlaylistSongToQueue()
 			return nil
 		}
 		return event
@@ -92,34 +109,54 @@ func (ui *Ui) createPlaylistPage() (*tview.Flex, tview.Primitive) {
 
 	deletePlaylistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
-			ui.deletePlaylist(ui.playlistList.GetCurrentItem())
-			ui.app.SetFocus(ui.playlistList)
+			playlistPage.deletePlaylist(playlistPage.playlistList.GetCurrentItem())
+			ui.app.SetFocus(playlistPage.playlistList)
 			ui.pages.HidePage("deletePlaylist")
 			return nil
 		}
 		if event.Key() == tcell.KeyEscape {
-			ui.app.SetFocus(ui.playlistList)
+			ui.app.SetFocus(playlistPage.playlistList)
 			ui.pages.HidePage("deletePlaylist")
 			return nil
 		}
 		return event
 	})
 
-	deletePlaylistModal := makeModal(deletePlaylistFlex, 20, 3)
+	playlistPage.DeletePlaylistModal = makeModal(deletePlaylistFlex, 20, 3)
 
-	return playlistFlex, deletePlaylistModal
+	return &playlistPage
 }
 
-func (ui *Ui) handleAddPlaylistSongToQueue() {
-	playlistIndex := ui.playlistList.GetCurrentItem()
-	entityIndex := ui.selectedPlaylist.GetCurrentItem()
+func (p *PlaylistPage) GetCount() int {
+	return p.playlistList.GetItemCount()
+}
+
+func (p *PlaylistPage) UpdatePlaylists() {
+	response, err := p.ui.connection.GetPlaylists()
+	if err != nil {
+		p.logger.PrintError("GetPlaylists", err)
+	}
+	p.ui.playlists = response.Playlists.Playlists
+
+	p.playlistList.Clear()
+	p.ui.addToPlaylistList.Clear()
+
+	for _, playlist := range p.ui.playlists {
+		p.playlistList.AddItem(playlist.Name, "", 0, nil)
+		p.ui.addToPlaylistList.AddItem(playlist.Name, "", 0, nil)
+	}
+}
+
+func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
+	playlistIndex := p.playlistList.GetCurrentItem()
+	entityIndex := p.ui.selectedPlaylist.GetCurrentItem()
 
 	if playlistIndex < 0 || entityIndex < 0 {
 		return
 	}
 
-	if entityIndex+1 < ui.selectedPlaylist.GetItemCount() {
-		ui.selectedPlaylist.SetCurrentItem(entityIndex + 1)
+	if entityIndex+1 < p.ui.selectedPlaylist.GetItemCount() {
+		p.ui.selectedPlaylist.SetCurrentItem(entityIndex + 1)
 	}
 
 	// TODO add some bounds checking here
@@ -127,72 +164,72 @@ func (ui *Ui) handleAddPlaylistSongToQueue() {
 		return
 	}
 
-	entity := ui.playlists[playlistIndex].Entries[entityIndex]
-	ui.addSongToQueue(&entity)
+	entity := p.ui.playlists[playlistIndex].Entries[entityIndex]
+	p.ui.addSongToQueue(&entity)
 
-	ui.queuePage.UpdateQueue()
+	p.ui.queuePage.UpdateQueue()
 }
 
-func (ui *Ui) handleAddPlaylistToQueue() {
-	currentIndex := ui.playlistList.GetCurrentItem()
-	if currentIndex < 0 || currentIndex >= ui.playlistList.GetItemCount() {
+func (p *PlaylistPage) handleAddPlaylistToQueue() {
+	currentIndex := p.playlistList.GetCurrentItem()
+	if currentIndex < 0 || currentIndex >= p.playlistList.GetItemCount() {
 		return
 	}
 
 	// focus next entry
-	if currentIndex+1 < ui.playlistList.GetItemCount() {
-		ui.playlistList.SetCurrentItem(currentIndex + 1)
+	if currentIndex+1 < p.playlistList.GetItemCount() {
+		p.playlistList.SetCurrentItem(currentIndex + 1)
 	}
 
-	playlist := ui.playlists[currentIndex]
+	playlist := p.ui.playlists[currentIndex]
 
 	for _, entity := range playlist.Entries {
-		ui.addSongToQueue(&entity)
+		p.ui.addSongToQueue(&entity)
 	}
 
-	ui.queuePage.UpdateQueue()
+	p.ui.queuePage.UpdateQueue()
 }
 
-func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
-	ui.selectedPlaylist.Clear()
+func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
+	p.ui.selectedPlaylist.Clear()
 
 	for _, entity := range playlist.Entries {
-		handler := makeSongHandler(&entity, ui, entity.Artist)
+		handler := makeSongHandler(&entity, p.ui, entity.Artist)
 		title := entity.GetSongTitle()
-		ui.selectedPlaylist.AddItem(tview.Escape(title), "", 0, handler)
+		p.ui.selectedPlaylist.AddItem(tview.Escape(title), "", 0, handler)
 	}
 }
 
-func (ui *Ui) newPlaylist(name string) {
-	response, err := ui.connection.CreatePlaylist(name)
+func (p *PlaylistPage) newPlaylist(name string) {
+	response, err := p.ui.connection.CreatePlaylist(name)
 	if err != nil {
-		ui.logger.Printf("newPlaylist: CreatePlaylist %s -- %s", name, err.Error())
+		p.logger.Printf("newPlaylist: CreatePlaylist %s -- %s", name, err.Error())
 		return
 	}
 
-	ui.playlists = append(ui.playlists, response.Playlist)
+	p.ui.playlists = append(p.ui.playlists, response.Playlist)
 
-	ui.playlistList.AddItem(response.Playlist.Name, "", 0, nil)
-	ui.addToPlaylistList.AddItem(response.Playlist.Name, "", 0, nil)
+	p.playlistList.AddItem(response.Playlist.Name, "", 0, nil)
+	p.ui.addToPlaylistList.AddItem(response.Playlist.Name, "", 0, nil)
 }
 
-func (ui *Ui) deletePlaylist(index int) {
-	if index == -1 || len(ui.playlists) <= index {
+func (p *PlaylistPage) deletePlaylist(index int) {
+	if index == -1 || len(p.ui.playlists) <= index {
 		return
 	}
 
-	playlist := ui.playlists[index]
+	playlist := p.ui.playlists[index]
 
 	if index == 0 {
-		ui.playlistList.SetCurrentItem(1)
+		p.playlistList.SetCurrentItem(1)
 	}
 
 	// Removes item with specified index
-	ui.playlists = append(ui.playlists[:index], ui.playlists[index+1:]...)
+	p.ui.playlists = append(p.ui.playlists[:index], p.ui.playlists[index+1:]...)
 
-	ui.playlistList.RemoveItem(index)
-	ui.addToPlaylistList.RemoveItem(index)
-	if err := ui.connection.DeletePlaylist(string(playlist.Id)); err != nil {
-		ui.logger.PrintError("deletePlaylist", err)
+	p.playlistList.RemoveItem(index)
+	p.ui.addToPlaylistList.RemoveItem(index)
+	if err := p.ui.connection.DeletePlaylist(string(playlist.Id)); err != nil {
+		p.logger.PrintError("deletePlaylist", err)
 	}
 }

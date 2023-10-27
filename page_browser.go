@@ -172,7 +172,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 		}
 		// only makes sense to add to a playlist if there are playlists
 		if event.Rune() == 'A' {
-			if ui.playlistList.GetItemCount() > 0 {
+			if ui.playlistPage.GetCount() > 0 {
 				ui.pages.ShowPage("addToPlaylist")
 				ui.app.SetFocus(ui.addToPlaylistList)
 			} else {
@@ -415,20 +415,7 @@ func (b *BrowserPage) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylis
 		}
 	}
 
-	// update the playlists
-	response, err := b.ui.connection.GetPlaylists()
-	if err != nil {
-		b.logger.PrintError("GetPlaylists", err)
-	}
-	b.ui.playlists = response.Playlists.Playlists
-
-	b.ui.playlistList.Clear()
-	b.ui.addToPlaylistList.Clear()
-
-	for _, playlist := range b.ui.playlists {
-		b.ui.playlistList.AddItem(playlist.Name, "", 0, nil)
-		b.ui.addToPlaylistList.AddItem(playlist.Name, "", 0, nil)
-	}
+	b.ui.playlistPage.UpdatePlaylists()
 
 	if currentIndex+1 < b.entityList.GetItemCount() {
 		b.entityList.SetCurrentItem(currentIndex + 1)
