@@ -13,7 +13,8 @@ import (
 )
 
 type BrowserPage struct {
-	Root *tview.Flex
+	Root               *tview.Flex
+	AddToPlaylistModal tview.Primitive
 
 	artistList  *tview.List
 	entityList  *tview.List
@@ -27,12 +28,12 @@ type BrowserPage struct {
 	logger logger.LoggerInterface
 }
 
-func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex, tview.Primitive) {
+func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage {
 	browserPage := BrowserPage{
 		ui:     ui,
 		logger: ui.logger,
 
-		currentDirectory: &subsonic.SubsonicDirectory{},
+		currentDirectory: nil,
 		artistIdList:     []string{},
 	}
 
@@ -79,7 +80,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 		AddItem(browserPage.artistList, 0, 1, true).
 		AddItem(browserPage.entityList, 0, 1, false)
 
-	browserFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+	browserPage.Root = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(artistFlex, 0, 1, true).
 		AddItem(browserPage.searchField, 1, 0, false)
 
@@ -138,7 +139,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 		SetDirection(tview.FlexRow).
 		AddItem(ui.addToPlaylistList, 0, 1, true)
 
-	addToPlaylistModal := makeModal(addToPlaylistFlex, 60, 20)
+	browserPage.AddToPlaylistModal = makeModal(addToPlaylistFlex, 60, 20)
 
 	ui.addToPlaylistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
@@ -191,7 +192,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) (*tview.Flex,
 		return event
 	})
 
-	return browserFlex, addToPlaylistModal
+	return &browserPage
 }
 
 func (b *BrowserPage) IsSearchFocused(focused tview.Primitive) bool {
@@ -237,12 +238,16 @@ func (b *BrowserPage) handleAddEntityToQueue() {
 }
 
 func (b *BrowserPage) handleEntitySelected(directoryId string) {
-	if response, err := b.ui.connection.GetMusicDirectory(directoryId); err != nil {
+	if directoryId == "" {
+		return
+	}
+
+	if response, err := b.ui.connection.GetMusicDirectory(directoryId); err != nil || response == nil {
 		b.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %v", directoryId, err)
 		return
 	} else {
-		sort.Sort(response.Directory.Entities)
 		b.currentDirectory = &response.Directory
+		sort.Sort(response.Directory.Entities)
 	}
 
 	b.entityList.Clear()

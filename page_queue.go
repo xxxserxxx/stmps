@@ -74,10 +74,6 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	return &queuePage
 }
 
-// HACK legacy
-func (ui *Ui) updateQueue() {
-	ui.queuePage.UpdateQueue()
-}
 func (q *QueuePage) UpdateQueue() {
 	q.updateQueue()
 }

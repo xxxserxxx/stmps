@@ -130,7 +130,7 @@ func (ui *Ui) handleAddPlaylistSongToQueue() {
 	entity := ui.playlists[playlistIndex].Entries[entityIndex]
 	ui.addSongToQueue(&entity)
 
-	ui.updateQueue()
+	ui.queuePage.UpdateQueue()
 }
 
 func (ui *Ui) handleAddPlaylistToQueue() {
@@ -150,7 +150,7 @@ func (ui *Ui) handleAddPlaylistToQueue() {
 		ui.addSongToQueue(&entity)
 	}
 
-	ui.updateQueue()
+	ui.queuePage.UpdateQueue()
 }
 
 func (ui *Ui) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {

@@ -44,7 +44,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	case 'D':
 		// clear queue and stop playing
 		ui.player.ClearQueue()
-		ui.updateQueue()
+		ui.queuePage.UpdateQueue()
 
 	case 'p':
 		// toggle playing/pause
@@ -103,7 +103,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		if err := ui.player.PlayNextTrack(); err != nil {
 			ui.logger.PrintError("handlePageInput: Next", err)
 		}
-		ui.updateQueue()
+		ui.queuePage.UpdateQueue()
 	}
 
 	return event
@@ -111,7 +111,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 
 func (ui *Ui) handleAddRandomSongs() {
 	ui.addRandomSongsToQueue()
-	ui.updateQueue()
+	ui.queuePage.UpdateQueue()
 }
 
 func (ui *Ui) addRandomSongsToQueue() {
@@ -151,6 +151,6 @@ func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist str
 			ui.logger.PrintError("SongHandler Play", err)
 			return
 		}
-		ui.updateQueue()
+		ui.queuePage.UpdateQueue()
 	}
 }

@@ -22,7 +22,7 @@ type Ui struct {
 	playerStatus    *tview.TextView
 
 	// browser page
-	browserPage BrowserPage
+	browserPage *BrowserPage
 
 	// queue page
 	queuePage *QueuePage
@@ -113,7 +113,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		AddItem(ui.currentPage, 0, 1, false)
 
 	// browser page
-	browserFlex, addToPlaylistModal := ui.createBrowserPage(indexes)
+	ui.browserPage = ui.createBrowserPage(indexes)
 
 	// queue page
 	ui.queuePage = ui.createQueuePage()
@@ -124,10 +124,10 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	// log page
 	logListFlex := ui.createLogPage()
 
-	ui.pages.AddPage("browser", browserFlex, true, true).
+	ui.pages.AddPage("browser", ui.browserPage.Root, true, true).
 		AddPage("queue", ui.queuePage.Root, true, false).
 		AddPage("playlists", playlistFlex, true, false).
-		AddPage("addToPlaylist", addToPlaylistModal, true, false).
+		AddPage("addToPlaylist", ui.browserPage.AddToPlaylistModal, true, false).
 		AddPage("deletePlaylist", deletePlaylistModal, true, false).
 		AddPage("messageBox", ui.messageBox, true, false).
 		AddPage("log", logListFlex, true, false)
