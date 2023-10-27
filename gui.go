@@ -31,7 +31,7 @@ type Ui struct {
 	playlistList *tview.List
 
 	// log page
-	logList *tview.List
+	logPage *LogPage
 
 	// modals
 	addToPlaylistList *tview.List
@@ -122,7 +122,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	playlistFlex, deletePlaylistModal := ui.createPlaylistPage()
 
 	// log page
-	logListFlex := ui.createLogPage()
+	ui.logPage = ui.createLogPage()
 
 	ui.pages.AddPage("browser", ui.browserPage.Root, true, true).
 		AddPage("queue", ui.queuePage.Root, true, false).
@@ -130,7 +130,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		AddPage("addToPlaylist", ui.browserPage.AddToPlaylistModal, true, false).
 		AddPage("deletePlaylist", deletePlaylistModal, true, false).
 		AddPage("messageBox", ui.messageBox, true, false).
-		AddPage("log", logListFlex, true, false)
+		AddPage("log", ui.logPage.Root, true, false)
 
 	rootFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
