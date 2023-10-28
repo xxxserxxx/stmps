@@ -18,19 +18,19 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 
 	switch event.Rune() {
 	case '1':
-		ui.pages.SwitchToPage("browser")
+		ui.pages.SwitchToPage(PageBrowser)
 		ui.currentPage.SetText("Browser")
 
 	case '2':
-		ui.pages.SwitchToPage("queue")
+		ui.pages.SwitchToPage(PageQueue)
 		ui.currentPage.SetText("Queue")
 
 	case '3':
-		ui.pages.SwitchToPage("playlists")
+		ui.pages.SwitchToPage(PagePlaylists)
 		ui.currentPage.SetText("Playlists")
 
 	case '4':
-		ui.pages.SwitchToPage("log")
+		ui.pages.SwitchToPage(PageLog)
 		ui.currentPage.SetText("Log")
 
 	case 'Q':

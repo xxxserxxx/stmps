@@ -143,15 +143,15 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 
 	ui.addToPlaylistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
-			ui.pages.HidePage("addToPlaylist")
-			ui.pages.SwitchToPage("browser")
+			ui.pages.HidePage(PageAddToPlaylist)
+			ui.pages.SwitchToPage(PageBrowser)
 			ui.app.SetFocus(browserPage.entityList)
 		} else if event.Key() == tcell.KeyEnter {
 			playlist := ui.playlists[ui.addToPlaylistList.GetCurrentItem()]
 			browserPage.handleAddSongToPlaylist(&playlist)
 
-			ui.pages.HidePage("addToPlaylist")
-			ui.pages.SwitchToPage("browser")
+			ui.pages.HidePage(PageAddToPlaylist)
+			ui.pages.SwitchToPage(PageBrowser)
 			ui.app.SetFocus(browserPage.entityList)
 		}
 		return event
@@ -172,8 +172,9 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 		}
 		// only makes sense to add to a playlist if there are playlists
 		if event.Rune() == 'A' {
+			//////////////////////////////////////
 			if ui.playlistPage.GetCount() > 0 {
-				ui.pages.ShowPage("addToPlaylist")
+				ui.pages.ShowPage(PageAddToPlaylist)
 				ui.app.SetFocus(ui.addToPlaylistList)
 			} else {
 				ui.showMessageBox("No playlists available. Create one first.")
