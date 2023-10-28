@@ -12,6 +12,7 @@ import (
 
 type PlaylistPage struct {
 	Root                *tview.Flex
+	NewPlaylistModal    tview.Primitive
 	DeletePlaylistModal tview.Primitive
 
 	playlistList     *tview.List
@@ -60,27 +61,37 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 	playlistPage.Root = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(playlistColFlex, 0, 1, true)
 
-	// input handlers
+	// "new playlist" modal
 	playlistPage.newPlaylistInput = tview.NewInputField().
-		SetLabel("Playlist name:").
+		SetLabel("Name: ").
 		SetFieldWidth(50)
 	playlistPage.newPlaylistInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
 			playlistPage.newPlaylist(playlistPage.newPlaylistInput.GetText())
-			playlistPage.Root.Clear()
-			playlistPage.Root.AddItem(playlistColFlex, 0, 1, true)
+			ui.pages.HidePage(PageNewPlaylist)
+			ui.pages.SwitchToPage(PagePlaylists)
 			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
 		}
 		if event.Key() == tcell.KeyEscape {
-			playlistPage.Root.Clear()
-			playlistPage.Root.AddItem(playlistColFlex, 0, 1, true)
+			ui.pages.HidePage(PageNewPlaylist)
+			ui.pages.SwitchToPage(PagePlaylists)
 			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
 		}
 		return event
 	})
 
+	newPlaylistFlex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(playlistPage.newPlaylistInput, 0, 1, true)
+
+	newPlaylistFlex.SetTitle("Create new playlist").
+		SetBorder(true)
+
+	playlistPage.NewPlaylistModal = makeModal(newPlaylistFlex, 58, 3)
+
+	// main list input handler
 	playlistPage.playlistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRight {
 			ui.app.SetFocus(playlistPage.selectedPlaylist)
@@ -91,11 +102,11 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 			return nil
 		}
 		if event.Rune() == 'n' {
-			playlistPage.Root.AddItem(playlistPage.newPlaylistInput, 0, 1, true)
-			ui.app.SetFocus(playlistPage.newPlaylistInput)
+			ui.pages.ShowPage(PageNewPlaylist)
+			ui.app.SetFocus(ui.playlistPage.newPlaylistInput)
 		}
 		if event.Rune() == 'd' {
-			ui.pages.ShowPage("deletePlaylist")
+			ui.pages.ShowPage(PageDeletePlaylist)
 		}
 		return event
 	})
@@ -116,10 +127,10 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 	deletePlaylistList := tview.NewList().
 		ShowSecondaryText(false)
 
-	deletePlaylistList.AddItem("Confirm", "", 0, nil)
-
 	deletePlaylistList.SetBorder(true).
 		SetTitle("Confirm deletion")
+
+	deletePlaylistList.AddItem("Confirm", "", 0, nil)
 
 	deletePlaylistFlex := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
@@ -129,12 +140,12 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 		if event.Key() == tcell.KeyEnter {
 			playlistPage.deletePlaylist(playlistPage.playlistList.GetCurrentItem())
 			ui.app.SetFocus(playlistPage.playlistList)
-			ui.pages.HidePage("deletePlaylist")
+			ui.pages.HidePage(PageDeletePlaylist)
 			return nil
 		}
 		if event.Key() == tcell.KeyEscape {
 			ui.app.SetFocus(playlistPage.playlistList)
-			ui.pages.HidePage("deletePlaylist")
+			ui.pages.HidePage(PageDeletePlaylist)
 			return nil
 		}
 		return event

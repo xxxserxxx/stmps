@@ -48,6 +48,18 @@ type Ui struct {
 	logger     *logger.Logger
 }
 
+const (
+	PageBrowser   = "browser"
+	PageQueue     = "queue"
+	PagePlaylists = "playlists"
+	PageLog       = "log"
+
+	PageDeletePlaylist = "deletePlaylist"
+	PageNewPlaylist    = "newPlaylist"
+	PageAddToPlaylist  = "addToPlaylist"
+	PageMessageBox     = "messageBox"
+)
+
 func InitGui(indexes *[]subsonic.SubsonicIndex,
 	playlists *[]subsonic.SubsonicPlaylist,
 	connection *subsonic.SubsonicConnection,
@@ -91,7 +103,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		SetText("hi there").
 		SetBackgroundColor(tcell.ColorBlack)
 	ui.messageBox.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		ui.pages.HidePage("messageBox")
+		ui.pages.HidePage(PageMessageBox)
 		return event
 	})
 
@@ -116,13 +128,14 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	// log page
 	ui.logPage = ui.createLogPage()
 
-	ui.pages.AddPage("browser", ui.browserPage.Root, true, true).
-		AddPage("queue", ui.queuePage.Root, true, false).
-		AddPage("playlists", ui.playlistPage.Root, true, false).
-		AddPage("addToPlaylist", ui.browserPage.AddToPlaylistModal, true, false).
-		AddPage("deletePlaylist", ui.playlistPage.DeletePlaylistModal, true, false).
-		AddPage("messageBox", ui.messageBox, true, false).
-		AddPage("log", ui.logPage.Root, true, false)
+	ui.pages.AddPage(PageBrowser, ui.browserPage.Root, true, true).
+		AddPage(PageQueue, ui.queuePage.Root, true, false).
+		AddPage(PagePlaylists, ui.playlistPage.Root, true, false).
+		AddPage(PageDeletePlaylist, ui.playlistPage.DeletePlaylistModal, true, false).
+		AddPage(PageNewPlaylist, ui.playlistPage.NewPlaylistModal, true, false).
+		AddPage(PageAddToPlaylist, ui.browserPage.AddToPlaylistModal, true, false).
+		AddPage(PageMessageBox, ui.messageBox, true, false).
+		AddPage(PageLog, ui.logPage.Root, true, false)
 
 	rootFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -155,7 +168,7 @@ func (ui *Ui) Run() error {
 }
 
 func (ui *Ui) showMessageBox(text string) {
-	ui.pages.ShowPage("messageBox")
+	ui.pages.ShowPage(PageMessageBox)
 	ui.messageBox.SetText(text)
 	ui.app.SetFocus(ui.messageBox)
 }

@@ -32,13 +32,12 @@ export LIBRARY_PATH=/opt/homebrew/lib:$LIBRARY_PATH
 
 ## Compiling
 
-stmp should compile normally with `go build`. Cgo is needed for linking the
-libmpv header.
+stmp should compile normally with `go build`. Cgo is needed for linking with libmpv.
 
 ## Configuration
 
 stmp looks for a config file called `stmp.toml` in either `$HOME/.config/stmp`
-or the directory in which the executible is placed.
+or the directory in which the executable is placed.
 
 ### Example configuration
 
