@@ -21,11 +21,9 @@ import (
 
 import (
 	"log"
-	"strings"
 	"unsafe"
 
 	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
 // os_remote_command_callback is called by Objective-C when incoming OS media commands are received.
@@ -54,7 +52,7 @@ func os_remote_command_callback(command C.Command, value C.double) {
 
 // MPMediaHandler is the handler for MacOS media controls and system events.
 type MPMediaHandler struct {
-	player *mpvplayer.Player
+	player ControlledPlayer
 	logger logger.LoggerInterface
 }
 
@@ -64,7 +62,7 @@ var mpMediaEventRecipient *MPMediaHandler
 
 // NewMPMediaHandler creates a new MPMediaHandler instances and sets it as the current recipient
 // for incoming system events.
-func RegisterMPMediaHandler(player *mpvplayer.Player, logger_ logger.LoggerInterface) error {
+func RegisterMPMediaHandler(player ControlledPlayer, logger_ logger.LoggerInterface) error {
 	mp := &MPMediaHandler{
 		player: player,
 		logger: logger_,
@@ -74,7 +72,7 @@ func RegisterMPMediaHandler(player *mpvplayer.Player, logger_ logger.LoggerInter
 	mpMediaEventRecipient = mp
 	C.register_os_remote_commands()
 
-	mp.playbackManager.OnSongChange(func(track, _ *mediaprovider.Track) {
+	mp.player.OnSongChange(func(track TrackInterface) {
 		// Asynchronously because artwork fetching can take time
 		go mp.updateMetadata(track)
 	})
@@ -84,29 +82,29 @@ func RegisterMPMediaHandler(player *mpvplayer.Player, logger_ logger.LoggerInter
 	})
 
 	mp.player.OnSeek(func() {
-		C.update_os_now_playing_info_position(C.double(mp.player.GetStatus().TimePos))
+		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
 
 	mp.player.OnPlaying(func() {
 		C.set_os_playback_state_playing()
-		C.update_os_now_playing_info_position(C.double(mp.player.GetStatus().TimePos))
+		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
 
 	mp.player.OnPaused(func() {
 		C.set_os_playback_state_paused()
-		C.update_os_now_playing_info_position(C.double(mp.player.GetStatus().TimePos))
+		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
 
 	return nil
 }
 
-func (mp *MPMediaHandler) updateMetadata(track *mediaprovider.Track) {
-	var title, artist, artURL string
+func (mp *MPMediaHandler) updateMetadata(track TrackInterface) {
+	var title, artist string
 	var duration int
-	if track != nil && track.ID != "" {
-		title = track.Name
-		artist = strings.Join(track.ArtistNames, ", ")
-		duration = track.Duration
+	if track != nil && track.IsValid() {
+		title = track.GetTitle()
+		artist = track.GetArtist()
+		duration = track.GetDuration()
 	}
 
 	cTitle := C.CString(title)
@@ -114,9 +112,6 @@ func (mp *MPMediaHandler) updateMetadata(track *mediaprovider.Track) {
 
 	cArtist := C.CString(artist)
 	defer C.free(unsafe.Pointer(cArtist))
-
-	cArtURL := C.CString(artURL)
-	defer C.free(unsafe.Pointer(cArtURL))
 
 	cTrackDuration := C.double(duration)
 
