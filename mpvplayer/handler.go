@@ -53,6 +53,7 @@ func (p *Player) EventLoop() {
 				Position: position.(int64),
 				Duration: duration.(int64),
 			}
+			p.remoteState.timePos = float64(statusData.Position)
 			p.sendGuiDataEvent(EventStatus, statusData)
 		} else if evt.Event_Id == mpv.EVENT_END_FILE && !p.replaceInProgress {
 			// we don't want to update anything if we're in the process of replacing the current track
@@ -106,21 +107,62 @@ func (p *Player) EventLoop() {
 }
 
 func (p *Player) sendGuiEvent(typ UiEventType) {
-	if p.eventConsumer == nil {
-		return
+	if p.eventConsumer != nil {
+		p.eventConsumer.SendEvent(UiEvent{
+			Type: typ,
+			Data: nil,
+		})
 	}
-	p.eventConsumer.SendEvent(UiEvent{
-		Type: typ,
-		Data: nil,
-	})
+
+	p.sendRemoteEvent(typ, nil)
 }
 
 func (p *Player) sendGuiDataEvent(typ UiEventType, data interface{}) {
-	if p.eventConsumer == nil {
-		return
+	if p.eventConsumer != nil {
+		p.eventConsumer.SendEvent(UiEvent{
+			Type: typ,
+			Data: data,
+		})
 	}
-	p.eventConsumer.SendEvent(UiEvent{
-		Type: typ,
-		Data: data,
-	})
+
+	p.sendRemoteEvent(typ, data)
+}
+
+func (p *Player) sendRemoteEvent(typ UiEventType, data interface{}) {
+	switch typ {
+	case EventStopped:
+		defer func() {
+			for _, cb := range p.cbOnStopped {
+				cb()
+			}
+		}()
+
+	case EventUnpaused:
+		fallthrough
+	case EventPlaying:
+		defer func() {
+			if data != nil {
+				p.sendSongChange(data.(QueueItem))
+			}
+			for _, cb := range p.cbOnPlaying {
+				cb()
+			}
+		}()
+
+	case EventPaused:
+		defer func() {
+			if data != nil {
+				p.sendSongChange(data.(QueueItem))
+			}
+			for _, cb := range p.cbOnPaused {
+				cb()
+			}
+		}()
+	}
+}
+
+func (p *Player) sendSongChange(track QueueItem) {
+	for _, cb := range p.cbOnSongChange {
+		cb(&track)
+	}
 }

@@ -23,6 +23,18 @@ type Player struct {
 
 	replaceInProgress bool
 	stopped           bool
+
+	// player state
+	remoteState struct {
+		timePos float64
+	}
+
+	// callbacks
+	cbOnPaused     []func()
+	cbOnStopped    []func()
+	cbOnPlaying    []func()
+	cbOnSeek       []func()
+	cbOnSongChange []func(remote.TrackInterface)
 }
 
 var _ remote.ControlledPlayer = (*Player)(nil)
@@ -312,26 +324,33 @@ func (p *Player) GetPlayingTrack() (QueueItem, error) {
 	return currentSong, nil
 }
 
-func (p *Player) IsSeeking() (bool, error) {
-	return false, nil
+// remote.ControlledPlayer callbacks
+func (p *Player) OnPaused(cb func()) {
+	p.cbOnPaused = append(p.cbOnPaused, cb)
 }
 
-// Registers a callback which is invoked when the player transitions to the Paused state.
-func (p *Player) OnPaused(cb func()) {}
+func (p *Player) OnStopped(cb func()) {
+	p.cbOnStopped = append(p.cbOnStopped, cb)
+}
 
-// Registers a callback which is invoked when the player transitions to the Stopped state.
-func (p *Player) OnStopped(cb func()) {}
+func (p *Player) OnPlaying(cb func()) {
+	p.cbOnPlaying = append(p.cbOnPlaying, cb)
+}
 
-// Registers a callback which is invoked when the player transitions to the Playing state.
-func (p *Player) OnPlaying(cb func()) {}
+func (p *Player) OnSeek(cb func()) {
+	p.cbOnSeek = append(p.cbOnSeek, cb)
+}
 
-// Registers a callback which is invoked whenever a seek event occurs.
-func (p *Player) OnSeek(cb func()) {}
-
-func (p *Player) OnSongChange(func(track remote.TrackInterface)) {}
+func (p *Player) OnSongChange(cb func(track remote.TrackInterface)) {
+	p.cbOnSongChange = append(p.cbOnSongChange, cb)
+}
 
 func (p *Player) GetTimePos() float64 {
-	return 0
+	return p.remoteState.timePos
+}
+
+func (p *Player) IsSeeking() (bool, error) {
+	return false, nil
 }
 
 func (p *Player) SeekAbsolute(float64) error {

@@ -21,7 +21,7 @@ type ControlledPlayer interface {
 	// Registers a callback which is invoked whenever a seek event occurs.
 	OnSeek(cb func())
 
-	OnSongChange(func(track TrackInterface))
+	OnSongChange(cb func(track TrackInterface))
 
 	GetTimePos() float64
 

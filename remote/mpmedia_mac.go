@@ -73,24 +73,28 @@ func RegisterMPMediaHandler(player ControlledPlayer, logger_ logger.LoggerInterf
 	C.register_os_remote_commands()
 
 	mp.player.OnSongChange(func(track TrackInterface) {
-		// Asynchronously because artwork fetching can take time
-		go mp.updateMetadata(track)
+		mp.logger.Print("OnSongChange")
+		mp.updateMetadata(track)
 	})
 
 	mp.player.OnStopped(func() {
+		mp.logger.Print("OnStopped")
 		C.set_os_playback_state_stopped()
 	})
 
 	mp.player.OnSeek(func() {
+		mp.logger.Print("OnSeek")
 		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
 
 	mp.player.OnPlaying(func() {
+		mp.logger.Print("OnPlaying")
 		C.set_os_playback_state_playing()
 		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
 
 	mp.player.OnPaused(func() {
+		mp.logger.Print("OnPaused")
 		C.set_os_playback_state_paused()
 		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
