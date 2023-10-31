@@ -1,3 +1,6 @@
+// Copyright 2023 The STMP Authors
+// SPDX-License-Identifier: GPL-3.0-only
+
 package remote
 
 type ControlledPlayer interface {
