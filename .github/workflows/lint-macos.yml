@@ -1,18 +1,19 @@
-name: golangci-lint on Linux
+name: golangci-lint on macOS
 
 on: [push]
 
 permissions:
   contents: read
 
+# do a separate lint job on macOS to catch platform-dependent problems
 jobs:
   golangci:
-    name: Lint Linux
-    runs-on: ubuntu-latest
+    name: Lint macOS
+    runs-on: macos-latest
 
     steps:
       - name: Library dependencies
-        run: sudo apt-get install libmpv-dev libglx-dev libgl-dev
+        run: brew install mpv
 
       - uses: actions/checkout@v4
 

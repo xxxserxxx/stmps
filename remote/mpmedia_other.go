@@ -10,10 +10,9 @@ import (
 	"errors"
 
 	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
-func RegisterMPMediaHandler(player *mpvplayer.Player, logger_ logger.LoggerInterface) error {
+func RegisterMPMediaHandler(_ ControlledPlayer, _ logger.LoggerInterface) error {
 	// MPMediaHandler only supports macOS.
 	return errors.New("unsupported platform")
 }
