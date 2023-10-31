@@ -18,8 +18,6 @@ type MprisPlayer struct {
 	dbus   *dbus.Conn
 	player ControlledPlayer
 	logger logger.LoggerInterface
-
-	lastVolume float64
 }
 
 func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface) (mpp *MprisPlayer, err error) {

@@ -342,7 +342,7 @@ func (p *Player) Play() error {
 	if isPlaying, err := p.IsPlaying(); err != nil {
 		return err
 	} else if !isPlaying {
-		p.Pause()
+		return p.Pause()
 	}
 	return nil
 }

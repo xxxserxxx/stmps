@@ -127,7 +127,9 @@ func (mp *MPMediaHandler) OnCommandPause() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.Pause()
+	if err := mp.player.Pause(); err != nil {
+		mp.logger.PrintError("Pause", err)
+	}
 }
 
 // MPMediaHandler instance received OS command 'play'
@@ -135,7 +137,9 @@ func (mp *MPMediaHandler) OnCommandPlay() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.Play()
+	if err := mp.player.Play(); err != nil {
+		mp.logger.PrintError("Play", err)
+	}
 }
 
 // MPMediaHandler instance received OS command 'stop'
@@ -143,7 +147,9 @@ func (mp *MPMediaHandler) OnCommandStop() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.Stop()
+	if err := mp.player.Stop(); err != nil {
+		mp.logger.PrintError("Stop", err)
+	}
 }
 
 // MPMediaHandler instance received OS command 'toggle'
@@ -151,7 +157,9 @@ func (mp *MPMediaHandler) OnCommandTogglePlayPause() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.Pause()
+	if err := mp.player.Pause(); err != nil {
+		mp.logger.PrintError("Pause", err)
+	}
 }
 
 // MPMediaHandler instance received OS command 'next track'
@@ -159,7 +167,9 @@ func (mp *MPMediaHandler) OnCommandNextTrack() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.NextTrack()
+	if err := mp.player.NextTrack(); err != nil {
+		mp.logger.PrintError("NextTrack", err)
+	}
 }
 
 // MPMediaHandler instance received OS command 'previous track'
@@ -167,7 +177,9 @@ func (mp *MPMediaHandler) OnCommandPreviousTrack() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.PreviousTrack()
+	if err := mp.player.PreviousTrack(); err != nil {
+		mp.logger.PrintError("PreviousTrack", err)
+	}
 }
 
 // MPMediaHandler instance received OS command to 'seek'
@@ -175,5 +187,7 @@ func (mp *MPMediaHandler) OnCommandSeek(positionSeconds float64) {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.SeekAbsolute(positionSeconds)
+	if err := mp.player.SeekAbsolute(positionSeconds); err != nil {
+		mp.logger.PrintError("SeekAbsolute", err)
+	}
 }
