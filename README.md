@@ -1,12 +1,17 @@
-# STMP (subsonic terminal music player)
+# STMPS (Subsonic Terminal Music Player S)
 
-A terminal client for *sonic music servers. Inspired by ncmpcpp.
+A terminal client for *sonic music servers. Inspired by ncmpcpp and musickube.
 
 ## Features
 
 * browse by folder
 * queue songs and albums
+* create and play playlists
+* favorites
 * volume control
+* server-side scrobbling (e.g. on Navidrome, gonic)
+* Linux: [MPRIS2](https://mpris2.readthedocs.io/en/latest/) control
+* macOS: [MediaPlayer](https://developer.apple.com/documentation/mediaplayer/) control
 
 ## Dependencies
 
@@ -94,3 +99,8 @@ These are accessible in every view.
 * n - new playlist
 * d - delete playlist
 * a - add playlist or song to queue
+
+## Credits
+
+* This is a fork of [STMP](https://github.com/wildeyedskies/stmp), see [AUTHORS](./AUTHORS). I decided to rename my fork as its codebase has diverged quite a bit.
+* macOS MediaPlayer integration based on: <https://github.com/dweymouth/supersonic/pull/258>
