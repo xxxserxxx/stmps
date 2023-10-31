@@ -147,7 +147,7 @@ func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist str
 	duration := entity.Duration
 
 	return func() {
-		if err := ui.player.Play(id, uri, title, artist, duration); err != nil {
+		if err := ui.player.PlayUri(id, uri, title, artist, duration); err != nil {
 			ui.logger.PrintError("SongHandler Play", err)
 			return
 		}

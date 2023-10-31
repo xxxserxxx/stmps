@@ -9,6 +9,7 @@ import (
 
 	"github.com/wildeyedskies/go-mpv/mpv"
 	"github.com/wildeyedskies/stmp/logger"
+	"github.com/wildeyedskies/stmp/remote"
 )
 
 type PlayerQueue []QueueItem
@@ -23,6 +24,8 @@ type Player struct {
 	replaceInProgress bool
 	stopped           bool
 }
+
+var _ remote.ControlledPlayer = (*Player)(nil)
 
 func NewPlayer(logger logger.LoggerInterface) (player *Player, err error) {
 	m := mpv.Create()
@@ -109,7 +112,7 @@ func (p *Player) PlayNextTrack() error {
 	return nil
 }
 
-func (p *Player) Play(id string, uri string, title string, artist string, duration int) error {
+func (p *Player) PlayUri(id string, uri string, title string, artist string, duration int) error {
 	p.queue = []QueueItem{{id, uri, title, artist, duration}}
 	p.replaceInProgress = true
 	if ip, e := p.IsPaused(); ip && e == nil {
@@ -216,7 +219,7 @@ func (p *Player) Pause() (err error) {
 	return
 }
 
-func (p *Player) SetVolume(percentValue int64) error {
+func (p *Player) SetVolume(percentValue int) error {
 	if percentValue > 100 {
 		percentValue = 100
 	} else if percentValue < 0 {
@@ -226,7 +229,7 @@ func (p *Player) SetVolume(percentValue int64) error {
 	return p.instance.SetProperty("volume", mpv.FORMAT_INT64, percentValue)
 }
 
-func (p *Player) AdjustVolume(increment int64) error {
+func (p *Player) AdjustVolume(increment int) error {
 	volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
 	if err != nil {
 		return err
@@ -235,7 +238,7 @@ func (p *Player) AdjustVolume(increment int64) error {
 		return nil
 	}
 
-	return p.SetVolume(volume.(int64) + increment)
+	return p.SetVolume(volume.(int) + increment)
 }
 
 func (p *Player) Volume() (int64, error) {
@@ -307,4 +310,50 @@ func (p *Player) GetPlayingTrack() (QueueItem, error) {
 	}
 	currentSong := p.queue[0]
 	return currentSong, nil
+}
+
+func (p *Player) IsSeeking() (bool, error) {
+	return false, nil
+}
+
+// Registers a callback which is invoked when the player transitions to the Paused state.
+func (p *Player) OnPaused(cb func()) {}
+
+// Registers a callback which is invoked when the player transitions to the Stopped state.
+func (p *Player) OnStopped(cb func()) {}
+
+// Registers a callback which is invoked when the player transitions to the Playing state.
+func (p *Player) OnPlaying(cb func()) {}
+
+// Registers a callback which is invoked whenever a seek event occurs.
+func (p *Player) OnSeek(cb func()) {}
+
+func (p *Player) OnSongChange(func(track remote.TrackInterface)) {}
+
+func (p *Player) GetTimePos() float64 {
+	return 0
+}
+
+func (p *Player) SeekAbsolute(float64) error {
+	return nil
+}
+
+func (p *Player) Play() error {
+	if isPlaying, err := p.IsPlaying(); err != nil {
+		return err
+	} else if !isPlaying {
+		p.Pause()
+	}
+	return nil
+}
+
+func (p *Player) NextTrack() error {
+	return p.PlayNextTrack()
+}
+
+func (p *Player) PreviousTrack() (err error) {
+	if err = p.Stop(); err != nil {
+		return
+	}
+	return p.Pause()
 }

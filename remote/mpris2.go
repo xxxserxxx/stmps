@@ -12,18 +12,17 @@ import (
 	"github.com/godbus/dbus/v5/introspect"
 	"github.com/godbus/dbus/v5/prop"
 	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/mpvplayer"
 )
 
 type MprisPlayer struct {
 	dbus   *dbus.Conn
-	player *mpvplayer.Player
+	player ControlledPlayer
 	logger logger.LoggerInterface
 
 	lastVolume float64
 }
 
-func RegisterMprisPlayer(player *mpvplayer.Player, logger_ logger.LoggerInterface) (mpp *MprisPlayer, err error) {
+func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface) (mpp *MprisPlayer, err error) {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		return
@@ -127,7 +126,7 @@ func (m *MprisPlayer) Stop() {
 }
 
 func (m *MprisPlayer) Next() {
-	if err := m.player.PlayNextTrack(); err != nil {
+	if err := m.player.NextTrack(); err != nil {
 		m.logger.PrintError("mpp PlayNextTrack", err)
 	}
 	//TODO updateQueueList(ui.player, ui.queueList, ui.starIdList)
@@ -178,17 +177,14 @@ func (m *MprisPlayer) SetPosition(string, int) {
 }
 
 func (m *MprisPlayer) volumeChange(c *prop.Change) *dbus.Error {
-	// get volume change value as float where 1.0 = 100%
 	fVol := c.Value.(float64)
-	fDelta := fVol - m.lastVolume
-	m.lastVolume = fVol
 
 	// convert to %
-	pcDelta := int64(math.Round(fDelta * 100))
-	if err := m.player.AdjustVolume(pcDelta); err != nil {
+	percentVol := int(math.Round(fVol * 100))
+	if err := m.player.SetVolume(percentVol); err != nil {
 		m.logger.PrintError("volumeChange", err)
 	} else {
-		m.logger.Printf("mpris: adjust volume %f d%f -> %d%%", fVol, fDelta, pcDelta)
+		m.logger.Printf("mpris: adjust volume %f -> %d%%", fVol, percentVol)
 	}
 	return nil
 }

@@ -159,7 +159,7 @@ func (mp *MPMediaHandler) OnCommandNextTrack() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.PlayNextTrack()
+	mp.player.NextTrack()
 }
 
 // MPMediaHandler instance received OS command 'previous track'
@@ -167,8 +167,7 @@ func (mp *MPMediaHandler) OnCommandPreviousTrack() {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	mp.player.Stop()
-	mp.player.PlayNextTrack()
+	mp.player.PreviousTrack()
 }
 
 // MPMediaHandler instance received OS command to 'seek'
@@ -176,5 +175,5 @@ func (mp *MPMediaHandler) OnCommandSeek(positionSeconds float64) {
 	if mp == nil || mp.player == nil {
 		return
 	}
-	//mp.player.Seek(fmt.Sprintf("%0.2f", positionSeconds), player.SeekAbsolute)
+	mp.player.SeekAbsolute(positionSeconds)
 }

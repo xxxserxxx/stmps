@@ -2,7 +2,9 @@ package remote
 
 type ControlledPlayer interface {
 	// Returns true if a seek is currently in progress.
-	IsSeeking()
+	IsSeeking() (bool, error)
+	IsPaused() (bool, error)
+	IsPlaying() (bool, error)
 
 	// Registers a callback which is invoked when the player transitions to the Paused state.
 	OnPaused(cb func())
@@ -20,10 +22,14 @@ type ControlledPlayer interface {
 
 	GetTimePos() float64
 
-	Play()
-	Pause()
-	PlayNextTrack()
-	Stop()
+	Play() error
+	Pause() error
+	Stop() error
+	SeekAbsolute(float64) error
+	NextTrack() error
+	PreviousTrack() error
+
+	SetVolume(percentValue int) error
 }
 
 type TrackInterface interface {

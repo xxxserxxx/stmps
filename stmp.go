@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/spf13/viper"
 	"github.com/wildeyedskies/stmp/logger"
@@ -68,12 +69,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	// init mpv engine
 	player, err := mpvplayer.NewPlayer(logger)
 	if err != nil {
 		fmt.Println("Unable to initialize mpv. Is mpv installed?")
 		os.Exit(1)
 	}
 
+	// init mpris2 player control (linux only but fails gracefully on other systems)
 	if *enableMpris {
 		mpris, err := remote.RegisterMprisPlayer(player, logger)
 		if err != nil {
@@ -82,6 +85,16 @@ func main() {
 			os.Exit(1)
 		}
 		defer mpris.Close()
+	}
+
+	// init macos mediaplayer control
+	if runtime.GOOS == "darwin" {
+		if err = remote.RegisterMPMediaHandler(player, logger); err != nil {
+			fmt.Printf("Unable to initialize MediaPlayer bindings: %s\n", err)
+			os.Exit(1)
+		} else {
+			logger.Print("MacOS MediaPlayer registered")
+		}
 	}
 
 	ui := InitGui(&indexResponse.Indexes.Index,
