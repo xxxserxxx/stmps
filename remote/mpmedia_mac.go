@@ -99,6 +99,9 @@ func RegisterMPMediaHandler(player ControlledPlayer, logger_ logger.LoggerInterf
 		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
 
+	// set to paused initially, like https://developer.apple.com/documentation/mediaplayer/becoming_a_now_playable_app
+	C.set_os_playback_state_paused()
+
 	return nil
 }
 
