@@ -19,6 +19,11 @@ jobs:
       - name: Library dependencies
         run: brew install mpv
 
+      - name: Setup path
+        run: |
+          export C_INCLUDE_PATH=/opt/homebrew/include:$C_INCLUDE_PATH
+          export LIBRARY_PATH=/opt/homebrew/lib:$LIBRARY_PATH
+
       - uses: actions/checkout@v4
 
       - name: Install Go ${{ matrix.go }}

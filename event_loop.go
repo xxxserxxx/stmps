@@ -70,13 +70,13 @@ func (ui *Ui) guiEventLoop() {
 			case mpvplayer.EventStopped:
 				ui.logger.Print("mpvEvent: stopped")
 				ui.app.QueueUpdateDraw(func() {
-					ui.startStopStatus.SetText("[::b]stmp: [red]Stopped")
+					ui.startStopStatus.SetText("[red::b]Stopped[::-]")
 					ui.queuePage.UpdateQueue()
 				})
 
 			case mpvplayer.EventPlaying:
 				ui.logger.Print("mpvEvent: playing")
-				statusText := "[::b]stmp: [green]Playing"
+				statusText := "[green::b]Playing[::-]"
 
 				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
@@ -114,7 +114,7 @@ func (ui *Ui) guiEventLoop() {
 
 			case mpvplayer.EventPaused:
 				ui.logger.Print("mpvEvent: paused")
-				statusText := "[::b]stmp: [yellow]Paused"
+				statusText := "[yellow::b]Paused[::-]"
 
 				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
@@ -128,7 +128,7 @@ func (ui *Ui) guiEventLoop() {
 
 			case mpvplayer.EventUnpaused:
 				ui.logger.Print("mpvEvent: unpaused")
-				statusText := "[::b]stmp: [green]Playing"
+				statusText := "[green::b]Playing[::-]"
 
 				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {

@@ -83,7 +83,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.pages = tview.NewPages()
 
 	// status text at the top
-	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmp").
+	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmps").
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
 	ui.playerStatus = tview.NewTextView().SetText("[100%][::b][00:00/00:00]").
