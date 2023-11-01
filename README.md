@@ -10,8 +10,7 @@ A terminal client for *sonic music servers. Inspired by ncmpcpp and musickube.
 * favorites
 * volume control
 * server-side scrobbling (e.g. on Navidrome, gonic)
-* Linux: [MPRIS2](https://mpris2.readthedocs.io/en/latest/) control
-* macOS: [MediaPlayer](https://developer.apple.com/documentation/mediaplayer/) control
+* [MPRIS2](https://mpris2.readthedocs.io/en/latest/) control
 
 ## Dependencies
 
@@ -103,4 +102,3 @@ These are accessible in every view.
 ## Credits
 
 * This is a fork of [STMP](https://github.com/wildeyedskies/stmp), see [AUTHORS](./AUTHORS). I decided to rename my fork as its codebase has diverged quite a bit.
-* macOS MediaPlayer integration based on: <https://github.com/dweymouth/supersonic/pull/258>
