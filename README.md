@@ -12,6 +12,18 @@ A terminal client for *sonic music servers. Inspired by ncmpcpp and musickube.
 * server-side scrobbling (e.g. on Navidrome, gonic)
 * [MPRIS2](https://mpris2.readthedocs.io/en/latest/) control
 
+## Screenshots
+
+These are using [Navidrome's demo server](https://demo.navidrome.org/) ([config file](./stmp-navidromedemo.toml)).
+
+Queue:
+
+![Queue View](./docs/screenshots/queue.png)
+
+Browser:
+
+![Browser View](./docs/screenshots/browser.png)
+
 ## Dependencies
 
 [mpv](https://mpv.io):
@@ -101,4 +113,6 @@ These are accessible in every view.
 
 ## Credits
 
-* This is a fork of [STMP](https://github.com/wildeyedskies/stmp), see [AUTHORS](./AUTHORS). I decided to rename my fork as its codebase has diverged quite a bit.
+* This is a fork of [STMP](https://github.com/wildeyedskies/stmp), see
+[AUTHORS](./AUTHORS). I decided to rename my fork as its codebase has diverged
+quite a bit.

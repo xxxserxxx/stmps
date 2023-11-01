@@ -1,0 +1,8 @@
+[auth]
+username = 'demo'
+password = 'demo'
+plaintext = false
+
+[server]
+host = 'https://demo.navidrome.org'
+scrobble = false
