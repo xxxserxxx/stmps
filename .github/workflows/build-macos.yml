@@ -16,6 +16,11 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
       - name: Library dependencies
         run: brew install mpv
 
@@ -23,8 +28,6 @@ jobs:
         run: |
           export C_INCLUDE_PATH=/opt/homebrew/include:$C_INCLUDE_PATH
           export LIBRARY_PATH=/opt/homebrew/lib:$LIBRARY_PATH
-
-      - uses: actions/checkout@v4
 
       - name: Install Go ${{ matrix.go }}
         uses: actions/setup-go@v4
