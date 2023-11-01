@@ -11,23 +11,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ["1.21"]
+        go: ["1.20", "1.21"]
 
     runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-
       - name: Library dependencies
         run: brew install mpv
 
       - name: Setup path
         run: |
-          export C_INCLUDE_PATH=/opt/homebrew/include:$C_INCLUDE_PATH
-          export LIBRARY_PATH=/opt/homebrew/lib:$LIBRARY_PATH
+          export C_INCLUDE_PATH="$(brew --prefix)/include:$C_INCLUDE_PATH"
+          export LIBRARY_PATH="$(brew --prefix)/lib:$LIBRARY_PATH"
 
       - name: Install Go ${{ matrix.go }}
         uses: actions/setup-go@v4
@@ -36,5 +33,4 @@ jobs:
 
       - name: Compile
         run: |
-          go get .
-          go build .
+          go build
