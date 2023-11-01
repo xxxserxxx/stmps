@@ -3,11 +3,11 @@ module github.com/spezifisch/stmps
 go 1.19
 
 require (
+	github.com/dweymouth/go-mpv v0.0.0-20230406000229-ebd2e6b78d74
 	github.com/gdamore/tcell/v2 v2.6.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/rivo/tview v0.0.0-20231024211518-8b7bcf9883df
 	github.com/spf13/viper v1.17.0
-	github.com/wildeyedskies/go-mpv v0.0.0-20221204042335-e8961dc66756
 )
 
 require (
