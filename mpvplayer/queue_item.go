@@ -1,6 +1,6 @@
 package mpvplayer
 
-import "github.com/wildeyedskies/stmp/remote"
+import "github.com/spezifisch/stmps/remote"
 
 var _ remote.TrackInterface = (*QueueItem)(nil)
 

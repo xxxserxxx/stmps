@@ -1,4 +1,4 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // SPDX-License-Identifier: GPL-3.0-only
 
 package mpvplayer
@@ -7,9 +7,9 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/spezifisch/stmps/logger"
+	"github.com/spezifisch/stmps/remote"
 	"github.com/wildeyedskies/go-mpv/mpv"
-	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/remote"
 )
 
 type PlayerQueue []QueueItem

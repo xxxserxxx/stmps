@@ -1,4 +1,4 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spezifisch/stmps/logger"
+	"github.com/spezifisch/stmps/mpvplayer"
+	"github.com/spezifisch/stmps/remote"
+	"github.com/spezifisch/stmps/subsonic"
 	"github.com/spf13/viper"
-	"github.com/wildeyedskies/stmp/logger"
-	"github.com/wildeyedskies/stmp/mpvplayer"
-	"github.com/wildeyedskies/stmp/remote"
-	"github.com/wildeyedskies/stmp/subsonic"
 )
 
 func readConfig() {

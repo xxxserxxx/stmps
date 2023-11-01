@@ -1,4 +1,4 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // SPDX-License-Identifier: GPL-3.0-only
 
 package subsonic
@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wildeyedskies/stmp/logger"
+	"github.com/spezifisch/stmps/logger"
 )
 
 type SubsonicConnection struct {

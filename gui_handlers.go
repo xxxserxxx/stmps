@@ -1,12 +1,12 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/wildeyedskies/stmp/mpvplayer"
-	"github.com/wildeyedskies/stmp/subsonic"
+	"github.com/spezifisch/stmps/mpvplayer"
+	"github.com/spezifisch/stmps/subsonic"
 )
 
 func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {

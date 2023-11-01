@@ -1,4 +1,4 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // SPDX-License-Identifier: GPL-3.0-only
 
 package remote
@@ -11,7 +11,7 @@ import (
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
 	"github.com/godbus/dbus/v5/prop"
-	"github.com/wildeyedskies/stmp/logger"
+	"github.com/spezifisch/stmps/logger"
 )
 
 type MprisPlayer struct {

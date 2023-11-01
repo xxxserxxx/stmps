@@ -1,4 +1,4 @@
-module github.com/wildeyedskies/stmp
+module github.com/spezifisch/stmps
 
 go 1.19
 

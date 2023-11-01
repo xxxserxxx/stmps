@@ -1,4 +1,4 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
@@ -6,7 +6,7 @@ package main
 import (
 	"time"
 
-	"github.com/wildeyedskies/stmp/mpvplayer"
+	"github.com/spezifisch/stmps/mpvplayer"
 )
 
 type eventLoop struct {

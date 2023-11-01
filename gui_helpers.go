@@ -1,4 +1,4 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/rivo/tview"
-	"github.com/wildeyedskies/stmp/mpvplayer"
+	"github.com/spezifisch/stmps/mpvplayer"
 )
 
 func makeModal(p tview.Primitive, width, height int) tview.Primitive {
