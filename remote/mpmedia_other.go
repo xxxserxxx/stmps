@@ -9,7 +9,7 @@ package remote
 import (
 	"errors"
 
-	"github.com/wildeyedskies/stmp/logger"
+	"github.com/spezifisch/stmps/logger"
 )
 
 func RegisterMPMediaHandler(_ ControlledPlayer, _ logger.LoggerInterface) error {
