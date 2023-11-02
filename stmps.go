@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/mpvplayer"
@@ -84,6 +85,16 @@ func main() {
 			os.Exit(1)
 		}
 		defer mpris.Close()
+	}
+
+	// init macos mediaplayer control
+	if runtime.GOOS == "darwin" {
+		if err = remote.RegisterMPMediaHandler(player, logger); err != nil {
+			fmt.Printf("Unable to initialize MediaPlayer bindings: %s\n", err)
+			os.Exit(1)
+		} else {
+			logger.Print("MacOS MediaPlayer registered")
+		}
 	}
 
 	ui := InitGui(&indexResponse.Indexes.Index,
