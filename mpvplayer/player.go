@@ -7,7 +7,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/dweymouth/go-mpv"
+	"github.com/spezifisch/go-mpv"
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/remote"
 )

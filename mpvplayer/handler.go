@@ -4,7 +4,7 @@
 package mpvplayer
 
 import (
-	"github.com/dweymouth/go-mpv"
+	"github.com/spezifisch/go-mpv"
 )
 
 func (p *Player) EventLoop() {

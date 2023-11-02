@@ -2,8 +2,6 @@ name: Build macOS
 
 on:
   push:
-    branches:
-      - "main"
     paths-ignore:
       - "README.md"
       - "CHANGELOG.md"
@@ -18,15 +16,10 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Library dependencies
         run: brew install mpv
 
-      - name: Setup path
-        run: |
-          export C_INCLUDE_PATH="$(brew --prefix)/include:$C_INCLUDE_PATH"
-          export LIBRARY_PATH="$(brew --prefix)/lib:$LIBRARY_PATH"
+      - uses: actions/checkout@v4
 
       - name: Install Go ${{ matrix.go }}
         uses: actions/setup-go@v4

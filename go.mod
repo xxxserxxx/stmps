@@ -3,10 +3,9 @@ module github.com/spezifisch/stmps
 go 1.19
 
 require (
-	github.com/dweymouth/go-mpv v0.0.0-20230406000229-ebd2e6b78d74
 	github.com/gdamore/tcell/v2 v2.6.0
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/rivo/tview v0.0.0-20231024211518-8b7bcf9883df
+	github.com/rivo/tview v0.0.0-20231031172508-2dfe06011790
 	github.com/spf13/viper v1.17.0
 )
 
@@ -23,6 +22,7 @@ require (
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
+	github.com/spezifisch/go-mpv v0.0.0-20231102071031-b990eeffe778
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
