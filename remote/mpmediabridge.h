@@ -44,7 +44,7 @@ void os_remote_command_callback(Command command, double value);
  * using the MPNowPlayingInfoCenter API to set the metadata 
  * for the currently playing media in the system's "Now Playing" interface.
  */
-void set_os_now_playing_info(const char *title, const char *artist, double trackDuration);
+void set_os_now_playing_info(const char *title, const char *artist, const char *coverArtFileURL, double trackDuration);
 void update_os_now_playing_info_position(double positionSeconds);
 
 /**

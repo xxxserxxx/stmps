@@ -51,11 +51,20 @@ void register_os_remote_commands() {
 /**
  * C bridge setting "Now Playing" information on macOS for media playback using the native APIs.
  */
-void set_os_now_playing_info(const char *title, const char *artist, double trackDuration) {
+void set_os_now_playing_info(const char *title, const char *artist, const char *coverArtFileURL, double trackDuration) {
+    NSString *coverArtLocationString = [NSString stringWithUTF8String:coverArtFileURL];
+    NSURL *coverArtURL = [NSURL URLWithString:coverArtLocationString];
+    NSImage *coverArtImage = [[NSImage alloc] initWithContentsOfURL:coverArtURL];
+
+    MPMediaItemArtwork *coverArt = [[MPMediaItemArtwork alloc] initWithBoundsSize:coverArtImage.size requestHandler:^NSImage * _Nonnull(CGSize size) {
+        return coverArtImage;
+    }];
+
     MPNowPlayingInfoCenter *infoCenter = [MPNowPlayingInfoCenter defaultCenter];
     NSDictionary *nowPlayingInfo = @{
         MPMediaItemPropertyTitle: [NSString stringWithUTF8String:title],
         MPMediaItemPropertyArtist: [NSString stringWithUTF8String:artist],
+                MPMediaItemPropertyArtwork: coverArt,
         MPNowPlayingInfoPropertyElapsedPlaybackTime: @(0),
         MPMediaItemPropertyPlaybackDuration: @(trackDuration) // Expects 'NSNumber'
     };

@@ -158,6 +158,13 @@ func (p *Player) sendRemoteEvent(typ UiEventType, data interface{}) {
 				cb()
 			}
 		}()
+
+	case EventStatus:
+		defer func() {
+			for _, cb := range p.cbOnSeek {
+				cb()
+			}
+		}()
 	}
 }
 

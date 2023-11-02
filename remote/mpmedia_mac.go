@@ -23,7 +23,7 @@ import (
 	"log"
 	"unsafe"
 
-	"github.com/wildeyedskies/stmp/logger"
+	"github.com/spezifisch/stmps/logger"
 )
 
 // os_remote_command_callback is called by Objective-C when incoming OS media commands are received.
@@ -99,9 +99,6 @@ func RegisterMPMediaHandler(player ControlledPlayer, logger_ logger.LoggerInterf
 		C.update_os_now_playing_info_position(C.double(mp.player.GetTimePos()))
 	})
 
-	// set to paused initially, like https://developer.apple.com/documentation/mediaplayer/becoming_a_now_playable_app
-	C.set_os_playback_state_paused()
-
 	return nil
 }
 
@@ -120,9 +117,13 @@ func (mp *MPMediaHandler) updateMetadata(track TrackInterface) {
 	cArtist := C.CString(artist)
 	defer C.free(unsafe.Pointer(cArtist))
 
+	// HACK because we don't have cover art
+	cArtURL := C.CString("https://support.apple.com/library/content/dam/edam/applecare/images/en_US/osx/mac-apple-logo-screen-icon.png")
+	defer C.free(unsafe.Pointer(cArtURL))
+
 	cTrackDuration := C.double(duration)
 
-	C.set_os_now_playing_info(cTitle, cArtist, cTrackDuration)
+	C.set_os_now_playing_info(cTitle, cArtist, cArtURL, cTrackDuration)
 }
 
 /**
