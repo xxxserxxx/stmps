@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   md:
-    name: Lint Linux
+    name: Lint Markdown
     runs-on: ubuntu-latest
 
     steps:

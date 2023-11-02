@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   golangci:
-    name: Lint Linux
+    name: Lint Golang
     runs-on: ubuntu-latest
 
     steps:

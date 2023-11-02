@@ -28,4 +28,5 @@ jobs:
 
       - name: Compile
         run: |
+          go get .
           go build

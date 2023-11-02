@@ -39,7 +39,8 @@ Go build dependencies
 
 ### OSX path setup
 
-On OSX if you installed mpv with brew you may need to set the following paths (these differ between Intel and ARM Macs):
+On OSX if you installed mpv with brew you may need to set the following paths
+(these differ between Intel and ARM Macs):
 
 ```shell
 export C_INCLUDE_PATH="$(brew --prefix)/include:$C_INCLUDE_PATH"
