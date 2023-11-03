@@ -21,9 +21,13 @@ const starIcon = "♥"
 type queueData struct {
 	tview.TableContentReadOnly
 
+	// our copy of the queue
 	playerQueue mpvplayer.PlayerQueue
-	starIdList  map[string]struct{}
+	// we also need to know which elements are starred
+	starIdList map[string]struct{}
 }
+
+var _ tview.TableContent = (*queueData)(nil)
 
 type QueuePage struct {
 	Root *tview.Flex
@@ -87,6 +91,7 @@ func (q *QueuePage) getSelectedItem() (index int, err error) {
 	return
 }
 
+// button handler
 func (q *QueuePage) handleDeleteFromQueue() {
 	currentIndex, err := q.getSelectedItem()
 	if err != nil {
@@ -98,6 +103,7 @@ func (q *QueuePage) handleDeleteFromQueue() {
 	q.updateQueue()
 }
 
+// button handler
 func (q *QueuePage) handleToggleStar() {
 	starIdList := q.queueData.starIdList
 
@@ -131,10 +137,11 @@ func (q *QueuePage) handleToggleStar() {
 	q.ui.browserPage.UpdateStars()
 }
 
+// re-read queue data from mpvplayer which is the authoritative source for the queue
 func (q *QueuePage) updateQueue() {
 	queueWasEmpty := len(q.queueData.playerQueue) == 0
 
-	// tell table to update its data
+	// tell tview table to update its data
 	q.queueData.playerQueue = q.ui.player.GetQueueCopy()
 	q.queueList.SetContent(&q.queueData)
 
@@ -144,7 +151,7 @@ func (q *QueuePage) updateQueue() {
 	}
 }
 
-// queueData methods
+// queueData methods, used by tview to lazily render the table
 func (q *queueData) GetCell(row, column int) *tview.TableCell {
 	if row >= len(q.playerQueue) || column >= queueDataColumns {
 		return nil
