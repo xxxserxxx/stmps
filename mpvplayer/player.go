@@ -84,6 +84,16 @@ func (p *Player) mpvEngineEventHandler(instance *mpv.Mpv) {
 	}
 }
 
+func (p *Player) getPropertyInt64(name string) (int64, error) {
+	value, err := p.instance.GetProperty(name, mpv.FORMAT_INT64)
+	if err != nil {
+		return 0, err
+	} else if value == nil {
+		return 0, errors.New("nil value")
+	}
+	return value.(int64), err
+}
+
 func (p *Player) Quit() {
 	p.mpvEvents <- nil
 	p.instance.TerminateDestroy()
@@ -242,23 +252,12 @@ func (p *Player) SetVolume(percentValue int) error {
 }
 
 func (p *Player) AdjustVolume(increment int) error {
-	volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
+	volume, err := p.getPropertyInt64("volume")
 	if err != nil {
 		return err
 	}
-	if volume == nil {
-		return nil
-	}
 
-	return p.SetVolume(volume.(int) + increment)
-}
-
-func (p *Player) Volume() (int64, error) {
-	volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
-	if err != nil {
-		return -1, err
-	}
-	return volume.(int64), nil
+	return p.SetVolume(int(volume) + increment)
 }
 
 func (p *Player) Seek(increment int) error {
