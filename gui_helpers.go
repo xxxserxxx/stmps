@@ -8,6 +8,7 @@ import (
 
 	"github.com/rivo/tview"
 	"github.com/spezifisch/stmps/mpvplayer"
+	"github.com/spezifisch/stmps/subsonic"
 )
 
 func makeModal(p tview.Primitive, width, height int) tview.Primitive {
@@ -38,10 +39,20 @@ func formatSongForStatusBar(currentSong *mpvplayer.QueueItem) (text string) {
 		return
 	}
 	if currentSong.Title != "" {
-		text += "[::-] [white]" + currentSong.Title
+		text += "[::-] [white]" + tview.Escape(currentSong.Title)
 	}
 	if currentSong.Artist != "" {
-		text += " [gray]by [white]" + currentSong.Artist
+		text += " [gray]by [white]" + tview.Escape(currentSong.Artist)
+	}
+	return
+}
+
+func formatSongForPlaylistEntry(entity subsonic.SubsonicEntity) (text string) {
+	if entity.Title != "" {
+		text += "[::-] [white]" + tview.Escape(entity.Title)
+	}
+	if entity.Artist != "" {
+		text += " [gray]by [white]" + tview.Escape(entity.Artist)
 	}
 	return
 }

@@ -237,11 +237,12 @@ func (p *PlaylistPage) handleAddPlaylistToQueue() {
 
 func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
 	p.selectedPlaylist.Clear()
+	p.selectedPlaylist.SetSelectedFocusOnly(true)
 
 	for _, entity := range playlist.Entries {
 		handler := makeSongHandler(&entity, p.ui, entity.Artist)
-		title := entity.GetSongTitle()
-		p.selectedPlaylist.AddItem(tview.Escape(title), "", 0, handler)
+		line := formatSongForPlaylistEntry(entity)
+		p.selectedPlaylist.AddItem(line, "", 0, handler)
 	}
 }
 
