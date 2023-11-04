@@ -84,16 +84,6 @@ func (p *Player) mpvEngineEventHandler(instance *mpv.Mpv) {
 	}
 }
 
-func (p *Player) getPropertyInt64(name string) (int64, error) {
-	value, err := p.instance.GetProperty(name, mpv.FORMAT_INT64)
-	if err != nil {
-		return 0, err
-	} else if value == nil {
-		return 0, errors.New("nil value")
-	}
-	return value.(int64), err
-}
-
 func (p *Player) Quit() {
 	p.mpvEvents <- nil
 	p.instance.TerminateDestroy()
@@ -156,26 +146,26 @@ func (p *Player) temporaryStop() error {
 }
 
 func (p *Player) IsSongLoaded() (bool, error) {
-	idle, err := p.instance.GetProperty("idle-active", mpv.FORMAT_FLAG)
-	return !idle.(bool), err
+	idle, err := p.getPropertyBool("idle-active")
+	return !idle, err
 }
 
 func (p *Player) IsPaused() (bool, error) {
-	pause, err := p.instance.GetProperty("pause", mpv.FORMAT_FLAG)
-	return pause.(bool), err
+	pause, err := p.getPropertyBool("pause")
+	return pause, err
 }
 
 func (p *Player) IsPlaying() (playing bool, err error) {
-	if idle, err := p.instance.GetProperty("idle-active", mpv.FORMAT_FLAG); err != nil {
-	} else if paused, err := p.instance.GetProperty("pause", mpv.FORMAT_FLAG); err != nil {
+	if idle, err := p.getPropertyBool("idle-active"); err != nil {
+	} else if paused, err := p.getPropertyBool("pause"); err != nil {
 	} else {
-		playing = !idle.(bool) && !paused.(bool)
+		playing = !idle && !paused
 	}
 	return
 }
 
 func (p *Player) Test() {
-	res, err := p.instance.GetProperty("idle-active", mpv.FORMAT_FLAG)
+	res, err := p.getPropertyBool("idle-active")
 	p.logger.Printf("res %v err %v", res, err)
 }
 

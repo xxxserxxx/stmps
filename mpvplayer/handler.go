@@ -25,33 +25,23 @@ func (p *Player) EventLoop() {
 		} else if evt.Event_Id == mpv.EVENT_PROPERTY_CHANGE {
 			// one of our observed properties changed. which one is probably extractable from evt.Data.. somehow.
 
-			position, err := p.instance.GetProperty("playback-time", mpv.FORMAT_INT64)
+			position, err := p.getPropertyInt64("playback-time")
 			if err != nil {
 				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "playback-time", err.Error())
 			}
-			duration, err := p.instance.GetProperty("duration", mpv.FORMAT_INT64)
+			duration, err := p.getPropertyInt64("duration")
 			if err != nil {
 				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "duration", err.Error())
 			}
-			volume, err := p.instance.GetProperty("volume", mpv.FORMAT_INT64)
+			volume, err := p.getPropertyInt64("volume")
 			if err != nil {
 				p.logger.Printf("mpv.EventLoop (%s): GetProperty %s -- %s", evt.Event_Id.String(), "volume", err.Error())
 			}
 
-			if position == nil {
-				position = int64(0)
-			}
-			if duration == nil {
-				duration = int64(0)
-			}
-			if volume == nil {
-				volume = int64(0)
-			}
-
 			statusData := StatusData{
-				Volume:   volume.(int64),
-				Position: position.(int64),
-				Duration: duration.(int64),
+				Volume:   volume,
+				Position: position,
+				Duration: duration,
 			}
 			p.remoteState.timePos = float64(statusData.Position)
 			p.sendGuiDataEvent(EventStatus, statusData)
