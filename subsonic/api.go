@@ -21,15 +21,26 @@ type SubsonicConnection struct {
 	PlaintextAuth bool
 	Scrobble      bool
 
+	clientName    string
+	clientVersion string
+
 	logger         logger.LoggerInterface
 	directoryCache map[string]SubsonicResponse
 }
 
 func Init(logger logger.LoggerInterface) *SubsonicConnection {
 	return &SubsonicConnection{
+		clientName:    "example",
+		clientVersion: "1.0.0",
+
 		logger:         logger,
 		directoryCache: make(map[string]SubsonicResponse),
 	}
+}
+
+func (s *SubsonicConnection) SetClientInfo(name, version string) {
+	s.clientName = name
+	s.clientVersion = version
 }
 
 func (s *SubsonicConnection) ClearCache() {
@@ -50,8 +61,8 @@ func defaultQuery(connection *SubsonicConnection) url.Values {
 		query.Set("s", salt)
 	}
 	query.Set("u", connection.Username)
-	query.Set("v", "1.15.1")
-	query.Set("c", "stmp")
+	query.Set("v", connection.clientVersion)
+	query.Set("c", connection.clientName)
 	query.Set("f", "json")
 
 	return query
