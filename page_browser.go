@@ -184,9 +184,8 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			browserPage.handleToggleEntityStar()
 			return nil
 		}
-		// only makes sense to add to a playlist if there are playlists
 		if event.Rune() == 'A' {
-			//////////////////////////////////////
+			// only makes sense to add to a playlist if there are playlists
 			if ui.playlistPage.GetCount() > 0 {
 				ui.pages.ShowPage(PageAddToPlaylist)
 				ui.app.SetFocus(ui.addToPlaylistList)
