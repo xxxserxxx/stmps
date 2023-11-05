@@ -96,6 +96,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			ui.app.SetFocus(browserPage.artistList)
 			return nil
 		}
+
 		switch event.Rune() {
 		case '/':
 			browserPage.showSearchField(true)
@@ -129,6 +130,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			if goBackTo < browserPage.artistList.GetItemCount() {
 				browserPage.artistList.SetCurrentItem(goBackTo)
 			}
+			return nil
 		}
 		return event
 	})
@@ -155,6 +157,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			ui.pages.HidePage(PageAddToPlaylist)
 			ui.pages.SwitchToPage(PageBrowser)
 			ui.app.SetFocus(browserPage.entityList)
+			return nil
 		} else if event.Key() == tcell.KeyEnter {
 			playlist := ui.playlists[ui.addToPlaylistList.GetCurrentItem()]
 			browserPage.handleAddSongToPlaylist(&playlist)
@@ -162,7 +165,9 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			ui.pages.HidePage(PageAddToPlaylist)
 			ui.pages.SwitchToPage(PageBrowser)
 			ui.app.SetFocus(browserPage.entityList)
+			return nil
 		}
+
 		return event
 	})
 

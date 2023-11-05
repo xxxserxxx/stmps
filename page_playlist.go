@@ -104,10 +104,13 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 		if event.Rune() == 'n' {
 			ui.pages.ShowPage(PageNewPlaylist)
 			ui.app.SetFocus(ui.playlistPage.newPlaylistInput)
+			return nil
 		}
 		if event.Rune() == 'd' {
 			ui.pages.ShowPage(PageDeletePlaylist)
+			return nil
 		}
+
 		return event
 	})
 

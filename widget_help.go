@@ -22,8 +22,12 @@ func (ui *Ui) createHelpWidget() (m *HelpWidget) {
 	}
 
 	// two help columns side by side
-	m.leftColumn = tview.NewTextView().SetTextAlign(tview.AlignLeft)
-	m.rightColumn = tview.NewTextView().SetTextAlign(tview.AlignLeft)
+	m.leftColumn = tview.NewTextView().
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
+	m.rightColumn = tview.NewTextView().
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
 	m.helpBook = tview.NewFlex().
 		SetDirection(tview.FlexColumn)
 
@@ -44,19 +48,19 @@ func (ui *Ui) createHelpWidget() (m *HelpWidget) {
 }
 
 func (h *HelpWidget) RenderHelp(context string) {
-	leftText := "[Playback]\n" + tview.Escape(strings.TrimSpace(helpPlayback))
+	leftText := "[::b]Playback[::-]\n" + tview.Escape(strings.TrimSpace(helpPlayback))
 	h.leftColumn.SetText(leftText)
 
 	rightText := ""
 	switch context {
 	case PageBrowser:
-		rightText = "[Browser]\n" + tview.Escape(strings.TrimSpace(helpPageBrowser))
+		rightText = "[::b]Browser[::-]\n" + tview.Escape(strings.TrimSpace(helpPageBrowser))
 
 	case PageQueue:
-		rightText = "[Queue]\n" + tview.Escape(strings.TrimSpace(helpPageQueue))
+		rightText = "[::b]Queue[::-]\n" + tview.Escape(strings.TrimSpace(helpPageQueue))
 
 	case PagePlaylists:
-		rightText = "[Playlists]\n" + tview.Escape(strings.TrimSpace(helpPagePlaylists))
+		rightText = "[::b]Playlists[::-]\n" + tview.Escape(strings.TrimSpace(helpPagePlaylists))
 
 	case PageLog:
 		fallthrough
