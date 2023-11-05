@@ -25,7 +25,7 @@ type MenuWidget struct {
 
 var buttonOrder = []string{PageBrowser, PageQueue, PagePlaylists, PageLog}
 
-func NewMenuWidget(ui *Ui) (m *MenuWidget) {
+func (ui *Ui) createMenuWidget() (m *MenuWidget) {
 	m = &MenuWidget{
 		activeButton: buttonOrder[0],
 		buttons:      make(map[string]*tview.Button),
@@ -54,7 +54,7 @@ func NewMenuWidget(ui *Ui) (m *MenuWidget) {
 		SetStyle(m.buttonStyle).
 		SetActivatedStyle(m.buttonStyle).
 		SetSelectedFunc(func() {
-			ui.showMessageBox("not yet implemented, sorry")
+			ui.ShowHelp()
 		})
 
 	m.buttonsRight = tview.NewFlex().
@@ -117,4 +117,8 @@ func (m *MenuWidget) SetActivePage(name string) {
 
 	m.activeButton = name
 	m.updatePageButtons()
+}
+
+func (m *MenuWidget) GetActivePage() string {
+	return m.activeButton
 }

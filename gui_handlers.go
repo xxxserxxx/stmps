@@ -29,6 +29,9 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	case '4':
 		ui.ShowPage(PageLog)
 
+	case '?':
+		ui.ShowHelp()
+
 	case 'Q':
 		ui.Quit()
 

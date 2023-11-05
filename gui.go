@@ -40,6 +40,8 @@ type Ui struct {
 	// modals
 	addToPlaylistList *tview.List
 	messageBox        *tview.Modal
+	helpModal         tview.Primitive
+	helpWidget        *HelpWidget
 
 	starIdList map[string]struct{}
 
@@ -63,6 +65,7 @@ const (
 	PageNewPlaylist    = "newPlaylist"
 	PageAddToPlaylist  = "addToPlaylist"
 	PageMessageBox     = "messageBox"
+	PageHelpBox        = "helpBox"
 )
 
 func InitGui(indexes *[]subsonic.SubsonicIndex,
@@ -100,7 +103,8 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		SetDynamicColors(true).
 		SetScrollable(false)
 
-	ui.menuWidget = NewMenuWidget(ui)
+	ui.menuWidget = ui.createMenuWidget()
+	ui.helpWidget = ui.createHelpWidget()
 
 	// same as 'playlistList' except for the addToPlaylistModal
 	// - we need a specific version of this because we need different keybinds
@@ -112,6 +116,13 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		SetBackgroundColor(tcell.ColorBlack)
 	ui.messageBox.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		ui.pages.HidePage(PageMessageBox)
+		return event
+	})
+
+	// help box modal
+	ui.helpModal = makeModal(ui.helpWidget.Root, 80, 30)
+	ui.helpWidget.Root.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		ui.CloseHelp()
 		return event
 	})
 
@@ -139,6 +150,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		AddPage(PageNewPlaylist, ui.playlistPage.NewPlaylistModal, true, false).
 		AddPage(PageAddToPlaylist, ui.browserPage.AddToPlaylistModal, true, false).
 		AddPage(PageMessageBox, ui.messageBox, true, false).
+		AddPage(PageHelpBox, ui.helpModal, true, false).
 		AddPage(PageLog, ui.logPage.Root, true, false)
 
 	rootFlex := tview.NewFlex().
@@ -169,6 +181,18 @@ func (ui *Ui) Run() error {
 
 	// gui main loop (blocking)
 	return ui.app.Run()
+}
+
+func (ui *Ui) ShowHelp() {
+	activePage := ui.menuWidget.GetActivePage()
+	ui.helpWidget.RenderHelp(activePage)
+
+	ui.pages.ShowPage(PageHelpBox)
+	ui.app.SetFocus(ui.helpModal)
+}
+
+func (ui *Ui) CloseHelp() {
+	ui.pages.HidePage(PageHelpBox)
 }
 
 func (ui *Ui) showMessageBox(text string) {
