@@ -18,20 +18,16 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 
 	switch event.Rune() {
 	case '1':
-		ui.pages.SwitchToPage(PageBrowser)
-		ui.currentPage.SetText("Browser")
+		ui.ShowPage(PageBrowser)
 
 	case '2':
-		ui.pages.SwitchToPage(PageQueue)
-		ui.currentPage.SetText("Queue")
+		ui.ShowPage(PageQueue)
 
 	case '3':
-		ui.pages.SwitchToPage(PagePlaylists)
-		ui.currentPage.SetText("Playlists")
+		ui.ShowPage(PagePlaylists)
 
 	case '4':
-		ui.pages.SwitchToPage(PageLog)
-		ui.currentPage.SetText("Log")
+		ui.ShowPage(PageLog)
 
 	case 'Q':
 		ui.player.Quit()
@@ -107,6 +103,11 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return event
+}
+
+func (ui *Ui) ShowPage(name string) {
+	ui.pages.SwitchToPage(name)
+	ui.menuWidget.SetActivePage(name)
 }
 
 func (ui *Ui) handleAddRandomSongs() {

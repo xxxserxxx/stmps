@@ -52,7 +52,7 @@ func main() {
 	logger := logger.Init()
 
 	connection := subsonic.Init(logger)
-	connection.SetClientInfo("stmps", "0.9.9")
+	connection.SetClientInfo(clientName, clientVersion)
 	connection.Username = viper.GetString("auth.username")
 	connection.Password = viper.GetString("auth.password")
 	connection.Host = viper.GetString("server.host")

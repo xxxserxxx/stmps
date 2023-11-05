@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spezifisch/stmps/logger"
@@ -16,10 +18,12 @@ type Ui struct {
 	app   *tview.Application
 	pages *tview.Pages
 
-	// top row
+	// top bar
 	startStopStatus *tview.TextView
-	currentPage     *tview.TextView
 	playerStatus    *tview.TextView
+
+	// bottom bar
+	menuWidget *MenuWidget
 
 	// browser page
 	browserPage *BrowserPage
@@ -49,6 +53,7 @@ type Ui struct {
 }
 
 const (
+	// page identifiers (use these instead of hardcoding page names for showing/hiding)
 	PageBrowser   = "browser"
 	PageQueue     = "queue"
 	PagePlaylists = "playlists"
@@ -83,16 +88,19 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.pages = tview.NewPages()
 
 	// status text at the top
-	ui.startStopStatus = tview.NewTextView().SetText("[::b]stmps").
+	statusLeft := fmt.Sprintf("[::b]%s[::-] v%s", clientName, clientVersion)
+	ui.startStopStatus = tview.NewTextView().SetText(statusLeft).
 		SetTextAlign(tview.AlignLeft).
-		SetDynamicColors(true)
-	ui.playerStatus = tview.NewTextView().SetText("[100%][::b][00:00/00:00]").
-		SetTextAlign(tview.AlignRight).
-		SetDynamicColors(true)
+		SetDynamicColors(true).
+		SetScrollable(false)
 
-	ui.currentPage = tview.NewTextView().SetText("Browser").
-		SetTextAlign(tview.AlignCenter).
-		SetDynamicColors(true)
+	statusRight := formatPlayerStatus(0, 0, 0)
+	ui.playerStatus = tview.NewTextView().SetText(statusRight).
+		SetTextAlign(tview.AlignRight).
+		SetDynamicColors(true).
+		SetScrollable(false)
+
+	ui.menuWidget = NewMenuWidget(ui)
 
 	// same as 'playlistList' except for the addToPlaylistModal
 	// - we need a specific version of this because we need different keybinds
@@ -107,14 +115,10 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		return event
 	})
 
-	// top row
-	top1Flex := tview.NewFlex().SetDirection(tview.FlexColumn).
+	// top bar: status text
+	topBarFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(ui.startStopStatus, 0, 1, false).
 		AddItem(ui.playerStatus, 20, 0, false)
-
-	// 2nd row
-	top2Flex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(ui.currentPage, 0, 1, false)
 
 	// browser page
 	ui.browserPage = ui.createBrowserPage(indexes)
@@ -139,9 +143,9 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 
 	rootFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(top1Flex, 1, 0, false).
-		AddItem(top2Flex, 1, 0, false).
-		AddItem(ui.pages, 0, 1, true)
+		AddItem(topBarFlex, 1, 0, false).
+		AddItem(ui.pages, 0, 1, true).
+		AddItem(ui.menuWidget.Root, 1, 0, false)
 
 	// add main input handler
 	rootFlex.SetInputCapture(ui.handlePageInput)
