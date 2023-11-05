@@ -16,6 +16,8 @@ type BrowserPage struct {
 	Root               *tview.Flex
 	AddToPlaylistModal tview.Primitive
 
+	artistFlex *tview.Flex
+
 	artistList  *tview.List
 	entityList  *tview.List
 	searchField *tview.InputField
@@ -76,13 +78,12 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			ui.app.SetFocus(browserPage.artistList)
 		})
 
-	artistFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
+	browserPage.artistFlex = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(browserPage.artistList, 0, 1, true).
 		AddItem(browserPage.entityList, 0, 1, false)
 
-	browserPage.Root = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(artistFlex, 0, 1, true).
-		AddItem(browserPage.searchField, 1, 0, false)
+	browserPage.Root = tview.NewFlex().SetDirection(tview.FlexRow)
+	browserPage.showSearchField(false) // add artist/search items
 
 	// going right from the artist list should focus the album/song list
 	browserPage.artistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -90,14 +91,22 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			ui.app.SetFocus(browserPage.entityList)
 			return nil
 		}
+		if event.Key() == tcell.KeyEscape {
+			browserPage.showSearchField(false)
+			ui.app.SetFocus(browserPage.artistList)
+			return nil
+		}
 		switch event.Rune() {
 		case '/':
+			browserPage.showSearchField(true)
 			browserPage.search()
 			return nil
 		case 'n':
+			browserPage.showSearchField(true)
 			browserPage.searchNext()
 			return nil
 		case 'N':
+			browserPage.showSearchField(true)
 			browserPage.searchPrev()
 			return nil
 		case 'R':
@@ -199,6 +208,15 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 	}
 
 	return &browserPage
+}
+
+func (b *BrowserPage) showSearchField(visible bool) {
+	b.Root.Clear()
+	b.Root.AddItem(b.artistFlex, 0, 1, true)
+
+	if visible {
+		b.Root.AddItem(b.searchField, 1, 0, false)
+	}
 }
 
 func (b *BrowserPage) IsSearchFocused(focused tview.Primitive) bool {
