@@ -1,4 +1,4 @@
-// Copyright 2023 The STMP Authors
+// Copyright 2023 The STMPS Authors
 // Copyright 2023 Drew Weymouth and contributors, zackslash
 // SPDX-License-Identifier: GPL-3.0-only
 
