@@ -30,8 +30,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.ShowPage(PageLog)
 
 	case 'Q':
-		ui.player.Quit()
-		ui.app.Stop()
+		ui.Quit()
 
 	case 'r':
 		// add random songs to queue
@@ -108,6 +107,11 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 func (ui *Ui) ShowPage(name string) {
 	ui.pages.SwitchToPage(name)
 	ui.menuWidget.SetActivePage(name)
+}
+
+func (ui *Ui) Quit() {
+	ui.player.Quit()
+	ui.app.Stop()
 }
 
 func (ui *Ui) handleAddRandomSongs() {

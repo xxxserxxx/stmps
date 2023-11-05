@@ -10,8 +10,14 @@ import (
 type MenuWidget struct {
 	Root *tview.Flex
 
+	buttonsLeft  *tview.Flex
+	buttonsRight *tview.Flex
+
 	activeButton string
 	buttons      map[string]*tview.Button
+
+	buttonStyle     tcell.Style
+	quitActiveStyle tcell.Style
 
 	// external references
 	ui *Ui
@@ -24,21 +30,55 @@ func NewMenuWidget(ui *Ui) (m *MenuWidget) {
 		activeButton: buttonOrder[0],
 		buttons:      make(map[string]*tview.Button),
 
+		buttonStyle:     tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite),
+		quitActiveStyle: tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorRed),
+
 		ui: ui,
 	}
 
-	m.Root = tview.NewFlex().SetDirection(tview.FlexColumn)
-	m.createButtons()
-	m.updateButtons()
+	// page buttons on the left
+	m.buttonsLeft = tview.NewFlex().
+		SetDirection(tview.FlexColumn)
+	m.createPageButtons()
+	m.updatePageButtons()
+
+	// help and quit button on the right
+	quitButton := tview.NewButton("Q: quit").
+		SetStyle(m.buttonStyle).
+		SetActivatedStyle(m.quitActiveStyle).
+		SetSelectedFunc(func() {
+			ui.Quit()
+		})
+
+	helpButton := tview.NewButton("?: help").
+		SetStyle(m.buttonStyle).
+		SetActivatedStyle(m.buttonStyle).
+		SetSelectedFunc(func() {
+			ui.showMessageBox("not yet implemented, sorry")
+		})
+
+	m.buttonsRight = tview.NewFlex().
+		SetDirection(tview.FlexColumn)
+	m.buttonsRight.AddItem(nil, 0, 1, false) // fill space to right-align the buttons
+	m.buttonsRight.AddItem(helpButton, 9, 0, false)
+	m.buttonsRight.AddItem(quitButton, 9, 0, false)
+
+	m.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(m.buttonsLeft, 0, 4, false).
+		AddItem(m.buttonsRight, 0, 2, false)
+
+	// clear background
+	m.Root.Box = tview.NewBox()
 
 	return
 }
 
-func (m *MenuWidget) createButtons() {
+func (m *MenuWidget) createPageButtons() {
 	for i, page := range buttonOrder {
 		button := tview.NewButton(page)
-		button.SetStyle(tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite))
-		button.SetActivatedStyle(tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack))
+		button.SetStyle(m.buttonStyle)
+		// HACK because I couldn't find a way to un-focus a button after switching with 1,2,3,4 keys:
+		button.SetActivatedStyle(m.buttonStyle)
 
 		// create copy for our function
 		buttonPage := page
@@ -48,16 +88,16 @@ func (m *MenuWidget) createButtons() {
 
 		m.buttons[page] = button
 		// add button
-		m.Root.AddItem(button, 15, 0, false)
+		m.buttonsLeft.AddItem(button, 15, 0, false)
 
 		// add spacer
 		if i < len(buttonOrder)-1 {
-			m.Root.AddItem(nil, 1, 0, false)
+			m.buttonsLeft.AddItem(nil, 1, 0, false)
 		}
 	}
 }
 
-func (m *MenuWidget) updateButtons() {
+func (m *MenuWidget) updatePageButtons() {
 	for i, page := range buttonOrder {
 		var text string
 		if page == m.activeButton {
@@ -76,5 +116,5 @@ func (m *MenuWidget) SetActivePage(name string) {
 	}
 
 	m.activeButton = name
-	m.updateButtons()
+	m.updatePageButtons()
 }
