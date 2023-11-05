@@ -7,8 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"net/url"
+	"log"
 	"os"
 	"runtime"
+	"runtime/pprof"
 
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/mpvplayer"
@@ -65,11 +67,26 @@ func main() {
 	help := flag.Bool("help", false, "Print usage")
 	enableMpris := flag.Bool("mpris", false, "Enable MPRIS2")
 	list := flag.Bool("list", false, "list server data")
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to `file`")
+	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
+
 	flag.Parse()
 	if *help {
 		fmt.Printf("USAGE: %s <args> [[user:pass@]server:port]\n", os.Args[0])
 		flag.Usage()
 		os.Exit(0)
+	}
+	// cpu/memprofile code straight from https://pkg.go.dev/runtime/pprof
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 
 	if len(flag.Args()) > 0 {
@@ -168,5 +185,17 @@ func main() {
 	// run main loop
 	if err := ui.Run(); err != nil {
 		panic(err)
+	}
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		runtime.GC()    // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
 	}
 }
