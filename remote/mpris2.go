@@ -26,7 +26,7 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 		return
 	}
 
-	parts := []string{"", "org", "mpris", "MediaPlayer2", "Player"}
+	parts := []string{"", "org", "mpris", "MediaPlayer2", "stmps"}
 	name := strings.Join(parts[1:], ".")
 	mpp = &MprisPlayer{
 		dbus:   conn,
@@ -90,7 +90,7 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 			{
 				Name:       "org.mpris.MediaPlayer2.Player",
 				Methods:    introspect.Methods(mpp),
-				Properties: props.Introspection("org.mpris.MediaPlayer2.Player"),
+				Properties: props.Introspection("org.mpris.MediaPlayer2.stmps"),
 			},
 		},
 	}
