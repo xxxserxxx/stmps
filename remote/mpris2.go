@@ -63,21 +63,35 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 		"xesam:trackNumber": int(0),
 	}
 
-	propSpec := map[string]map[string]*prop.Prop{
-		"org.mpris.MediaPlayer2.Player": {
-			"CanControl":     {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanGoNext":      {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanPause":       {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanPlay":        {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanSeek":        {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"CanGoPrevious":  {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-			"Metadata":       {Value: metadata, Writable: false, Emit: prop.EmitTrue, Callback: nil},
-			"Volume":         {Value: float64(0.0), Writable: true, Emit: prop.EmitTrue, Callback: mpp.volumeChange},
-			"PlaybackStatus": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
-		},
+	var mprisPlayer = map[string]*prop.Prop{
+		"CanControl":     {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"CanGoNext":      {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"CanPause":       {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"CanPlay":        {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"CanSeek":        {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"CanGoPrevious":  {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"Metadata":       {Value: metadata, Writable: false, Emit: prop.EmitTrue, Callback: nil},
+		"Volume":         {Value: float64(0.0), Writable: true, Emit: prop.EmitTrue, Callback: mpp.volumeChange},
+		"PlaybackStatus": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 	}
 
-	props, err := prop.Export(conn, "/org/mpris/MediaPlayer2", propSpec)
+	var mediaPlayer = map[string]*prop.Prop{
+		"CanQuit":             {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"CanRaise":            {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"HasTrackList":        {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"Identity":            {Value: "stmps", Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"SupportedUriSchemes": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"SupportedMimeTypes":  {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
+	}
+
+	props, err := prop.Export(
+		conn,
+		"/org/mpris/MediaPlayer2",
+		map[string]map[string]*prop.Prop{
+			"org.mpris.MediaPlayer2":        mediaPlayer,
+			"org.mpris.MediaPlayer2.Player": mprisPlayer,
+		},
+	)
 	if err != nil {
 		return
 	}
