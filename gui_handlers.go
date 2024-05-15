@@ -75,7 +75,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		}
 		return nil
 
-	case '=':
+	case '+', '=':
 		// volume+
 		if err := ui.player.AdjustVolume(5); err != nil {
 			ui.logger.PrintError("handlePageInput: AdjustVolume+", err)
