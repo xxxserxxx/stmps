@@ -40,6 +40,7 @@ func readConfig() {
 func main() {
 	help := flag.Bool("help", false, "Print usage")
 	enableMpris := flag.Bool("mpris", false, "Enable MPRIS2")
+	list := flag.Bool("list", false, "list server data")
 	flag.Parse()
 	if *help {
 		fmt.Printf("USAGE: %s <args>\n", os.Args[0])
@@ -68,6 +69,37 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error fetching indexes from server: %s\n", err)
 		os.Exit(1)
+	}
+
+	if *list {
+		fmt.Printf("Index response:\n")
+		fmt.Printf("  Directory: %s\n", indexResponse.Directory.Name)
+		fmt.Printf("  Status: %s\n", indexResponse.Status)
+		fmt.Printf("  Error: %s\n", indexResponse.Error.Message)
+		fmt.Printf("  Playlist: %s\n", indexResponse.Playlist.Name)
+		fmt.Printf("  Playlists: (%d)\n", len(indexResponse.Playlists.Playlists))
+		for _, pl := range indexResponse.Playlists.Playlists {
+			fmt.Printf("    [%d] %s\n", pl.Entries.Len(), pl.Name)
+		}
+		fmt.Printf("  Indexes:\n")
+		for _, pl := range indexResponse.Indexes.Index {
+			fmt.Printf("    %s\n", pl.Name)
+		}
+		fmt.Printf("Playlist response:\n")
+		fmt.Printf("  Directory: %s\n", playlistResponse.Directory.Name)
+		fmt.Printf("  Status: %s\n", playlistResponse.Status)
+		fmt.Printf("  Error: %s\n", playlistResponse.Error.Message)
+		fmt.Printf("  Playlist: %s\n", playlistResponse.Playlist.Name)
+		fmt.Printf("  Playlists: (%d)\n", len(indexResponse.Playlists.Playlists))
+		for _, pl := range playlistResponse.Playlists.Playlists {
+			fmt.Printf("    [%d] %s\n", pl.Entries.Len(), pl.Name)
+		}
+		fmt.Printf("  Indexes:\n")
+		for _, pl := range playlistResponse.Indexes.Index {
+			fmt.Printf("    %s\n", pl.Name)
+		}
+
+		os.Exit(0)
 	}
 
 	// init mpv engine
