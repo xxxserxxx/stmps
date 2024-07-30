@@ -153,7 +153,7 @@ func (q *QueuePage) updateQueue() {
 
 // queueData methods, used by tview to lazily render the table
 func (q *queueData) GetCell(row, column int) *tview.TableCell {
-	if row >= len(q.playerQueue) || column >= queueDataColumns {
+	if row >= len(q.playerQueue) || column >= queueDataColumns || row < 0 || column < 0 {
 		return nil
 	}
 	song := q.playerQueue[row]
