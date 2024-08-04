@@ -188,6 +188,8 @@ github.com/spezifisch/go-mpv v0.2.4 h1:C0M+/tv7Y3UM+6lrtDlWOz4eYSJeZe3g0SKFDXNtM
 github.com/spezifisch/go-mpv v0.2.4/go.mod h1:ivPx1Ztoq/WJIN1SHB8Hgjt4dgRt4YB7eXB4w5Ghtpg=
 github.com/spezifisch/go-mpv v0.2.5 h1:Cu3yiGhi6AKT391qpViFco299M+z+KL3UqgEiJWTTgw=
 github.com/spezifisch/go-mpv v0.2.5/go.mod h1:ivPx1Ztoq/WJIN1SHB8Hgjt4dgRt4YB7eXB4w5Ghtpg=
+github.com/spezifisch/go-mpv v0.2.6 h1:jJLxZFUD1maqwsrZLN81GPMDyZSZC5DFriieCimAla8=
+github.com/spezifisch/go-mpv v0.2.6/go.mod h1:ivPx1Ztoq/WJIN1SHB8Hgjt4dgRt4YB7eXB4w5Ghtpg=
 github.com/spf13/afero v1.10.0 h1:EaGW2JJh15aKOejeuJ+wpFSHnbd7GE6Wvp3TsNhb6LY=
 github.com/spf13/afero v1.10.0/go.mod h1:UBogFpq8E9Hx+xc5CNTTEpTnuHVmXDwZcZcE1eb/UhQ=
 github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=
