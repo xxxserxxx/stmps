@@ -28,24 +28,14 @@ Browser:
 
 [mpv](https://mpv.io):
 
-* Linux (Debian/Ubuntu): `apt install libmpv libmpv-dev`
-* MacOS (Homebrew): `brew install mpv` (not the cask)
+* Linux (Debian/Ubuntu): `apt install pkg-config libmpv libmpv-dev`
+* MacOS (Homebrew): `brew install pkg-config mpv` (not the cask)
 
-Go build dependencies
+Go build dependencies)
 
 * Go 1.19+
 * [tview](https://github.com/rivo/tview)
 * [go-mpv](https://github.com/spezifisch/go-mpv)
-
-### OSX path setup
-
-On OSX if you installed mpv with brew you may need to set the following paths
-(these differ between Intel and ARM Macs):
-
-```shell
-export C_INCLUDE_PATH="$(brew --prefix)/include:$C_INCLUDE_PATH"
-export LIBRARY_PATH="$(brew --prefix)/lib:$LIBRARY_PATH"
-```
 
 ## Compiling
 
