@@ -169,6 +169,8 @@ github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9yS
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/spezifisch/go-mpv v0.0.0-20231102071031-b990eeffe778 h1:b0mDyPsZ3xtHTfcEKTB08nF8rXLtU7lvjFRMBgxAimI=
 github.com/spezifisch/go-mpv v0.0.0-20231102071031-b990eeffe778/go.mod h1:ivPx1Ztoq/WJIN1SHB8Hgjt4dgRt4YB7eXB4w5Ghtpg=
+github.com/spezifisch/go-mpv v0.2.4 h1:C0M+/tv7Y3UM+6lrtDlWOz4eYSJeZe3g0SKFDXNtM4o=
+github.com/spezifisch/go-mpv v0.2.4/go.mod h1:ivPx1Ztoq/WJIN1SHB8Hgjt4dgRt4YB7eXB4w5Ghtpg=
 github.com/spf13/afero v1.10.0 h1:EaGW2JJh15aKOejeuJ+wpFSHnbd7GE6Wvp3TsNhb6LY=
 github.com/spf13/afero v1.10.0/go.mod h1:UBogFpq8E9Hx+xc5CNTTEpTnuHVmXDwZcZcE1eb/UhQ=
 github.com/spf13/cast v1.5.1 h1:R+kOtfhWQE6TVQzY+4D7wJLBgkdVasCEFxSUBYBYIlA=
