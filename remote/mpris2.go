@@ -200,3 +200,31 @@ func (m *MprisPlayer) volumeChange(c *prop.Change) *dbus.Error {
 	}
 	return nil
 }
+
+// OnSongChange method to be called by eventLoop
+func (m *MprisPlayer) OnSongChange(currentSong TrackInterface) {
+	m.logger.Print("mpris: OnSongChange called")
+
+	metadata := map[string]interface{}{
+		"mpris:trackid":     "",
+		"mpris:length":      int64(currentSong.GetDuration() * 1000000), // duration in microseconds
+		"xesam:album":       "",
+		"xesam:albumArtist": "",
+		"xesam:artist":      []string{currentSong.GetArtist()},
+		"xesam:composer":    []string{},
+		"xesam:genre":       []string{},
+		"xesam:title":       currentSong.GetTitle(),
+		"xesam:trackNumber": 0,
+	}
+
+	m.logger.Printf("mpris: Emitting PropertiesChanged with metadata: %+v", metadata)
+
+	err := m.dbus.Emit("/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties.PropertiesChanged",
+		"org.mpris.MediaPlayer2.Player", map[string]map[string]interface{}{
+			"Metadata": metadata,
+		}, []string{})
+
+	if err != nil {
+		m.logger.PrintError("mpris: Emit PropertiesChanged", err)
+	}
+}

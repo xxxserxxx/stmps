@@ -10,6 +10,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/mpvplayer"
+	"github.com/spezifisch/stmps/remote"
 	"github.com/spezifisch/stmps/subsonic"
 )
 
@@ -45,8 +46,9 @@ type Ui struct {
 
 	starIdList map[string]struct{}
 
-	eventLoop *eventLoop
-	mpvEvents chan mpvplayer.UiEvent
+	eventLoop   *eventLoop
+	mpvEvents   chan mpvplayer.UiEvent
+	mprisPlayer *remote.MprisPlayer
 
 	playlists  []subsonic.SubsonicPlaylist
 	connection *subsonic.SubsonicConnection
@@ -72,17 +74,19 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	playlists *[]subsonic.SubsonicPlaylist,
 	connection *subsonic.SubsonicConnection,
 	player *mpvplayer.Player,
-	logger *logger.Logger) (ui *Ui) {
+	logger *logger.Logger,
+	mprisPlayer *remote.MprisPlayer) (ui *Ui) {
 	ui = &Ui{
 		starIdList: map[string]struct{}{},
 
 		eventLoop: nil, // initialized by initEventLoops()
 		mpvEvents: make(chan mpvplayer.UiEvent, 5),
 
-		playlists:  *playlists,
-		connection: connection,
-		player:     player,
-		logger:     logger,
+		playlists:   *playlists,
+		connection:  connection,
+		player:      player,
+		logger:      logger,
+		mprisPlayer: mprisPlayer,
 	}
 
 	ui.initEventLoops()

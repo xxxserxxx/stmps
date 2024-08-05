@@ -83,6 +83,11 @@ func (ui *Ui) guiEventLoop() {
 					currentSong = mpvEvent.Data.(mpvplayer.QueueItem) // TODO is this safe to access? maybe we need a copy
 					statusText += formatSongForStatusBar(&currentSong)
 
+					// Update MprisPlayer with new track info
+					if ui.mprisPlayer != nil {
+						ui.mprisPlayer.OnSongChange(currentSong)
+					}
+
 					if ui.connection.Scrobble {
 						// scrobble "now playing" event (delegate to background event loop)
 						ui.eventLoop.scrobbleNowPlaying <- currentSong.Id

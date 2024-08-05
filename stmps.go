@@ -76,6 +76,7 @@ func main() {
 		flag.Usage()
 		os.Exit(0)
 	}
+
 	// cpu/memprofile code straight from https://pkg.go.dev/runtime/pprof
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -110,6 +111,7 @@ func main() {
 		fmt.Printf("Error fetching playlists from server: %s\n", err)
 		os.Exit(1)
 	}
+
 	// TODO (B) loading playlists can take a long time on e.g. gonic if there are a lot of them; can it be done in the background?
 	playlistResponse, err := connection.GetPlaylists()
 	if err != nil {
@@ -155,15 +157,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	var mprisPlayer *remote.MprisPlayer
 	// init mpris2 player control (linux only but fails gracefully on other systems)
 	if *enableMpris {
-		mpris, err := remote.RegisterMprisPlayer(player, logger)
+		mprisPlayer, err = remote.RegisterMprisPlayer(player, logger)
 		if err != nil {
 			fmt.Printf("Unable to register MPRIS with DBUS: %s\n", err)
 			fmt.Println("Try running without MPRIS")
 			os.Exit(1)
 		}
-		defer mpris.Close()
+		defer mprisPlayer.Close()
 	}
 
 	// init macos mediaplayer control
@@ -180,7 +183,8 @@ func main() {
 		&playlistResponse.Playlists.Playlists,
 		connection,
 		player,
-		logger)
+		logger,
+		mprisPlayer)
 
 	// run main loop
 	if err := ui.Run(); err != nil {
