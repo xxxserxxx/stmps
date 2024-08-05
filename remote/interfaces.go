@@ -36,9 +36,13 @@ type ControlledPlayer interface {
 }
 
 type TrackInterface interface {
+	GetId() string
 	GetArtist() string
 	GetTitle() string
 	GetDuration() int
+	GetAlbumArtist() string
+	GetAlbum() string
+	GetTrackNumber() int
 
 	// something like ID != ""
 	IsValid() bool

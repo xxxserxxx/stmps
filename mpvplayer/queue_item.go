@@ -15,6 +15,10 @@ type QueueItem struct {
 
 var _ remote.TrackInterface = (*QueueItem)(nil)
 
+func (q QueueItem) GetAlbumArtist() string {
+	return q.Artist
+}
+
 func (q QueueItem) GetArtist() string {
 	return q.Artist
 }

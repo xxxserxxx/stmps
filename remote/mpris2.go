@@ -17,6 +17,8 @@ type MprisPlayer struct {
 	dbus   *dbus.Conn
 	player ControlledPlayer
 	logger logger.LoggerInterface
+
+	metadata map[string]interface{}
 }
 
 func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface) (mpp *MprisPlayer, err error) {
@@ -29,35 +31,17 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 		dbus:   conn,
 		player: player,
 		logger: logger_,
-	}
-
-	err = conn.ExportAll(mpp, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player")
-	if err != nil {
-		return
-	}
-	/*
-		func (mpp MprisPlayer) Metadata() string {
-			if len(mpp.player.Queue) == 0 {
-				return ""
-			}
-			playing := mpp.player.Queue[0]
-			return fmt.Sprintf("%s - %s", playing.Artist, playing.Title)
-		}
-		Shuffle true/false
-		LoopStatus "Noneon, "Track", "Playlist"
-		Position time_in_us
-		MaximumRate, Rate, MinimumRate (float 0-1, x speed)
-	*/
-	metadata := map[string]interface{}{
-		"mpris:trackid":     "",
-		"mpris:length":      int64(0),
-		"xesam:album":       "",
-		"xesam:albumArtist": "",
-		"xesam:artist":      []string{},
-		"xesam:composer":    []string{},
-		"xesam:genre":       []string{},
-		"xesam:title":       "",
-		"xesam:trackNumber": int(0),
+		metadata: map[string]interface{}{
+			"mpris:trackid":     "",
+			"mpris:length":      int64(0),
+			"xesam:album":       "",
+			"xesam:albumArtist": "",
+			"xesam:artist":      []string{},
+			"xesam:composer":    []string{},
+			"xesam:genre":       []string{},
+			"xesam:title":       "",
+			"xesam:trackNumber": int(0),
+		},
 	}
 
 	var mprisPlayer = map[string]*prop.Prop{
@@ -67,7 +51,7 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 		"CanPlay":        {Value: true, Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"CanSeek":        {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"CanGoPrevious":  {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
-		"Metadata":       {Value: metadata, Writable: false, Emit: prop.EmitTrue, Callback: nil},
+		"Metadata":       {Value: mpp.metadata, Writable: false, Emit: prop.EmitTrue, Callback: nil},
 		"Volume":         {Value: float64(0.0), Writable: true, Emit: prop.EmitTrue, Callback: mpp.volumeChange},
 		"PlaybackStatus": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 	}
@@ -77,6 +61,7 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 		"CanRaise":            {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"HasTrackList":        {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"Identity":            {Value: "stmps", Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"IconName":            {Value: "stmps-icon", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"SupportedUriSchemes": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"SupportedMimeTypes":  {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 	}
@@ -102,6 +87,11 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 				Name:       "org.mpris.MediaPlayer2.Player",
 				Methods:    introspect.Methods(mpp),
 				Properties: props.Introspection("org.mpris.MediaPlayer2.Player"), // we implement the standard interface
+			},
+			{
+				Name:       "org.mpris.MediaPlayer2",
+				Methods:    []introspect.Method{},
+				Properties: props.Introspection("org.mpris.MediaPlayer2"),
 			},
 		},
 	}
@@ -202,25 +192,22 @@ func (m *MprisPlayer) volumeChange(c *prop.Change) *dbus.Error {
 
 // OnSongChange method to be called by eventLoop
 func (m *MprisPlayer) OnSongChange(currentSong TrackInterface) {
-	m.logger.Print("mpris: OnSongChange called")
+	m.metadata["mpris:trackid"] = "/org/mpris/MediaPlayer2/track/" + currentSong.GetId()
+	m.metadata["mpris:length"] = int64(currentSong.GetDuration() * 1000000) // Duration in microseconds
+	m.metadata["xesam:album"] = currentSong.GetAlbum()                      // Album name
+	m.metadata["xesam:albumArtist"] = currentSong.GetAlbumArtist()          // Album artist
+	m.metadata["xesam:artist"] = []string{currentSong.GetArtist()}          // List of artists
+	m.metadata["xesam:composer"] = []string{}                               // List of composers, empty
+	m.metadata["xesam:genre"] = []string{}                                  // List of genres, empty
+	m.metadata["xesam:title"] = currentSong.GetTitle()                      // Track title
+	m.metadata["xesam:trackNumber"] = currentSong.GetTrackNumber()          // Track number
 
-	metadata := map[string]interface{}{
-		"mpris:trackid":     "",
-		"mpris:length":      int64(currentSong.GetDuration() * 1000000), // duration in microseconds
-		"xesam:album":       "",
-		"xesam:albumArtist": "",
-		"xesam:artist":      []string{currentSong.GetArtist()},
-		"xesam:composer":    []string{},
-		"xesam:genre":       []string{},
-		"xesam:title":       currentSong.GetTitle(),
-		"xesam:trackNumber": 0,
-	}
+	//m.logger.Printf("mpris: Updated metadata: %+v", m.metadata)
 
-	m.logger.Printf("mpris: Emitting PropertiesChanged with metadata: %+v", metadata)
-
+	// Emit the PropertiesChanged signal to notify clients about the metadata change
 	err := m.dbus.Emit("/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties.PropertiesChanged",
-		"org.mpris.MediaPlayer2.Player", map[string]map[string]interface{}{
-			"Metadata": metadata,
+		"org.mpris.MediaPlayer2.Player", map[string]interface{}{
+			"Metadata": m.metadata,
 		}, []string{})
 
 	if err != nil {
