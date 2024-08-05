@@ -62,8 +62,8 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 		"HasTrackList":        {Value: false, Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"Identity":            {Value: "stmps", Writable: false, Emit: prop.EmitFalse, Callback: nil},
 		"IconName":            {Value: "stmps-icon", Writable: false, Emit: prop.EmitFalse, Callback: nil},
-		"SupportedUriSchemes": {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
-		"SupportedMimeTypes":  {Value: "", Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"SupportedUriSchemes": {Value: []string{}, Writable: false, Emit: prop.EmitFalse, Callback: nil},
+		"SupportedMimeTypes":  {Value: []string{}, Writable: false, Emit: prop.EmitFalse, Callback: nil},
 	}
 
 	props, err := prop.Export(
@@ -85,8 +85,37 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 			introspect.IntrospectData,
 			prop.IntrospectData,
 			{
-				Name:       "org.mpris.MediaPlayer2.Player",
-				Methods:    introspect.Methods(mpp),
+				Name: "org.mpris.MediaPlayer2.Player",
+				Methods: []introspect.Method{
+					{
+						Name: "Next",
+					},
+					{
+						Name: "Pause",
+					},
+					{
+						Name: "Play",
+					},
+					{
+						Name: "PlayPause",
+					},
+					{
+						Name: "Stop",
+					},
+					{
+						Name: "Seek",
+						Args: []introspect.Arg{
+							{Name: "Offset", Type: "x", Direction: "in"},
+						},
+					},
+					{
+						Name: "SetPosition",
+						Args: []introspect.Arg{
+							{Name: "TrackId", Type: "o", Direction: "in"},
+							{Name: "Position", Type: "x", Direction: "in"},
+						},
+					},
+				},
 				Properties: props.Introspection("org.mpris.MediaPlayer2.Player"), // we implement the standard interface
 			},
 			{
@@ -96,9 +125,16 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 			},
 		},
 	}
+
+	err = conn.Export(mpp, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player")
+	if err != nil {
+		logger_.PrintError("conn.Export Player error", err)
+		return
+	}
+
 	err = conn.Export(introspect.NewIntrospectable(n), "/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Introspectable")
 	if err != nil {
-		logger_.PrintError("conn.Export error", err)
+		logger_.PrintError("conn.Export Introspectable error", err)
 		return
 	}
 
@@ -130,55 +166,73 @@ func (m *MprisPlayer) Stop() {
 	}
 }
 
-func (m *MprisPlayer) Next() {
+func (m *MprisPlayer) Next() *dbus.Error {
 	if err := m.player.NextTrack(); err != nil {
-		m.logger.PrintError("mpp PlayNextTrack", err)
+		m.logger.PrintError("mpp Next", err)
+		return dbus.MakeFailedError(err)
 	}
-	//TODO updateQueueList(ui.player, ui.queueList, ui.starIdList)
+	return nil
 }
 
 // set paused
-func (m *MprisPlayer) Pause() {
+func (m *MprisPlayer) Pause() *dbus.Error {
 	if paused, err := m.player.IsPaused(); err != nil {
 		m.logger.PrintError("mpp IsPaused", err)
+		return dbus.MakeFailedError(err)
 	} else if !paused {
 		if err = m.player.Pause(); err != nil {
 			m.logger.PrintError("mpp Pause", err)
+			return dbus.MakeFailedError(err)
 		}
 	}
+	return nil
 }
 
 // set playing
-func (m *MprisPlayer) Play() {
+func (m *MprisPlayer) Play() *dbus.Error {
 	if playing, err := m.player.IsPlaying(); err != nil {
 		m.logger.PrintError("mpp IsPlaying", err)
+		return dbus.MakeFailedError(err)
 	} else if !playing {
-		if err = m.player.Pause(); err != nil {
-			m.logger.PrintError("mpp Pause", err)
+		if err = m.player.Play(); err != nil {
+			m.logger.PrintError("mpp Play", err)
+			return dbus.MakeFailedError(err)
 		}
 	}
+	return nil
 }
 
-func (m *MprisPlayer) PlayPause() {
-	if err := m.player.Pause(); err != nil {
-		m.logger.PrintError("mpp Pause", err)
+func (m *MprisPlayer) PlayPause() *dbus.Error {
+	if playing, err := m.player.IsPlaying(); err != nil {
+		m.logger.PrintError("mpp IsPlaying", err)
+		return dbus.MakeFailedError(err)
+	} else if playing {
+		if err = m.player.Pause(); err != nil {
+			m.logger.PrintError("mpp Pause", err)
+			return dbus.MakeFailedError(err)
+		}
+	} else {
+		if err = m.player.Play(); err != nil {
+			m.logger.PrintError("mpp Play", err)
+			return dbus.MakeFailedError(err)
+		}
 	}
+	return nil
 }
 
-func (m *MprisPlayer) OpenUri(string) {
+func (m *MprisPlayer) Previous() *dbus.Error {
 	// TODO not implemented
+	return nil
 }
-func (m *MprisPlayer) Previous() {
+
+func (m *MprisPlayer) Seek(offset int64, _ int) *dbus.Error {
 	// TODO not implemented
+	return nil
 }
-func (m *MprisPlayer) Seek(int) {
+
+func (m *MprisPlayer) SetPosition(trackId dbus.ObjectPath, position int64) *dbus.Error {
 	// TODO not implemented
-}
-func (m *MprisPlayer) Seeked(int) {
-	// TODO not implemented
-}
-func (m *MprisPlayer) SetPosition(string, int) {
-	// TODO not implemented
+	return nil
 }
 
 func (m *MprisPlayer) volumeChange(c *prop.Change) *dbus.Error {
@@ -188,6 +242,7 @@ func (m *MprisPlayer) volumeChange(c *prop.Change) *dbus.Error {
 	percentVol := int(math.Round(fVol * 100))
 	if err := m.player.SetVolume(percentVol); err != nil {
 		m.logger.PrintError("volumeChange", err)
+		return dbus.MakeFailedError(err)
 	} else {
 		m.logger.Printf("mpris: adjust volume %f -> %d%%", fVol, percentVol)
 	}
