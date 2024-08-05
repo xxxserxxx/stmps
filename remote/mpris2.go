@@ -75,6 +75,7 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 		},
 	)
 	if err != nil {
+		logger_.PrintError("prop.Export error", err)
 		return
 	}
 
@@ -97,6 +98,7 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 	}
 	err = conn.Export(introspect.NewIntrospectable(n), "/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Introspectable")
 	if err != nil {
+		logger_.PrintError("conn.Export error", err)
 		return
 	}
 
@@ -104,10 +106,12 @@ func RegisterMprisPlayer(player ControlledPlayer, logger_ logger.LoggerInterface
 	name := "org.mpris.MediaPlayer2.stmps"
 	reply, err := conn.RequestName(name, dbus.NameFlagDoNotQueue)
 	if err != nil {
+		logger_.PrintError("conn.RequestName error", err)
 		return
 	}
 	if reply != dbus.RequestNameReplyPrimaryOwner {
 		err = errors.New("name already owned")
+		logger_.PrintError("conn.RequestName reply error", err)
 		return
 	}
 	return
@@ -202,7 +206,7 @@ func (m *MprisPlayer) OnSongChange(currentSong TrackInterface) {
 	m.metadata["xesam:title"] = currentSong.GetTitle()                      // Track title
 	m.metadata["xesam:trackNumber"] = currentSong.GetTrackNumber()          // Track number
 
-	//m.logger.Printf("mpris: Updated metadata: %+v", m.metadata)
+	m.logger.Printf("mpris: Updated metadata: %+v", m.metadata)
 
 	// Emit the PropertiesChanged signal to notify clients about the metadata change
 	err := m.dbus.Emit("/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties.PropertiesChanged",
