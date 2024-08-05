@@ -261,7 +261,7 @@ func (m *MprisPlayer) OnSongChange(currentSong TrackInterface) {
 	m.metadata["xesam:title"] = currentSong.GetTitle()                      // Track title
 	m.metadata["xesam:trackNumber"] = currentSong.GetTrackNumber()          // Track number
 
-	m.logger.Printf("mpris: Updated metadata: %+v", m.metadata)
+	//m.logger.Printf("mpris: Updated metadata: %+v", m.metadata)
 
 	// Emit the PropertiesChanged signal to notify clients about the metadata change
 	err := m.dbus.Emit("/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties.PropertiesChanged",
