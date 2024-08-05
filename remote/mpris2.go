@@ -225,9 +225,9 @@ func (m *MprisPlayer) Previous() *dbus.Error {
 	return nil
 }
 
-func (m *MprisPlayer) Seek(offset int64, _ int) *dbus.Error {
+func (m *MprisPlayer) Seek(offset int64, _ int) (int64, error) {
 	// TODO not implemented
-	return nil
+	return 0, nil
 }
 
 func (m *MprisPlayer) SetPosition(trackId dbus.ObjectPath, position int64) *dbus.Error {
