@@ -13,15 +13,11 @@ jobs:
     steps:
       - name: Library dependencies
         run: sudo apt-get install libmpv-dev libglx-dev libgl-dev
-
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
-
+          go-version: stable
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.54.2
-          skip-cache: true
+          version: v1.59
