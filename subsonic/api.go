@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/spezifisch/stmps/logger"
+	"github.com/spf13/viper"
 )
 
 type SubsonicConnection struct {
@@ -242,7 +243,11 @@ func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicRes
 func (connection *SubsonicConnection) GetRandomSongs() (*SubsonicResponse, error) {
 	query := defaultQuery(connection)
 	// Let's get 50 random songs, default is 10
-	query.Set("size", "50")
+	if viper.IsSet("client.random-songs"){
+		query.Set("size", viper.GetString("client.random-songs"))
+	} else {
+		query.Set("size", "50")
+	}
 	requestUrl := connection.Host + "/rest/getRandomSongs" + "?" + query.Encode()
 	resp, err := connection.getResponse("GetRandomSongs", requestUrl)
 	if err != nil {

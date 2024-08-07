@@ -57,6 +57,9 @@ plaintext = true  # Use 'legacy' unsalted password authentication (default: fals
 [server]
 host = 'https://your-subsonic-host.tld'
 scrobble = true  # Use Subsonic scrobbling for last.fm/ListenBrainz (default: false)
+
+[client]
+random-songs = 50
 ```
 
 ## Usage
