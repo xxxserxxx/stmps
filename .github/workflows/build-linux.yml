@@ -34,4 +34,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: matrix.go == 'stable' && startsWith(github.ref, 'refs/tags/')
         with:
-          files: stmp
+          files: stmp-linux-x86_64
