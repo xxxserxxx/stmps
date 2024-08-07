@@ -1,0 +1,37 @@
+name: Build macOS Intel
+
+on:
+  push:
+    paths-ignore:
+      - "*.md"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        go:
+          - "1.21"
+          - "1.22"
+
+    runs-on: macos-13
+
+    steps:
+      - name: Library dependencies
+        run: brew install mpv
+
+      - uses: actions/checkout@v4
+
+      - name: Install Go ${{ matrix.go }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Get Go deps
+        run: go get .
+
+      - name: Setup path
+        run: export C_INCLUDE_PATH=/usr/local/include:/opt/homebrew/include:$C_INCLUDE_PATH && export LIBRARY_PATH=/usr/local/lib:/opt/homebrew/lib:$LIBRARY_PATH
+
+      - name: Compile
+        run: CGO_CFLAGS="-I/usr/local/include -I/opt/homebrew/include" CGO_LDFLAGS="-L/usr/local/lib -L/opt/homebrew/lib" go build
