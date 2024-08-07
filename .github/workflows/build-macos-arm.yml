@@ -30,8 +30,12 @@ jobs:
       - name: Get Go deps
         run: go get .
 
-      - name: Setup path
-        run: export C_INCLUDE_PATH=/usr/local/include:/opt/homebrew/include:$C_INCLUDE_PATH && export LIBRARY_PATH=/usr/local/lib:/opt/homebrew/lib:$LIBRARY_PATH
+      - name: Export paths
+        run: |
+          export C_INCLUDE_PATH=/usr/local/include:/opt/homebrew/include:$C_INCLUDE_PATH
+          export LIBRARY_PATH=/usr/local/lib:/opt/homebrew/lib:$LIBRARY_PATH
+          export CGO_CFLAGS="-I/usr/local/include -I/opt/homebrew/include" 
+          export CGO_LDFLAGS="-L/usr/local/lib -L/opt/homebrew/lib"
 
       - name: Compile
-        run: CGO_CFLAGS="-I/usr/local/include -I/opt/homebrew/include" CGO_LDFLAGS="-L/usr/local/lib -L/opt/homebrew/lib" go build
+        run: go build

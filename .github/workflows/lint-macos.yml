@@ -21,6 +21,13 @@ jobs:
         with:
           go-version: "1.21"
 
+      - name: Export paths
+        run: |
+          export C_INCLUDE_PATH=/usr/local/include:/opt/homebrew/include:$C_INCLUDE_PATH
+          export LIBRARY_PATH=/usr/local/lib:/opt/homebrew/lib:$LIBRARY_PATH
+          export CGO_CFLAGS="-I/usr/local/include -I/opt/homebrew/include" 
+          export CGO_LDFLAGS="-L/usr/local/lib -L/opt/homebrew/lib"
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
