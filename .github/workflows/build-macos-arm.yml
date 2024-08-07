@@ -19,19 +19,14 @@ jobs:
     steps:
       - name: Library dependencies
         run: brew install mpv
-
       - uses: actions/checkout@v4
-
       - name: Install Go ${{ matrix.go }}
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-
       - name: Get Go deps
         run: go get .
-
       - name: Export paths
-        uses: spezifisch/export-homebrew-build-paths@v0.1.1
-
+        uses: spezifisch/export-homebrew-build-paths@v1.0.0
       - name: Compile
         run: go build
