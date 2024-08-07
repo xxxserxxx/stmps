@@ -1,6 +1,9 @@
 name: golangci-lint on Linux
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - "*.md"
 
 permissions:
   contents: read

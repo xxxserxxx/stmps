@@ -1,9 +1,9 @@
 name: golangci-lint on macOS
 
-on: [push]
-
-permissions:
-  contents: read
+on:
+  push:
+    paths-ignore:
+      - "*.md"
 
 # do a separate lint job on macOS to catch platform-dependent problems
 jobs:
