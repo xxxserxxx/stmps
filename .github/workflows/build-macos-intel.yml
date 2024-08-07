@@ -31,7 +31,7 @@ jobs:
         run: go get .
 
       - name: Export paths
-        uses: spezifisch/export-homebrew-build-paths@v0.1.1
+        uses: spezifisch/export-homebrew-build-paths@v0.1.2
 
       - name: Compile
         run: go build
