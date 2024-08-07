@@ -12,21 +12,21 @@ import (
 	"strings"
 
 	"github.com/spezifisch/stmps/logger"
-	"github.com/spf13/viper"
 )
 
 type SubsonicConnection struct {
-	Username      string
-	Password      string
-	Host          string
-	PlaintextAuth bool
-	Scrobble      bool
+	Username      		string
+	Password      		string
+	Host          		string
+	PlaintextAuth 		bool
+	Scrobble      		bool
+	RandomSongNumber	string
 
-	clientName    string
-	clientVersion string
+	clientName    		string
+	clientVersion 		string
 
-	logger         logger.LoggerInterface
-	directoryCache map[string]SubsonicResponse
+	logger         		logger.LoggerInterface
+	directoryCache 		map[string]SubsonicResponse
 }
 
 func Init(logger logger.LoggerInterface) *SubsonicConnection {
@@ -242,9 +242,9 @@ func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicRes
 
 func (connection *SubsonicConnection) GetRandomSongs() (*SubsonicResponse, error) {
 	query := defaultQuery(connection)
-	// Let's get 50 random songs, default is 10
-	if viper.IsSet("client.random-songs"){
-		query.Set("size", viper.GetString("client.random-songs"))
+	// Try loading the number of random songs from the config file, if not, default to 50
+	if connection.RandomSongNumber != "" {
+		query.Set("size", connection.RandomSongNumber)
 	} else {
 		query.Set("size", "50")
 	}
