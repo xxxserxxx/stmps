@@ -105,6 +105,7 @@ func main() {
 	connection.Host = viper.GetString("server.host")
 	connection.PlaintextAuth = viper.GetBool("auth.plaintext")
 	connection.Scrobble = viper.GetBool("server.scrobble")
+	connection.RandomSongNumber = viper.GetUint("client.random-songs")
 
 	indexResponse, err := connection.GetIndexes()
 	if err != nil {
