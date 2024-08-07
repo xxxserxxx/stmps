@@ -20,7 +20,7 @@ type SubsonicConnection struct {
 	Host          		string
 	PlaintextAuth 		bool
 	Scrobble      		bool
-	RandomSongNumber	string
+	RandomSongNumber	uint
 
 	clientName    		string
 	clientVersion 		string
@@ -242,10 +242,10 @@ func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicRes
 
 func (connection *SubsonicConnection) GetRandomSongs() (*SubsonicResponse, error) {
 	query := defaultQuery(connection)
-	// Try loading the number of random songs from the config file, if not, default to 50
-	if connection.RandomSongNumber != "" {
-		query.Set("size", connection.RandomSongNumber)
-	} else {
+	// Try loading the number of random songs from the config file (and clamp it to 500) if not, default to 50
+	if connection.RandomSongNumber > 0 && connection.RandomSongNumber < 500 {
+		query.Set("size", strconv.FormatInt(int64(connection.RandomSongNumber), 10))
+	} else {	
 		query.Set("size", "50")
 	}
 	requestUrl := connection.Host + "/rest/getRandomSongs" + "?" + query.Encode()
