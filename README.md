@@ -35,7 +35,7 @@ Go build dependencies)
 
 * Go 1.19+
 * [tview](https://github.com/rivo/tview)
-* [go-mpv](https://github.com/spezifisch/go-mpv)
+* [go-mpv](https://github.com/supersonic-app/go-mpv) (supersonic's fork)
 
 ## Compiling
 

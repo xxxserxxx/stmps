@@ -6,7 +6,7 @@ package mpvplayer
 import (
 	"errors"
 
-	"github.com/spezifisch/go-mpv"
+	"github.com/supersonic-app/go-mpv"
 )
 
 func (p *Player) getPropertyInt64(name string) (int64, error) {
