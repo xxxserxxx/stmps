@@ -15,18 +15,18 @@ import (
 )
 
 type SubsonicConnection struct {
-	Username      		string
-	Password      		string
-	Host          		string
-	PlaintextAuth 		bool
-	Scrobble      		bool
-	RandomSongNumber	uint
+	Username         string
+	Password         string
+	Host             string
+	PlaintextAuth    bool
+	Scrobble         bool
+	RandomSongNumber uint
 
-	clientName    		string
-	clientVersion 		string
+	clientName    string
+	clientVersion string
 
-	logger         		logger.LoggerInterface
-	directoryCache 		map[string]SubsonicResponse
+	logger         logger.LoggerInterface
+	directoryCache map[string]SubsonicResponse
 }
 
 func Init(logger logger.LoggerInterface) *SubsonicConnection {
@@ -245,7 +245,7 @@ func (connection *SubsonicConnection) GetRandomSongs() (*SubsonicResponse, error
 	// Try loading the number of random songs from the config file (and clamp it to 500) if not, default to 50
 	if connection.RandomSongNumber > 0 && connection.RandomSongNumber < 500 {
 		query.Set("size", strconv.FormatInt(int64(connection.RandomSongNumber), 10))
-	} else {	
+	} else {
 		query.Set("size", "50")
 	}
 	requestUrl := connection.Host + "/rest/getRandomSongs" + "?" + query.Encode()
