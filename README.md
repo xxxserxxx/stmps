@@ -37,14 +37,14 @@ These screenshots use [Navidrome's demo server](https://demo.navidrome.org/) ([c
 ### Required Software
 
 - [mpv](https://mpv.io)
-  - Linux (Debian/Ubuntu): `apt install pkg-config libmpv libmpv-dev`
-  - MacOS (Homebrew): `brew install pkg-config mpv` (not the cask)
+- Linux (Debian/Ubuntu): `apt install pkg-config libmpv libmpv-dev`
+- MacOS (Homebrew): `brew install pkg-config mpv` (not the cask)
 
 ### Go Build Dependencies
 
-* Go 1.19+
-* [tview](https://github.com/rivo/tview)
-* [go-mpv](https://github.com/supersonic-app/go-mpv) (supersonic's fork)
+- Go 1.19+
+- [tview](https://github.com/rivo/tview)
+- [go-mpv](https://github.com/supersonic-app/go-mpv) (supersonic's fork)
 
 ## Compiling
 
