@@ -19,7 +19,7 @@ jobs:
           - arm64
         go:
           - "1.21"
-          - "stable"
+          - stable
 
     runs-on: ${{ matrix.os }}
 
@@ -47,6 +47,7 @@ jobs:
       - name: Compile
         run: go build -o stmps-macos-${{ matrix.architecture }}
       - name: Upload binary as artifact
+        if: matrix.go == 'stable' && matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
           path: stmps-macos-${{ matrix.architecture }}
