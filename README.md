@@ -3,12 +3,12 @@
 *Stamps* is a terminal client for *sonic music servers, inspired by ncmpcpp and musickube.
 
 Main Branch:
-[![Build macOS arm64](https://github.com/spezifisch/stmps/actions/workflows/build-macos-arm.yml/badge.svg)](https://github.com/spezifisch/stmps/actions/workflows/build-macos-arm.yml)
-[![Build Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=main)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
+[![Build+Test Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=main)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
+[![Build+Test macOS](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml)
 
 Dev Branch:
-[![Build macOS arm64](https://github.com/spezifisch/stmps/actions/workflows/build-macos-arm.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-macos-arm.yml)
-[![Build Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
+[![Build+Test Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
+[![Build+Test macOS](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml)
 
 ## Features
 
@@ -115,10 +115,6 @@ These controls are accessible from any view:
 - `d`: Delete playlist
 - `a`: Add playlist or song to queue
 
-## Credits
-
-This is a fork of [STMP](https://github.com/wildeyedskies/stmp). See [AUTHORS](./AUTHORS) for more information. The codebase has diverged significantly from the original.
-
 ## Advanced Configuration and Features
 
 ### MPRIS2 Integration
@@ -145,6 +141,10 @@ View logs and error messages in the log view by pressing `4`. This can help diag
 ## Contributing
 
 Contributions are welcome! Feel free to open issues or submit pull requests on GitHub. For major changes, please discuss first to ensure alignment with the project goals.
+
+## Credits
+
+This is a fork of [STMP](https://github.com/wildeyedskies/stmp). See [AUTHORS](./AUTHORS) for more information. The codebase has diverged significantly from the original.
 
 ## Licensing
 
