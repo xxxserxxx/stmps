@@ -15,9 +15,7 @@ jobs:
           - ubuntu-22.04
           - ubuntu-latest
         go:
-          - "1.19"
-          - "1.20"
-          - "1.21"
+          - "1.19" # oldest supported from debian stable
           - stable
         architecture:
           - amd64
