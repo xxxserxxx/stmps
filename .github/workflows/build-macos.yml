@@ -31,6 +31,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
+      - name: Export paths
+        uses: spezifisch/export-homebrew-build-paths@v1.0.0
       - name: Set Environment Variables for Cross-Compilation
         run: |
           if [ "${{ matrix.architecture }}" == "amd64" ]; then
