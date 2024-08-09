@@ -2,8 +2,6 @@ name: markdownlint
 
 on:
   push:
-    paths-ignore:
-      - "*.md"
 
 permissions:
   contents: read
