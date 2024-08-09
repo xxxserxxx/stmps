@@ -122,14 +122,22 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 				ui.logger.Printf("Error fetching indexes from server: %s\n", err)
 				return event
 			}
+
 			browserPage.artistList.Clear()
+			browserPage.artistIdList = []string{}
 			ui.connection.ClearCache()
+
+			// Sort the indexes before adding to the list
 			for _, index := range indexResponse.Indexes.Index {
+				sort.Slice(index.Artists, func(i, j int) bool {
+					return index.Artists[i].Name < index.Artists[j].Name
+				})
 				for _, artist := range index.Artists {
 					browserPage.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
 					browserPage.artistIdList = append(browserPage.artistIdList, artist.Id)
 				}
 			}
+
 			// Try to put the user to about where they were
 			if goBackTo < browserPage.artistList.GetItemCount() {
 				browserPage.artistList.SetCurrentItem(goBackTo)
