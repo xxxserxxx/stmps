@@ -5,6 +5,7 @@ package subsonic
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -346,26 +347,29 @@ func (connection *SubsonicConnection) CreatePlaylist(name string) (*SubsonicResp
 
 func (connection *SubsonicConnection) getResponse(caller, requestUrl string) (*SubsonicResponse, error) {
 	res, err := http.Get(requestUrl)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[%s] failed to make GET request: %v", caller, err)
 	}
 
 	if res.Body != nil {
 		defer res.Body.Close()
+	} else {
+		return nil, fmt.Errorf("[%s] response body is nil", caller)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("[%s] unexpected status code: %d, status: %s", caller, res.StatusCode, res.Status)
 	}
 
 	responseBody, readErr := io.ReadAll(res.Body)
-
 	if readErr != nil {
-		return nil, err
+		return nil, fmt.Errorf("[%s] failed to read response body: %v", caller, readErr)
 	}
 
 	var decodedBody responseWrapper
 	err = json.Unmarshal(responseBody, &decodedBody)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[%s] failed to unmarshal response body: %v", caller, err)
 	}
 
 	return &decodedBody.Response, nil
