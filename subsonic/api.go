@@ -176,15 +176,16 @@ type SubsonicPlaylist struct {
 }
 
 type SubsonicResponse struct {
-	Status      string            `json:"status"`
-	Version     string            `json:"version"`
-	Indexes     SubsonicIndexes   `json:"indexes"`
-	Directory   SubsonicDirectory `json:"directory"`
-	RandomSongs SubsonicSongs     `json:"randomSongs"`
-	Starred     SubsonicStarred   `json:"starred"`
-	Playlists   SubsonicPlaylists `json:"playlists"`
-	Playlist    SubsonicPlaylist  `json:"playlist"`
-	Error       SubsonicError     `json:"error"`
+	Status       string            `json:"status"`
+	Version      string            `json:"version"`
+	Indexes      SubsonicIndexes   `json:"indexes"`
+	Directory    SubsonicDirectory `json:"directory"`
+	RandomSongs  SubsonicSongs     `json:"randomSongs"`
+	SimilarSongs SubsonicSongs     `json:"similarSongs"`
+	Starred      SubsonicStarred   `json:"starred"`
+	Playlists    SubsonicPlaylists `json:"playlists"`
+	Playlist     SubsonicPlaylist  `json:"playlist"`
+	Error        SubsonicError     `json:"error"`
 }
 
 type responseWrapper struct {
@@ -240,20 +241,32 @@ func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicRes
 	return resp, nil
 }
 
-func (connection *SubsonicConnection) GetRandomSongs() (*SubsonicResponse, error) {
+func (connection *SubsonicConnection) GetRandomSongs(Id string, randomType string) (*SubsonicResponse, error) {
 	query := defaultQuery(connection)
-	// Try loading the number of random songs from the config file (and clamp it to 500) if not, default to 50
+
+	// Set the default size for random/similar songs, clamped to 500
+	size := "50"
 	if connection.RandomSongNumber > 0 && connection.RandomSongNumber < 500 {
-		query.Set("size", strconv.FormatInt(int64(connection.RandomSongNumber), 10))
-	} else {
-		query.Set("size", "50")
+		size = strconv.FormatInt(int64(connection.RandomSongNumber), 10)
 	}
-	requestUrl := connection.Host + "/rest/getRandomSongs" + "?" + query.Encode()
-	resp, err := connection.getResponse("GetRandomSongs", requestUrl)
-	if err != nil {
-		return resp, err
+
+	switch randomType {
+	case "random":
+		query.Set("size", size)
+		requestUrl := connection.Host + "/rest/getRandomSongs?" + query.Encode()
+		return connection.getResponse("GetRandomSongs", requestUrl)
+		
+	case "similar":
+		query.Set("id", Id)
+		query.Set("count", size)
+		requestUrl := connection.Host + "/rest/getSimilarSongs?" + query.Encode()
+		return connection.getResponse("GetSimilar", requestUrl)
+		
+	default:
+		query.Set("size", size)
+		requestUrl := connection.Host + "/rest/getRandomSongs?" + query.Encode()
+		return connection.getResponse("GetRandomSongs", requestUrl)
 	}
-	return resp, nil
 }
 
 func (connection *SubsonicConnection) ScrobbleSubmission(id string, isSubmission bool) (resp *SubsonicResponse, err error) {
