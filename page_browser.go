@@ -114,6 +114,8 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			browserPage.showSearchField(true)
 			browserPage.searchPrev()
 			return nil
+		case 'S':
+			browserPage.handleAddRandomSongs("similar")
 		case 'R':
 			goBackTo := browserPage.artistList.GetCurrentItem()
 			// REFRESH artists
@@ -217,6 +219,9 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			browserPage.handleEntitySelected(browserPage.artistIdList[artistIdx])
 			return nil
 		}
+		if event.Rune() == 'S' {	
+			browserPage.handleAddRandomSongs("similar")
+		}
 		return event
 	})
 
@@ -264,6 +269,23 @@ func (b *BrowserPage) handleAddArtistToQueue() {
 
 	b.ui.queuePage.UpdateQueue()
 }
+
+func (b *BrowserPage) handleAddRandomSongs(randomType string) {
+	currentIndex := b.entityList.GetCurrentItem()
+	if b.currentDirectory.Parent != "" {
+		// account for [..] entry that we show, see handleEntitySelected()
+		currentIndex--
+	}
+	if currentIndex < 0 {
+		return
+	}
+
+	entity := b.currentDirectory.Entities[currentIndex]
+
+	b.ui.addRandomSongsToQueue(entity.Id, randomType)
+	b.ui.queuePage.UpdateQueue()
+}
+
 
 func (b *BrowserPage) handleAddEntityToQueue() {
 	currentIndex := b.entityList.GetCurrentItem()
