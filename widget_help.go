@@ -9,7 +9,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-// FIXME (A) invoking help and the dismissing it ('q') dismisses it forever (it can't be called back up)
 type HelpWidget struct {
 	Root *tview.Flex
 

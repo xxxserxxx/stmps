@@ -4,6 +4,10 @@
 package main
 
 import (
+	"fmt"
+	"sync"
+	"time"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spezifisch/stmps/logger"
@@ -22,12 +26,16 @@ type PlaylistPage struct {
 	// external refs
 	ui     *Ui
 	logger logger.LoggerInterface
+
+	updatingMutex sync.Locker
+	isUpdating    bool
 }
 
 func (ui *Ui) createPlaylistPage() *PlaylistPage {
 	playlistPage := PlaylistPage{
-		ui:     ui,
-		logger: ui.logger,
+		ui:            ui,
+		logger:        ui.logger,
+		updatingMutex: &sync.Mutex{},
 	}
 
 	// left half: playlists
@@ -180,19 +188,77 @@ func (p *PlaylistPage) GetCount() int {
 }
 
 func (p *PlaylistPage) UpdatePlaylists() {
-	response, err := p.ui.connection.GetPlaylists()
-	if err != nil {
-		p.logger.PrintError("GetPlaylists", err)
+	// There's a potential race condition here and, albeit highly unlikely to ever get hit,
+	// we'll put in some protection
+	p.updatingMutex.Lock()
+	defer p.updatingMutex.Unlock()
+	if p.isUpdating {
+		return
 	}
-	p.ui.playlists = response.Playlists.Playlists
+	p.isUpdating = true
 
-	p.playlistList.Clear()
-	p.ui.addToPlaylistList.Clear()
+	var spinnerText []rune = []rune("⠁⠂⠄⡀⢀⠠⠐⠈")
+	playlistsButton := buttonOrder[2]
+	stop := make(chan bool)
+	go func() {
+		var idx int
+		timer := time.NewTicker(500 * time.Millisecond)
+		defer timer.Stop()
+		for {
+			select {
+			case <-timer.C:
+				p.ui.app.QueueUpdateDraw(func() {
+					var format string
+					if playlistsButton == p.ui.menuWidget.activeButton {
+						format = "%d: [::b][red]%c[white]%s[::-]"
+					} else {
+						format = "%d: [red]%c[white]%s"
+					}
+					label := fmt.Sprintf(format, 3, spinnerText[idx], playlistsButton)
+					p.ui.menuWidget.buttons[playlistsButton].SetLabel(label)
+					idx++
+					if idx > 7 {
+						idx = 0
+					}
+				})
+			case <-stop:
+				p.ui.app.QueueUpdateDraw(func() {
+					var format string
+					if playlistsButton == p.ui.menuWidget.activeButton {
+						format = "%d: [::b]%s[::-]"
+					} else {
+						format = "%d: %s"
+					}
+					label := fmt.Sprintf(format, 3, playlistsButton)
+					p.ui.menuWidget.buttons[playlistsButton].SetLabel(label)
+				})
+				close(stop)
+				return
+			}
+		}
+	}()
 
-	for _, playlist := range p.ui.playlists {
-		p.playlistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
-		p.ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
-	}
+	go func() {
+		response, err := p.ui.connection.GetPlaylists()
+		if err != nil {
+			p.logger.PrintError("GetPlaylists", err)
+		}
+		p.updatingMutex.Lock()
+		defer p.updatingMutex.Unlock()
+		p.ui.playlists = response.Playlists.Playlists
+		p.ui.app.QueueUpdateDraw(func() {
+			p.playlistList.Clear()
+			p.ui.addToPlaylistList.Clear()
+
+			for _, playlist := range p.ui.playlists {
+				p.playlistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
+				p.ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
+			}
+
+			p.isUpdating = false
+		})
+		stop <- true
+	}()
 }
 
 func (p *PlaylistPage) handleAddPlaylistSongToQueue() {

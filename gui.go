@@ -71,7 +71,6 @@ const (
 )
 
 func InitGui(indexes *[]subsonic.SubsonicIndex,
-	playlists *[]subsonic.SubsonicPlaylist,
 	connection *subsonic.SubsonicConnection,
 	player *mpvplayer.Player,
 	logger *logger.Logger,
@@ -82,7 +81,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		eventLoop: nil, // initialized by initEventLoops()
 		mpvEvents: make(chan mpvplayer.UiEvent, 5),
 
-		playlists:   *playlists,
+		playlists:   []subsonic.SubsonicPlaylist{},
 		connection:  connection,
 		player:      player,
 		logger:      logger,
@@ -175,6 +174,8 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	ui.app.SetRoot(rootFlex, true).
 		SetFocus(rootFlex).
 		EnableMouse(true)
+
+	ui.playlistPage.UpdatePlaylists()
 
 	return ui
 }
