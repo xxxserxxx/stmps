@@ -219,7 +219,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			browserPage.handleEntitySelected(browserPage.artistIdList[artistIdx])
 			return nil
 		}
-		if event.Rune() == 'S' {	
+		if event.Rune() == 'S' {
 			browserPage.handleAddRandomSongs("similar")
 		}
 		return event
@@ -285,7 +285,6 @@ func (b *BrowserPage) handleAddRandomSongs(randomType string) {
 	b.ui.addRandomSongsToQueue(entity.Id, randomType)
 	b.ui.queuePage.UpdateQueue()
 }
-
 
 func (b *BrowserPage) handleAddEntityToQueue() {
 	currentIndex := b.entityList.GetCurrentItem()
