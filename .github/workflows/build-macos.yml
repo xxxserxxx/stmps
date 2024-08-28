@@ -18,7 +18,7 @@ jobs:
           - amd64
           - arm64
         go:
-          - "1.21"
+          - "1.22"
           - stable
 
     runs-on: ${{ matrix.os }}
