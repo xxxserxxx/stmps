@@ -9,9 +9,13 @@ require (
 	github.com/spf13/viper v1.19.0
 )
 
-require github.com/supersonic-app/go-mpv v0.1.0
+require (
+	github.com/spezifisch/tview-command v0.0.0-20240828120248-f709e68086d3
+	github.com/supersonic-app/go-mpv v0.1.0
+)
 
 require (
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

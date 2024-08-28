@@ -127,15 +127,15 @@ func (ui *Ui) addRandomSongsToQueue(Id string, randomType string) {
 	if err != nil {
 		ui.logger.Printf("addRandomSongsToQueue %s", err.Error())
 	}
-	switch randomType{
-		case "random":
-			for _, e := range response.RandomSongs.Song {
-				ui.addSongToQueue(&e)
-			}
-		case "similar":
-			for _, e := range response.SimilarSongs.Song {
-				ui.addSongToQueue(&e)
-			}
+	switch randomType {
+	case "random":
+		for _, e := range response.RandomSongs.Song {
+			ui.addSongToQueue(&e)
+		}
+	case "similar":
+		for _, e := range response.SimilarSongs.Song {
+			ui.addSongToQueue(&e)
+		}
 	}
 }
 

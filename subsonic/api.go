@@ -256,13 +256,13 @@ func (connection *SubsonicConnection) GetRandomSongs(Id string, randomType strin
 		query.Set("size", size)
 		requestUrl := connection.Host + "/rest/getRandomSongs?" + query.Encode()
 		return connection.getResponse("GetRandomSongs", requestUrl)
-		
+
 	case "similar":
 		query.Set("id", Id)
 		query.Set("count", size)
 		requestUrl := connection.Host + "/rest/getSimilarSongs?" + query.Encode()
 		return connection.getResponse("GetSimilar", requestUrl)
-		
+
 	default:
 		query.Set("size", size)
 		requestUrl := connection.Host + "/rest/getRandomSongs?" + query.Encode()
