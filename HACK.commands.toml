@@ -1,0 +1,10 @@
+[Global.settings]
+silent = true
+
+[Global.bindings]
+
+[Default.bindings]
+d = "deleteSelectedTrack"
+
+[Empty.bindings]
+# context with no bindings
