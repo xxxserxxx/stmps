@@ -2,6 +2,14 @@
 
 *Stamps* is a terminal client for *sonic music servers, inspired by ncmpcpp and musickube.
 
+Main Branch:
+[![Build+Test Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=main)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
+[![Build+Test macOS](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml)
+
+Dev Branch:
+[![Build+Test Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
+[![Build+Test macOS](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml)
+
 ## Features
 
 - Browse by folder
@@ -29,14 +37,14 @@ These screenshots use [Navidrome's demo server](https://demo.navidrome.org/) ([c
 ### Required Software
 
 - [mpv](https://mpv.io)
-  - Linux (Debian/Ubuntu): `apt install pkg-config libmpv libmpv-dev`
-  - MacOS (Homebrew): `brew install pkg-config mpv` (not the cask)
+- Linux (Debian/Ubuntu): `apt install pkg-config libmpv libmpv-dev`
+- MacOS (Homebrew): `brew install pkg-config mpv` (not the cask)
 
 ### Go Build Dependencies
 
-- Go 1.19+
-- [tview](https://github.com/rivo/tview)
-- [go-mpv](https://github.com/spezifisch/go-mpv)
+- Go 1.22+
+  - [tview](https://github.com/rivo/tview)
+  - [go-mpv](https://github.com/supersonic-app/go-mpv) (supersonic's fork)
 
 ## Compiling
 
@@ -108,10 +116,6 @@ These controls are accessible from any view:
 - `d`: Delete playlist
 - `a`: Add playlist or song to queue
 
-## Credits
-
-This is a fork of [STMP](https://github.com/wildeyedskies/stmp). See [AUTHORS](./AUTHORS) for more information. The codebase has diverged significantly from the original.
-
 ## Advanced Configuration and Features
 
 ### MPRIS2 Integration
@@ -138,6 +142,10 @@ View logs and error messages in the log view by pressing `4`. This can help diag
 ## Contributing
 
 Contributions are welcome! Feel free to open issues or submit pull requests on GitHub. For major changes, please discuss first to ensure alignment with the project goals.
+
+## Credits
+
+This is a fork of [STMP](https://github.com/wildeyedskies/stmp). See [AUTHORS](./AUTHORS) for more information. The codebase has diverged significantly from the original.
 
 ## Licensing
 

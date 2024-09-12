@@ -1,6 +1,7 @@
 name: markdownlint
 
-on: [push]
+on:
+  push:
 
 permissions:
   contents: read
@@ -12,7 +13,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - name: markdownlint-cli
         uses: nosborn/github-action-markdown-cli@v3.3.0
         with:

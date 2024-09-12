@@ -7,9 +7,9 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/spezifisch/go-mpv"
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/remote"
+	"github.com/supersonic-app/go-mpv"
 )
 
 type PlayerQueue []QueueItem
