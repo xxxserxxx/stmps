@@ -42,7 +42,7 @@ These screenshots use [Navidrome's demo server](https://demo.navidrome.org/) ([c
 
 ### Go Build Dependencies
 
-- Go 1.19+
+- Go 1.22+
   - [tview](https://github.com/rivo/tview)
   - [go-mpv](https://github.com/supersonic-app/go-mpv) (supersonic's fork)
 
