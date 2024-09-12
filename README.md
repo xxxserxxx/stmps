@@ -94,6 +94,7 @@ These controls are accessible from any view:
 - `/`: Search artists
 - `n`: Continue search forward
 - `N`: Continue search backward
+- `S`: Add similar artist/song/album to playlist
 
 ### Queue Controls
 

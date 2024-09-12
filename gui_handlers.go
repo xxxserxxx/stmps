@@ -37,7 +37,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 
 	case 'r':
 		// add random songs to queue
-		ui.handleAddRandomSongs()
+		ui.handleAddRandomSongs("", "random")
 
 	case 'D':
 		// clear queue and stop playing
@@ -117,18 +117,25 @@ func (ui *Ui) Quit() {
 	ui.app.Stop()
 }
 
-func (ui *Ui) handleAddRandomSongs() {
-	ui.addRandomSongsToQueue()
+func (ui *Ui) handleAddRandomSongs(Id string, randomType string) {
+	ui.addRandomSongsToQueue(Id, randomType)
 	ui.queuePage.UpdateQueue()
 }
 
-func (ui *Ui) addRandomSongsToQueue() {
-	response, err := ui.connection.GetRandomSongs()
+func (ui *Ui) addRandomSongsToQueue(Id string, randomType string) {
+	response, err := ui.connection.GetRandomSongs(Id, randomType)
 	if err != nil {
 		ui.logger.Printf("addRandomSongsToQueue %s", err.Error())
 	}
-	for _, e := range response.RandomSongs.Song {
-		ui.addSongToQueue(&e)
+	switch randomType{
+		case "random":
+			for _, e := range response.RandomSongs.Song {
+				ui.addSongToQueue(&e)
+			}
+		case "similar":
+			for _, e := range response.SimilarSongs.Song {
+				ui.addSongToQueue(&e)
+			}
 	}
 }
 
