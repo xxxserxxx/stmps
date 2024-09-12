@@ -133,13 +133,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO (B) loading playlists can take a long time on e.g. gonic if there are a lot of them; can it be done in the background?
-	playlistResponse, err := connection.GetPlaylists()
-	if err != nil {
-		fmt.Printf("Error fetching indexes from server: %s\n", err)
-		os.Exit(1)
-	}
-
 	if *list {
 		fmt.Printf("Index response:\n")
 		fmt.Printf("  Directory: %s\n", indexResponse.Directory.Name)
@@ -154,7 +147,12 @@ func main() {
 		for _, pl := range indexResponse.Indexes.Index {
 			fmt.Printf("    %s\n", pl.Name)
 		}
-		fmt.Printf("Playlist response:\n")
+		fmt.Printf("Playlist response: (this can take a while)\n")
+		playlistResponse, err := connection.GetPlaylists()
+		if err != nil {
+			fmt.Printf("Error fetching indexes from server: %s\n", err)
+			os.Exit(1)
+		}
 		fmt.Printf("  Directory: %s\n", playlistResponse.Directory.Name)
 		fmt.Printf("  Status: %s\n", playlistResponse.Status)
 		fmt.Printf("  Error: %s\n", playlistResponse.Error.Message)
@@ -201,7 +199,6 @@ func main() {
 	}
 
 	ui := InitGui(&indexResponse.Indexes.Index,
-		&playlistResponse.Playlists.Playlists,
 		connection,
 		player,
 		logger,
