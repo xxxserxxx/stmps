@@ -68,6 +68,9 @@ scrobble = true  # Use Subsonic scrobbling for last.fm/ListenBrainz (default: fa
 
 [client]
 random-songs = 50
+
+[ui]
+spinner = '▁▂▃▄▅▆▇█▇▆▅▄▃▂▁'
 ```
 
 ## Usage
@@ -115,6 +118,20 @@ These controls are accessible from any view:
 - `n`: New playlist
 - `d`: Delete playlist
 - `a`: Add playlist or song to queue
+
+On servers with a large number of songs in the playlists, Subsonic can take a while to respond to a request for a list. stmps therefore loads playlists in the background, and will display a spinner next to the "playlist" tab label at the bottom. This spinner can be configured with the `ui.spinner` option in the config file. Some ideas are:
+
+```toml
+spinner = '▁▂▃▄▅▆▇█▇▆▅▄▃▁'
+spinner = '⠁⠂⠄⡀⢀⠠⠐⠈'
+spinner = '|/-\'
+spinner = '▖▘'
+spinner = '▖▌▘'
+spinner = '┤┘┴└├┌┬┐'
+spinner = '⣾⣽⣻⢿⡿⣟⣯⣷'
+```
+
+The default is `▉▊▋▌▍▎▏▎▍▌▋▊▉`. Set only one of these at a time, and the glyphs must exist in the font that the terminal running stmps is using.
 
 ## Advanced Configuration and Features
 

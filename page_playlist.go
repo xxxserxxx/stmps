@@ -12,6 +12,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/subsonic"
+	"github.com/spf13/viper"
 )
 
 type PlaylistPage struct {
@@ -197,7 +198,11 @@ func (p *PlaylistPage) UpdatePlaylists() {
 	}
 	p.isUpdating = true
 
-	var spinnerText []rune = []rune("⠁⠂⠄⡀⢀⠠⠐⠈")
+	var spinnerText []rune = []rune(viper.GetString("ui.spinner"))
+	if len(spinnerText) == 0 {
+		spinnerText = []rune("▉▊▋▌▍▎▏▎▍▌▋▊▉")
+	}
+	spinnerMax := len(spinnerText) - 1
 	playlistsButton := buttonOrder[2]
 	stop := make(chan bool)
 	go func() {
@@ -217,7 +222,7 @@ func (p *PlaylistPage) UpdatePlaylists() {
 					label := fmt.Sprintf(format, 3, spinnerText[idx], playlistsButton)
 					p.ui.menuWidget.buttons[playlistsButton].SetLabel(label)
 					idx++
-					if idx > 7 {
+					if idx > spinnerMax {
 						idx = 0
 					}
 				})
