@@ -109,6 +109,10 @@ These controls are accessible from any view:
 - `d`/`Delete`: Remove currently selected song from the queue
 - `D`: Remove all songs from queue
 - `y`: Toggle star on song
+- `k`: Move song up in queue
+- `j`: Move song down in queue
+
+If the currently playing song is moved, the music is stopped before the move, and must be re-started manually.
 
 ### Playlist Controls
 
