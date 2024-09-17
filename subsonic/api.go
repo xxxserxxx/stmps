@@ -93,22 +93,28 @@ type SubsonicSongs struct {
 	Song SubsonicEntities `json:"song"`
 }
 
-type SubsonicStarred struct {
+type SubsonicResults struct {
 	Artist SubsonicEntities `json:"artist"`
 	Album  SubsonicEntities `json:"album"`
 	Song   SubsonicEntities `json:"song"`
 }
 
+type Artist struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type SubsonicEntity struct {
-	Id          string `json:"id"`
-	IsDirectory bool   `json:"isDir"`
-	Parent      string `json:"parent"`
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	Duration    int    `json:"duration"`
-	Track       int    `json:"track"`
-	DiskNumber  int    `json:"diskNumber"`
-	Path        string `json:"path"`
+	Id          string   `json:"id"`
+	IsDirectory bool     `json:"isDir"`
+	Parent      string   `json:"parent"`
+	Title       string   `json:"title"`
+	Artist      string   `json:"artist"`
+	Artists     []Artist `json:"artists"`
+	Duration    int      `json:"duration"`
+	Track       int      `json:"track"`
+	DiskNumber  int      `json:"diskNumber"`
+	Path        string   `json:"path"`
 }
 
 // Return the title if present, otherwise fallback to the file path
@@ -177,16 +183,17 @@ type SubsonicPlaylist struct {
 }
 
 type SubsonicResponse struct {
-	Status       string            `json:"status"`
-	Version      string            `json:"version"`
-	Indexes      SubsonicIndexes   `json:"indexes"`
-	Directory    SubsonicDirectory `json:"directory"`
-	RandomSongs  SubsonicSongs     `json:"randomSongs"`
-	SimilarSongs SubsonicSongs     `json:"similarSongs"`
-	Starred      SubsonicStarred   `json:"starred"`
-	Playlists    SubsonicPlaylists `json:"playlists"`
-	Playlist     SubsonicPlaylist  `json:"playlist"`
-	Error        SubsonicError     `json:"error"`
+	Status        string            `json:"status"`
+	Version       string            `json:"version"`
+	Indexes       SubsonicIndexes   `json:"indexes"`
+	Directory     SubsonicDirectory `json:"directory"`
+	RandomSongs   SubsonicSongs     `json:"randomSongs"`
+	SimilarSongs  SubsonicSongs     `json:"similarSongs"`
+	Starred       SubsonicResults   `json:"starred"`
+	Playlists     SubsonicPlaylists `json:"playlists"`
+	Playlist      SubsonicPlaylist  `json:"playlist"`
+	Error         SubsonicError     `json:"error"`
+	SearchResults SubsonicResults   `json:"searchResult3"`
 }
 
 type responseWrapper struct {
@@ -425,4 +432,15 @@ func (connection *SubsonicConnection) GetPlayUrl(entity *SubsonicEntity) string 
 	query := defaultQuery(connection)
 	query.Set("id", entity.Id)
 	return connection.Host + "/rest/stream" + "?" + query.Encode()
+}
+
+// Search uses the Subsonic search3 API to query a server for all songs that have
+// ID3 tags that match the query. The query is global, in that it matches in any
+// ID3 field.
+// https://www.subsonic.org/pages/api.jsp#search3
+func (connection *SubsonicConnection) Search(searchTerm string) (*SubsonicResponse, error) {
+	query := defaultQuery(connection)
+	query.Set("query", searchTerm)
+	requestUrl := connection.Host + "/rest/search3" + "?" + query.Encode()
+	return connection.getResponse("Search", requestUrl)
 }

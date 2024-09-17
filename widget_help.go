@@ -61,6 +61,9 @@ func (h *HelpWidget) RenderHelp(context string) {
 	case PagePlaylists:
 		rightText = "[::b]Playlists[::-]\n" + tview.Escape(strings.TrimSpace(helpPagePlaylists))
 
+	case PageSearch:
+		rightText = "[::b]Search[::-]\n" + tview.Escape(strings.TrimSpace(helpSearchPage))
+
 	case PageLog:
 		fallthrough
 	default:

@@ -39,3 +39,15 @@ n     new playlist
 d     delete playlist
 a     add playlist or song to queue
 `
+
+const helpSearchPage = `
+artist, album, or song tab
+  Down    focus search field
+  Left    previous column
+  Right   next column
+  Enter   recursively add item to quue
+  a       recursively add item to quue
+  /       start search
+search field
+  Enter   search for text
+`

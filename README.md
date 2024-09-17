@@ -15,6 +15,7 @@ Dev Branch:
 - Browse by folder
 - Queue songs and albums
 - Create and play playlists
+- Search music library
 - Mark favorites
 - Volume control
 - Server-side scrobbling (e.g., on Navidrome, gonic)
@@ -81,7 +82,8 @@ spinner = '▁▂▃▄▅▆▇█▇▆▅▄▃▂▁'
 - `1`: Folder view
 - `2`: Queue view
 - `3`: Playlist view
-- `4`: Log (errors, etc.) view
+- `4`: Search view
+- `5`: Log (errors, etc.) view
 - `Escape`/`Return`: Close modal if open
 
 ### Playback Controls
@@ -132,6 +134,13 @@ spinner = '⣾⣽⣻⢿⡿⣟⣯⣷'
 ```
 
 The default is `▉▊▋▌▍▎▏▎▍▌▋▊▉`. Set only one of these at a time, and the glyphs must exist in the font that the terminal running stmps is using.
+
+### Search Controls
+
+- `/`: Focus search field
+- `Enter`: In the search field, initiates a server-side search in all attributes for the text
+- `Enter` / `a`: In one of the columns (artist, album, song), adds that item (recursively) to the queue
+- Arrow keys navigate between the columns and search field
 
 ## Advanced Configuration and Features
 

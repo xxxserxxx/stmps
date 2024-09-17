@@ -27,6 +27,9 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.ShowPage(PagePlaylists)
 
 	case '4':
+		ui.ShowPage(PageSearch)
+
+	case '5':
 		ui.ShowPage(PageLog)
 
 	case '?':
