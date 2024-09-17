@@ -57,22 +57,22 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.queueList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyDelete || event.Rune() == 'd' {
 			queuePage.handleDeleteFromQueue()
-			return nil
 		} else {
 			switch event.Rune() {
 			case 'y':
 				queuePage.handleToggleStar()
-				return nil
 			case 'j':
 				queuePage.moveSongDown()
-				return nil
 			case 'k':
 				queuePage.moveSongUp()
-				return nil
+			case 'S':
+				queuePage.shuffle()
+			default:
+				return event
 			}
 		}
 
-		return event
+		return nil
 	})
 
 	// flex wrapper
@@ -215,6 +215,18 @@ func (q *QueuePage) moveSongDown() {
 	// remove the item from the queue
 	q.ui.player.MoveSongDown(currentIndex)
 	q.queueList.Select(currentIndex+1, column)
+	q.updateQueue()
+}
+
+func (q *QueuePage) shuffle() {
+	if len(q.queueData.playerQueue) == 0 {
+		return
+	}
+
+	q.ui.player.Stop()
+	q.ui.player.Shuffle()
+
+	q.queueList.Select(0, 0)
 	q.updateQueue()
 }
 
