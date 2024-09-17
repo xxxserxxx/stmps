@@ -137,10 +137,22 @@ The default is `▉▊▋▌▍▎▏▎▍▌▋▊▉`. Set only one of these 
 
 ### Search Controls
 
-- `/`: Focus search field
-- `Enter`: In the search field, initiates a server-side search in all attributes for the text
-- `Enter` / `a`: In one of the columns (artist, album, song), adds that item (recursively) to the queue
-- Arrow keys navigate between the columns and search field
+The search tab performs a server-side search for text in metadata name fields.
+The search results are filtered into three columns: artist, album, and song. 20
+results (in each column) are fetched at a time; use `n` to load more results.
+
+In any of the columns:
+
+- `/`: Focus search field.
+- `Enter` / `a`: Adds the selected item recursively to the queue.
+- `n`: Load more search results.
+- Left/right arrow keys (`←`, `→`) navigate between the columns
+- Up/down arrow keys (`↓`, `↑`) navigate the selected column list
+
+In the search field:
+
+- `Enter`: Perform the query.
+- `Escape`: Escapes into the columns, where the global key bindings work.
 
 ## Advanced Configuration and Features
 

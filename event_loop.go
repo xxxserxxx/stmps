@@ -45,7 +45,7 @@ func (ui *Ui) guiEventLoop() {
 		select {
 		case <-fpsTimer.C:
 			fpsTimer.Reset(10 * time.Second)
-			ui.logger.Printf("guiEventLoop: %f events per second", events/10.0)
+			// ui.logger.Printf("guiEventLoop: %f events per second", events/10.0)
 			events = 0
 
 		case msg := <-ui.logger.Prints:

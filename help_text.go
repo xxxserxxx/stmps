@@ -48,6 +48,7 @@ artist, album, or song tab
   Enter   recursively add item to quue
   a       recursively add item to quue
   /       start search
+  n       load more results
 search field
   Enter   search for text
 `
