@@ -38,7 +38,7 @@ var buttonOrder = []string{PageBrowser, PageQueue, PagePlaylists, PageSearch, Pa
 
 func (ui *Ui) createMenuWidget() (m *MenuWidget) {
 	m = &MenuWidget{
-		activeButton: buttonOrder[0],
+		activeButton: buttonOrder[PAGE_BROWSER],
 		buttons:      make(map[string]*tview.Button),
 
 		buttonStyle:     tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite),
