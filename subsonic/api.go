@@ -530,7 +530,7 @@ func (connection *SubsonicConnection) GetPlayUrl(entity *SubsonicEntity) string 
 // ID3 tags that match the query. The query is global, in that it matches in any
 // ID3 field.
 // https://www.subsonic.org/pages/api.jsp#search3
-func (connection *SubsonicConnection) Search(searchTerm string, artistOffset, albumOffset, songOffset int) (*SubsonicResponse, string, error) {
+func (connection *SubsonicConnection) Search(searchTerm string, artistOffset, albumOffset, songOffset int) (*SubsonicResponse, error) {
 	query := defaultQuery(connection)
 	query.Set("query", searchTerm)
 	query.Set("artistOffset", strconv.Itoa(artistOffset))
@@ -538,5 +538,5 @@ func (connection *SubsonicConnection) Search(searchTerm string, artistOffset, al
 	query.Set("songOffset", strconv.Itoa(songOffset))
 	requestUrl := connection.Host + "/rest/search3" + "?" + query.Encode()
 	res, err := connection.getResponse("Search", requestUrl)
-	return res, requestUrl, err
+	return res, err
 }

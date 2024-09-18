@@ -217,8 +217,7 @@ func (s *SearchPage) search() {
 	}
 	query := s.searchField.GetText()
 
-	res, q, err := s.ui.connection.Search(query, s.artistOffset, s.albumOffset, s.songOffset)
-	s.logger.Printf("query was %s", q)
+	res, err := s.ui.connection.Search(query, s.artistOffset, s.albumOffset, s.songOffset)
 	if err != nil {
 		s.logger.PrintError("SearchPage.search", err)
 		return
