@@ -253,6 +253,7 @@ func (b *BrowserPage) UpdateStars() {
 }
 
 func (b *BrowserPage) handleAddArtistToQueue() {
+	currentIndex := b.artistList.GetCurrentItem()
 	if b.artistList.GetCurrentItem() < 0 {
 		return
 	}
