@@ -35,6 +35,9 @@ type Ui struct {
 	// playlist page
 	playlistPage *PlaylistPage
 
+	// search page
+	searchPage *SearchPage
+
 	// log page
 	logPage *LogPage
 
@@ -61,6 +64,7 @@ const (
 	PageBrowser   = "browser"
 	PageQueue     = "queue"
 	PagePlaylists = "playlists"
+	PageSearch    = "search"
 	PageLog       = "log"
 
 	PageDeletePlaylist = "deletePlaylist"
@@ -149,12 +153,16 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 	// playlist page
 	ui.playlistPage = ui.createPlaylistPage()
 
+	// search page
+	ui.searchPage = ui.createSearchPage()
+
 	// log page
 	ui.logPage = ui.createLogPage()
 
 	ui.pages.AddPage(PageBrowser, ui.browserPage.Root, true, true).
 		AddPage(PageQueue, ui.queuePage.Root, true, false).
 		AddPage(PagePlaylists, ui.playlistPage.Root, true, false).
+		AddPage(PageSearch, ui.searchPage.Root, true, false).
 		AddPage(PageDeletePlaylist, ui.playlistPage.DeletePlaylistModal, true, false).
 		AddPage(PageNewPlaylist, ui.playlistPage.NewPlaylistModal, true, false).
 		AddPage(PageAddToPlaylist, ui.browserPage.AddToPlaylistModal, true, false).

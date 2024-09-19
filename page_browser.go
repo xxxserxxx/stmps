@@ -82,7 +82,6 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 		AddItem(browserPage.artistList, 0, 1, true).
 		AddItem(browserPage.entityList, 0, 1, false)
 
-	// TODO (A) add search-for-song, if feasible. Might be able to do server-side then drill-down, but we might also have all entities cached on the client already. To investigate.
 	browserPage.Root = tview.NewFlex().SetDirection(tview.FlexRow)
 	browserPage.showSearchField(false) // add artist/search items
 
@@ -254,8 +253,7 @@ func (b *BrowserPage) UpdateStars() {
 }
 
 func (b *BrowserPage) handleAddArtistToQueue() {
-	currentIndex := b.artistList.GetCurrentItem()
-	if currentIndex < 0 {
+	if b.artistList.GetCurrentItem() < 0 {
 		return
 	}
 

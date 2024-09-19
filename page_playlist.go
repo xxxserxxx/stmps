@@ -203,7 +203,7 @@ func (p *PlaylistPage) UpdatePlaylists() {
 		spinnerText = []rune("▉▊▋▌▍▎▏▎▍▌▋▊▉")
 	}
 	spinnerMax := len(spinnerText) - 1
-	playlistsButton := buttonOrder[2]
+	playlistsButton := buttonOrder[PAGE_PLAYLISTS]
 	stop := make(chan bool)
 	go func() {
 		var idx int
@@ -219,7 +219,7 @@ func (p *PlaylistPage) UpdatePlaylists() {
 					} else {
 						format = "%d: [red]%c[white]%s"
 					}
-					label := fmt.Sprintf(format, 3, spinnerText[idx], playlistsButton)
+					label := fmt.Sprintf(format, PAGE_PLAYLISTS+1, spinnerText[idx], playlistsButton)
 					p.ui.menuWidget.buttons[playlistsButton].SetLabel(label)
 					idx++
 					if idx > spinnerMax {
@@ -234,7 +234,7 @@ func (p *PlaylistPage) UpdatePlaylists() {
 					} else {
 						format = "%d: %s"
 					}
-					label := fmt.Sprintf(format, 3, playlistsButton)
+					label := fmt.Sprintf(format, PAGE_PLAYLISTS+1, playlistsButton)
 					p.ui.menuWidget.buttons[playlistsButton].SetLabel(label)
 				})
 				close(stop)

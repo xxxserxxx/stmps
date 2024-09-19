@@ -70,6 +70,10 @@ func defaultQuery(connection *SubsonicConnection) url.Values {
 	return query
 }
 
+type Ider interface {
+	ID() string
+}
+
 // response structs
 type SubsonicError struct {
 	Code    int    `json:"code"`
@@ -77,9 +81,13 @@ type SubsonicError struct {
 }
 
 type SubsonicArtist struct {
-	Id         string
-	Name       string
-	AlbumCount int
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	AlbumCount int    `json:"albumCount"`
+}
+
+func (s SubsonicArtist) ID() string {
+	return s.Id
 }
 
 type SubsonicDirectory struct {
@@ -89,26 +97,72 @@ type SubsonicDirectory struct {
 	Entities SubsonicEntities `json:"child"`
 }
 
+func (s SubsonicDirectory) ID() string {
+	return s.Id
+}
+
 type SubsonicSongs struct {
 	Song SubsonicEntities `json:"song"`
 }
 
-type SubsonicStarred struct {
-	Artist SubsonicEntities `json:"artist"`
-	Album  SubsonicEntities `json:"album"`
+type SubsonicResults struct {
+	Artist []Artist         `json:"artist"`
+	Album  []Album          `json:"album"`
 	Song   SubsonicEntities `json:"song"`
 }
 
+type Artist struct {
+	Id         string  `json:"id"`
+	Name       string  `json:"name"`
+	AlbumCount int     `json:"albumCount"`
+	Album      []Album `json:"album"`
+}
+
+func (s Artist) ID() string {
+	return s.Id
+}
+
+type Album struct {
+	Id            string           `json:"id"`
+	Created       string           `json:"created"`
+	Artist        string           `json:"artist"`
+	Artists       []Artist         `json:"artists"`
+	DisplayArtist string           `json:"displayArtist"`
+	Title         string           `json:"title"`
+	Album         string           `json:"album"`
+	Name          string           `json:"name"`
+	SongCount     int              `json:"songCount"`
+	Duration      int              `json:"duration"`
+	PlayCount     int              `json:"playCount"`
+	Genre         string           `json:"genre"`
+	Genres        []Genre          `json:"genres"`
+	Year          int              `json:"year"`
+	Song          SubsonicEntities `json:"song"`
+}
+
+func (s Album) ID() string {
+	return s.Id
+}
+
+type Genre struct {
+	Name string `json:"name"`
+}
+
 type SubsonicEntity struct {
-	Id          string `json:"id"`
-	IsDirectory bool   `json:"isDir"`
-	Parent      string `json:"parent"`
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	Duration    int    `json:"duration"`
-	Track       int    `json:"track"`
-	DiskNumber  int    `json:"diskNumber"`
-	Path        string `json:"path"`
+	Id          string   `json:"id"`
+	IsDirectory bool     `json:"isDir"`
+	Parent      string   `json:"parent"`
+	Title       string   `json:"title"`
+	Artist      string   `json:"artist"`
+	Artists     []Artist `json:"artists"`
+	Duration    int      `json:"duration"`
+	Track       int      `json:"track"`
+	DiskNumber  int      `json:"diskNumber"`
+	Path        string   `json:"path"`
+}
+
+func (s SubsonicEntity) ID() string {
+	return s.Id
 }
 
 // Return the title if present, otherwise fallback to the file path
@@ -177,16 +231,19 @@ type SubsonicPlaylist struct {
 }
 
 type SubsonicResponse struct {
-	Status       string            `json:"status"`
-	Version      string            `json:"version"`
-	Indexes      SubsonicIndexes   `json:"indexes"`
-	Directory    SubsonicDirectory `json:"directory"`
-	RandomSongs  SubsonicSongs     `json:"randomSongs"`
-	SimilarSongs SubsonicSongs     `json:"similarSongs"`
-	Starred      SubsonicStarred   `json:"starred"`
-	Playlists    SubsonicPlaylists `json:"playlists"`
-	Playlist     SubsonicPlaylist  `json:"playlist"`
-	Error        SubsonicError     `json:"error"`
+	Status        string            `json:"status"`
+	Version       string            `json:"version"`
+	Indexes       SubsonicIndexes   `json:"indexes"`
+	Directory     SubsonicDirectory `json:"directory"`
+	RandomSongs   SubsonicSongs     `json:"randomSongs"`
+	SimilarSongs  SubsonicSongs     `json:"similarSongs"`
+	Starred       SubsonicResults   `json:"starred"`
+	Playlists     SubsonicPlaylists `json:"playlists"`
+	Playlist      SubsonicPlaylist  `json:"playlist"`
+	Error         SubsonicError     `json:"error"`
+	Artist        Artist            `json:"artist"`
+	Album         Album             `json:"album"`
+	SearchResults SubsonicResults   `json:"searchResult3"`
 }
 
 type responseWrapper struct {
@@ -219,6 +276,48 @@ func (connection *SubsonicConnection) GetIndexes() (*SubsonicResponse, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getIndexes" + "?" + query.Encode()
 	return connection.getResponse("GetIndexes", requestUrl)
+}
+
+func (connection *SubsonicConnection) GetArtist(id string) (*SubsonicResponse, error) {
+	if cachedResponse, present := connection.directoryCache[id]; present {
+		return &cachedResponse, nil
+	}
+
+	query := defaultQuery(connection)
+	query.Set("id", id)
+	requestUrl := connection.Host + "/rest/getArtist" + "?" + query.Encode()
+	resp, err := connection.getResponse("GetMusicDirectory", requestUrl)
+	if err != nil {
+		return resp, err
+	}
+
+	// on a sucessful request, cache the response
+	if resp.Status == "ok" {
+		connection.directoryCache[id] = *resp
+	}
+
+	return resp, nil
+}
+
+func (connection *SubsonicConnection) GetAlbum(id string) (*SubsonicResponse, error) {
+	if cachedResponse, present := connection.directoryCache[id]; present {
+		return &cachedResponse, nil
+	}
+
+	query := defaultQuery(connection)
+	query.Set("id", id)
+	requestUrl := connection.Host + "/rest/getAlbum" + "?" + query.Encode()
+	resp, err := connection.getResponse("GetAlbum", requestUrl)
+	if err != nil {
+		return resp, err
+	}
+
+	// on a sucessful request, cache the response
+	if resp.Status == "ok" {
+		connection.directoryCache[id] = *resp
+	}
+
+	return resp, nil
 }
 
 func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicResponse, error) {
@@ -425,4 +524,19 @@ func (connection *SubsonicConnection) GetPlayUrl(entity *SubsonicEntity) string 
 	query := defaultQuery(connection)
 	query.Set("id", entity.Id)
 	return connection.Host + "/rest/stream" + "?" + query.Encode()
+}
+
+// Search uses the Subsonic search3 API to query a server for all songs that have
+// ID3 tags that match the query. The query is global, in that it matches in any
+// ID3 field.
+// https://www.subsonic.org/pages/api.jsp#search3
+func (connection *SubsonicConnection) Search(searchTerm string, artistOffset, albumOffset, songOffset int) (*SubsonicResponse, error) {
+	query := defaultQuery(connection)
+	query.Set("query", searchTerm)
+	query.Set("artistOffset", strconv.Itoa(artistOffset))
+	query.Set("albumOffset", strconv.Itoa(albumOffset))
+	query.Set("songOffset", strconv.Itoa(songOffset))
+	requestUrl := connection.Host + "/rest/search3" + "?" + query.Encode()
+	res, err := connection.getResponse("Search", requestUrl)
+	return res, err
 }

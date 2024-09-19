@@ -12,7 +12,7 @@ import (
 func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	// we don't want any of these firing if we're trying to add a new playlist
 	focused := ui.app.GetFocus()
-	if ui.playlistPage.IsNewPlaylistInputFocused(focused) || ui.browserPage.IsSearchFocused(focused) {
+	if ui.playlistPage.IsNewPlaylistInputFocused(focused) || ui.browserPage.IsSearchFocused(focused) || focused == ui.searchPage.searchField {
 		return event
 	}
 
@@ -27,6 +27,9 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.ShowPage(PagePlaylists)
 
 	case '4':
+		ui.ShowPage(PageSearch)
+
+	case '5':
 		ui.ShowPage(PageLog)
 
 	case '?':
@@ -50,7 +53,6 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		if err != nil {
 			ui.logger.PrintError("handlePageInput: Pause", err)
 		}
-		return nil
 
 	case 'P':
 		// stop playing without changes to queue
@@ -59,42 +61,36 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		if err != nil {
 			ui.logger.PrintError("handlePageInput: Stop", err)
 		}
-		return nil
 
 	case 'X':
 		// debug stuff
 		ui.logger.Print("test")
 		//ui.player.Test()
 		ui.showMessageBox("foo bar")
-		return nil
 
 	case '-':
 		// volume-
 		if err := ui.player.AdjustVolume(-5); err != nil {
 			ui.logger.PrintError("handlePageInput: AdjustVolume-", err)
 		}
-		return nil
 
 	case '+', '=':
 		// volume+
 		if err := ui.player.AdjustVolume(5); err != nil {
 			ui.logger.PrintError("handlePageInput: AdjustVolume+", err)
 		}
-		return nil
 
 	case '.':
 		// <<
 		if err := ui.player.Seek(10); err != nil {
 			ui.logger.PrintError("handlePageInput: Seek+", err)
 		}
-		return nil
 
 	case ',':
 		// >>
 		if err := ui.player.Seek(-10); err != nil {
 			ui.logger.PrintError("handlePageInput: Seek-", err)
 		}
-		return nil
 
 	case '>':
 		// skip to next track
@@ -102,9 +98,12 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 			ui.logger.PrintError("handlePageInput: Next", err)
 		}
 		ui.queuePage.UpdateQueue()
+
+	default:
+		return event
 	}
 
-	return event
+	return nil
 }
 
 func (ui *Ui) ShowPage(name string) {

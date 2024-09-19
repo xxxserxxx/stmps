@@ -26,11 +26,19 @@ type MenuWidget struct {
 	ui *Ui
 }
 
-var buttonOrder = []string{PageBrowser, PageQueue, PagePlaylists, PageLog}
+const (
+	PAGE_BROWSER = iota
+	PAGE_QUEUE
+	PAGE_PLAYLISTS
+	PAGE_SEARCH
+	PAGE_LOG
+)
+
+var buttonOrder = []string{PageBrowser, PageQueue, PagePlaylists, PageSearch, PageLog}
 
 func (ui *Ui) createMenuWidget() (m *MenuWidget) {
 	m = &MenuWidget{
-		activeButton: buttonOrder[0],
+		activeButton: buttonOrder[PAGE_BROWSER],
 		buttons:      make(map[string]*tview.Button),
 
 		buttonStyle:     tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite),
