@@ -57,13 +57,22 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.queueList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyDelete || event.Rune() == 'd' {
 			queuePage.handleDeleteFromQueue()
-			return nil
-		} else if event.Rune() == 'y' {
-			queuePage.handleToggleStar()
-			return nil
+		} else {
+			switch event.Rune() {
+			case 'y':
+				queuePage.handleToggleStar()
+			case 'j':
+				queuePage.moveSongDown()
+			case 'k':
+				queuePage.moveSongUp()
+			case 'S':
+				queuePage.shuffle()
+			default:
+				return event
+			}
 		}
 
-		return event
+		return nil
 	})
 
 	// flex wrapper
@@ -149,6 +158,76 @@ func (q *QueuePage) updateQueue() {
 	if queueWasEmpty {
 		q.queueList.ScrollToBeginning()
 	}
+}
+
+// moveSongUp moves the currently selected song up in the queue
+// If the selected song isn't the third or higher, this is a NOP
+// and no error is reported.
+func (q *QueuePage) moveSongUp() {
+	if len(q.queueData.playerQueue) == 0 {
+		return
+	}
+
+	currentIndex, column := q.queueList.GetSelection()
+	if currentIndex < 0 || column < 0 {
+		q.logger.Printf("moveSongUp: invalid selection (%d, %d)", currentIndex, column)
+		return
+	}
+
+	if currentIndex == 0 {
+		return
+	}
+
+	if currentIndex == 1 {
+		q.ui.player.Stop()
+	}
+
+	// remove the item from the queue
+	q.ui.player.MoveSongUp(currentIndex)
+	q.queueList.Select(currentIndex-1, column)
+	q.updateQueue()
+}
+
+// moveSongUp moves the currently selected song up in the queue
+// If the selected song is not the second-to-the-last or lower, this is a NOP,
+// and no error is reported
+func (q *QueuePage) moveSongDown() {
+	queueLen := len(q.queueData.playerQueue)
+	if queueLen == 0 {
+		return
+	}
+
+	currentIndex, column := q.queueList.GetSelection()
+	if currentIndex < 0 || column < 0 {
+		q.logger.Printf("moveSongDown: invalid selection (%d, %d)", currentIndex, column)
+		return
+	}
+
+	if currentIndex == 0 {
+		q.ui.player.Stop()
+	}
+
+	if currentIndex > queueLen-2 {
+		q.logger.Printf("moveSongDown: can't move last song")
+		return
+	}
+
+	// remove the item from the queue
+	q.ui.player.MoveSongDown(currentIndex)
+	q.queueList.Select(currentIndex+1, column)
+	q.updateQueue()
+}
+
+func (q *QueuePage) shuffle() {
+	if len(q.queueData.playerQueue) == 0 {
+		return
+	}
+
+	q.ui.player.Stop()
+	q.ui.player.Shuffle()
+
+	q.queueList.Select(0, 0)
+	q.updateQueue()
 }
 
 // queueData methods, used by tview to lazily render the table

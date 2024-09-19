@@ -5,6 +5,7 @@ package mpvplayer
 
 import (
 	"errors"
+	"math/rand"
 	"strconv"
 
 	"github.com/spezifisch/stmps/logger"
@@ -281,6 +282,39 @@ func (p *Player) DeleteQueueItem(index int) {
 
 func (p *Player) AddToQueue(item *QueueItem) {
 	p.queue = append(p.queue, *item)
+}
+
+func (p *Player) MoveSongUp(index int) {
+	if index < 1 {
+		p.logger.Printf("MoveSongUp(%d) can't move top item", index)
+		return
+	}
+	if index >= len(p.queue) {
+		p.logger.Printf("MoveSongUp(%d) not that many songs in queue", index)
+		return
+	}
+	p.queue[index-1], p.queue[index] = p.queue[index], p.queue[index-1]
+}
+
+func (p *Player) MoveSongDown(index int) {
+	if index < 0 {
+		p.logger.Printf("MoveSongUp(%d) invalid index", index)
+		return
+	}
+	if index >= len(p.queue)-1 {
+		p.logger.Printf("MoveSongUp(%d) can't move last song down", index)
+		return
+	}
+	p.queue[index], p.queue[index+1] = p.queue[index+1], p.queue[index]
+}
+
+func (p *Player) Shuffle() {
+	max := len(p.queue)
+	for range max / 2 {
+		ra := rand.Intn(max)
+		rb := rand.Intn(max)
+		p.queue[ra], p.queue[rb] = p.queue[rb], p.queue[ra]
+	}
 }
 
 func (p *Player) GetQueueItem(index int) (QueueItem, error) {

@@ -32,6 +32,9 @@ const helpPageQueue = `
 d/DEL remove currently selected song from the queue
 D     remove all songs from queue
 y     toggle star on song
+k     move selected song up in queue
+j     move selected song down in queue
+S     shuffle the current queue
 `
 
 const helpPagePlaylists = `
