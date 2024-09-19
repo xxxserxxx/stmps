@@ -265,6 +265,10 @@ func (b *BrowserPage) handleAddArtistToQueue() {
 		}
 	}
 
+	if currentIndex+1 < b.artistList.GetItemCount() {
+		b.artistList.SetCurrentItem(currentIndex + 1)
+	}
+
 	b.ui.queuePage.UpdateQueue()
 }
 
