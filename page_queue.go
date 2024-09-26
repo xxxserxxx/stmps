@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"text/template"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -46,7 +47,12 @@ type QueuePage struct {
 }
 
 func (ui *Ui) createQueuePage() *QueuePage {
-	songInfoTemplate, err := template.New("song info").Parse(songInfoTemplateString)
+	tmpl := template.New("song info").Funcs(template.FuncMap{
+		"formatTime": func(i int) string {
+			return fmt.Sprintf("%s", time.Duration(i)*time.Second)
+		},
+	})
+	songInfoTemplate, err := tmpl.Parse(songInfoTemplateString)
 	if err != nil {
 		ui.logger.PrintError("createQueuePage", err)
 	}
@@ -321,4 +327,5 @@ func (q *queueData) GetColumnCount() int {
 var songInfoTemplateString = `[blue::b]Title:[-:-:-:-] [green::i]{{.Title}}[-:-:-:-]
 [blue::b]Artist:[-:-:-:-] [::i]{{.Artist}}[-:-:-:-]
 [blue::b]Album:[-:-:-:-] [::i]{{.GetAlbum}}[-:-:-:-]
-[blue::b]Track:[-:-:-:-] [::i]{{.GetTrackNumber}}[-:-:-:-]`
+[blue::b]Track:[-:-:-:-] [::i]{{.GetTrackNumber}}[-:-:-:-]
+[blue::b]Duration:[-:-:-:-] [::i]{{formatTime .Duration}}[-:-:-:-] `
