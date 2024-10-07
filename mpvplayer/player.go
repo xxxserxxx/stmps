@@ -125,8 +125,8 @@ func (p *Player) PlayNextTrack() error {
 	return nil
 }
 
-func (p *Player) PlayUri(id, uri, title, artist, album string, duration, track int) error {
-	p.queue = []QueueItem{{id, uri, title, artist, duration, album, track}}
+func (p *Player) PlayUri(id, uri, title, artist, album string, duration, track int, coverArtId string) error {
+	p.queue = []QueueItem{{id, uri, title, artist, duration, album, track, coverArtId}}
 	p.replaceInProgress = true
 	if ip, e := p.IsPaused(); ip && e == nil {
 		if err := p.Pause(); err != nil {
