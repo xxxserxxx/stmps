@@ -352,6 +352,11 @@ func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicRes
 	return resp, nil
 }
 
+// GetCoverArt fetches album art from the server, by ID. The results are cached,
+// so it is safe to call this function repeatedly. If id is empty, an error
+// is returned. If, for some reason, the server response can't be parsed into
+// an image, an error is returned. This function can parse GIF, JPEG, and PNG
+// images.
 func (connection *SubsonicConnection) GetCoverArt(id string) (image.Image, error) {
 	if id == "" {
 		return nil, fmt.Errorf("GetCoverArt: no ID provided")
