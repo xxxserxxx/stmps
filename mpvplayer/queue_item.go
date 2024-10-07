@@ -3,7 +3,9 @@
 
 package mpvplayer
 
-import "github.com/spezifisch/stmps/remote"
+import (
+	"github.com/spezifisch/stmps/remote"
+)
 
 type QueueItem struct {
 	Id          string
@@ -13,6 +15,7 @@ type QueueItem struct {
 	Duration    int
 	Album       string
 	TrackNumber int
+	CoverArtId  string
 }
 
 var _ remote.TrackInterface = (*QueueItem)(nil)

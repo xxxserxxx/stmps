@@ -166,6 +166,7 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 		Duration:    entity.Duration,
 		Album:       album,
 		TrackNumber: entity.Track,
+		CoverArtId:  entity.CoverArtId,
 	}
 	ui.player.AddToQueue(queueItem)
 }
@@ -179,6 +180,7 @@ func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist str
 	artist := stringOr(entity.Artist, fallbackArtist)
 	duration := entity.Duration
 	track := entity.Track
+	coverArtId := entity.CoverArtId
 
 	response, err := ui.connection.GetAlbum(entity.Parent)
 	album := ""
@@ -196,7 +198,7 @@ func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist str
 	}
 
 	return func() {
-		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track); err != nil {
+		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track, coverArtId); err != nil {
 			ui.logger.PrintError("SongHandler Play", err)
 			return
 		}
