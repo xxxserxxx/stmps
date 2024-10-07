@@ -183,7 +183,7 @@ func (ui *Ui) createPlaylistSelectionWidget() (m *PlaylistSelectionWidget) {
 	return
 }
 
-func (m PlaylistSelectionWidget) focusNext(event *tcell.EventKey) *tcell.EventKey {
+func (m *PlaylistSelectionWidget) focusNext(event *tcell.EventKey) *tcell.EventKey {
 	switch m.ui.app.GetFocus() {
 	case m.inputField:
 		st := m.inputField.GetText()
