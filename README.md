@@ -129,7 +129,7 @@ These controls are accessible from any view:
 
 If the currently playing song is moved, the music is stopped before the move, and must be re-started manually.
 
-The save function includes an autocomplete function; if an existing playlist is selected (or manually entered), the `Overwrite` checkbox **must** be checked, or else the queue will not be saved. If a playlist is saved over, it will be **replaced** with the queue contents. 
+The save function includes an autocomplete function; if an existing playlist is selected (or manually entered), the `Overwrite` checkbox **must** be checked, or else the queue will not be saved. If a playlist is saved over, it will be **replaced** with the queue contents.
 
 ### Playlist Controls
 

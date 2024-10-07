@@ -103,7 +103,6 @@ func (ui *Ui) createPlaylistSelectionWidget() (m *PlaylistSelectionWidget) {
 	}
 	m.cancel.SetSelectedFunc(cancelFunc)
 
-	// TODO add some L/R padding around the buttons
 	buttons := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		AddItem(tview.NewFlex(), 0, 1, false).
