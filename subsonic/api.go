@@ -207,13 +207,11 @@ func (s SubsonicEntities) Less(i, j int) bool {
 	// Disk and track numbers are only relevant within the same parent
 	if s[i].Parent == s[j].Parent {
 		// sort first by DiskNumber
-		if s[i].DiscNumber < s[j].DiscNumber {
-			return true
-		} else if s[i].DiscNumber > s[j].DiscNumber {
-			return false
+		if s[i].DiscNumber == s[j].DiscNumber {
+			// Tracks on the same disk are sorted by track
+			return s[i].Track < s[j].Track
 		}
-		// Tracks on the same disk are sorted by track
-		return s[i].Track < s[j].Track
+		return s[i].DiscNumber < s[j].DiscNumber
 	}
 	// If we get here, the songs are either from different albums, or else
 	// they're on the same disk
