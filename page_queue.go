@@ -442,6 +442,7 @@ func (q *queueData) GetColumnCount() int {
 var songInfoTemplateString = `[blue::b]Title:[-:-:-:-] [green::i]{{.Title}}[-:-:-:-]
 [blue::b]Artist:[-:-:-:-] [::i]{{.Artist}}[-:-:-:-]
 [blue::b]Album:[-:-:-:-] [::i]{{.GetAlbum}}[-:-:-:-]
+[blue::b]Disc:[-:-:-:-] [::i]{{.GetDiscNumber}}[-:-:-:-]
 [blue::b]Track:[-:-:-:-] [::i]{{.GetTrackNumber}}[-:-:-:-]
 [blue::b]Duration:[-:-:-:-] [::i]{{formatTime .Duration}}[-:-:-:-] `
 
