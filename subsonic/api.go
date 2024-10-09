@@ -157,7 +157,7 @@ type SubsonicEntity struct {
 	Artists     []Artist `json:"artists"`
 	Duration    int      `json:"duration"`
 	Track       int      `json:"track"`
-	DiskNumber  int      `json:"diskNumber"`
+	DiscNumber  int      `json:"discNumber"`
 	Path        string   `json:"path"`
 }
 
