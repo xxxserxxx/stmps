@@ -49,7 +49,7 @@ type QueuePage struct {
 func (ui *Ui) createQueuePage() *QueuePage {
 	tmpl := template.New("song info").Funcs(template.FuncMap{
 		"formatTime": func(i int) string {
-			return fmt.Sprintf("%s", time.Duration(i)*time.Second)
+			return (time.Duration(i) * time.Second).String()
 		},
 	})
 	songInfoTemplate, err := tmpl.Parse(songInfoTemplateString)
