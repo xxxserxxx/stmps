@@ -188,7 +188,8 @@ func (q *QueuePage) moveSongUp() {
 	}
 
 	if currentIndex == 1 {
-		q.ui.player.Stop()
+		// An error here won't affect re-arranging the queue.
+		_ = q.ui.player.Stop()
 	}
 
 	// remove the item from the queue
@@ -213,7 +214,8 @@ func (q *QueuePage) moveSongDown() {
 	}
 
 	if currentIndex == 0 {
-		q.ui.player.Stop()
+		// An error here won't affect re-arranging the queue.
+		_ = q.ui.player.Stop()
 	}
 
 	if currentIndex > queueLen-2 {
@@ -294,7 +296,8 @@ func (q *QueuePage) shuffle() {
 		return
 	}
 
-	q.ui.player.Stop()
+	// An error here won't affect re-arranging the queue.
+	_ = q.ui.player.Stop()
 	q.ui.player.Shuffle()
 
 	q.queueList.Select(0, 0)

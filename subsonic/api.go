@@ -34,7 +34,7 @@ type SubsonicConnection struct {
 func Init(logger logger.LoggerInterface) *SubsonicConnection {
 	return &SubsonicConnection{
 		clientName:    "example",
-		clientVersion: "1.0.0",
+		clientVersion: "1.8.0",
 
 		logger:         logger,
 		directoryCache: make(map[string]SubsonicResponse),
@@ -126,6 +126,7 @@ func (s Artist) ID() string {
 type Album struct {
 	Id            string           `json:"id"`
 	Created       string           `json:"created"`
+	ArtistId      string           `json:"artistId"`
 	Artist        string           `json:"artist"`
 	Artists       []Artist         `json:"artists"`
 	DisplayArtist string           `json:"displayArtist"`
@@ -139,6 +140,7 @@ type Album struct {
 	Genres        []Genre          `json:"genres"`
 	Year          int              `json:"year"`
 	Song          SubsonicEntities `json:"song"`
+	CoverArt      string           `json:"coverArt"`
 }
 
 func (s Album) ID() string {
@@ -154,6 +156,7 @@ type SubsonicEntity struct {
 	IsDirectory bool     `json:"isDir"`
 	Parent      string   `json:"parent"`
 	Title       string   `json:"title"`
+	ArtistId    string   `json:"artistId"`
 	Artist      string   `json:"artist"`
 	Artists     []Artist `json:"artists"`
 	Duration    int      `json:"duration"`
