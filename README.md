@@ -2,6 +2,11 @@
 
 *Stamps* is a terminal client for *sonic music servers, inspired by ncmpcpp and musickube.
 
+xxxserxxx's main branch:
+Forked from spezifisch's project, with all of my (outstanding) PRs applied. I do not plan on hard-forking stmps, so I would not recommend creating distro packages. If you want one of the implemented features that @spezifisch hasn't yet merged, by all means, use this. Just remember it's a development fork.
+[![Build+Test Linux](https://github.com/xxxserxxx/stmps/actions/workflows/build-linux.yml/badge.svg?branch=main)](https://github.com/xxxserxxx/stmps/actions/workflows/build-linux.yml)
+[![Build+Test macOS](https://github.com/xxxserxxx/stmps/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/xxxserxxx/stmps/actions/workflows/build-macos.yml)
+
 Main Branch:
 [![Build+Test Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=main)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
 [![Build+Test macOS](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml)
