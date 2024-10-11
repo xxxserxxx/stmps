@@ -139,7 +139,7 @@ type Album struct {
 	Genres        []Genre          `json:"genres"`
 	Year          int              `json:"year"`
 	Song          SubsonicEntities `json:"song"`
-	CoverArt      string           `json"coverArt"`
+	CoverArt      string           `json:"coverArt"`
 }
 
 func (s Album) ID() string {
