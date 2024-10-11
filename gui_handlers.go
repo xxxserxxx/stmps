@@ -205,8 +205,7 @@ func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist str
 	}
 
 	return func() {
-		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track, coverArtId); err != nil {
-		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track, disc); err != nil {
+		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track, disc, coverArtId); err != nil {
 			ui.logger.PrintError("SongHandler Play", err)
 			return
 		}
