@@ -104,6 +104,7 @@ These controls are accessible from any view:
 - `-`/`=`: Volume down/volume up
 - `,`/`.`: Seek -10/+10 seconds
 - `r`: Add 50 random songs to the queue
+- `s`: Start a server library scan
 
 ### Browser Controls
 
