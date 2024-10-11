@@ -12,7 +12,7 @@ import (
 func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 	// we don't want any of these firing if we're trying to add a new playlist
 	focused := ui.app.GetFocus()
-	if ui.playlistPage.IsNewPlaylistInputFocused(focused) || ui.browserPage.IsSearchFocused(focused) || focused == ui.searchPage.searchField {
+	if ui.playlistPage.IsNewPlaylistInputFocused(focused) || ui.browserPage.IsSearchFocused(focused) || focused == ui.searchPage.searchField || ui.selectPlaylistWidget.visible {
 		return event
 	}
 
@@ -99,6 +99,11 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		}
 		ui.queuePage.UpdateQueue()
 
+	case 's':
+		if err := ui.connection.StartScan(); err != nil {
+			ui.logger.PrintError("startScan:", err)
+		}
+
 	default:
 		return event
 	}
@@ -112,6 +117,7 @@ func (ui *Ui) ShowPage(name string) {
 }
 
 func (ui *Ui) Quit() {
+	// TODO savePlayQueue/getPlayQueue
 	ui.player.Quit()
 	ui.app.Stop()
 }
@@ -166,6 +172,7 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 		Album:       album,
 		TrackNumber: entity.Track,
 		CoverArtId:  entity.CoverArtId,
+		DiscNumber:  entity.DiscNumber,
 	}
 	ui.player.AddToQueue(queueItem)
 }
@@ -180,6 +187,7 @@ func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist str
 	duration := entity.Duration
 	track := entity.Track
 	coverArtId := entity.CoverArtId
+	disc := entity.DiscNumber
 
 	response, err := ui.connection.GetAlbum(entity.Parent)
 	album := ""
@@ -198,6 +206,7 @@ func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist str
 
 	return func() {
 		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track, coverArtId); err != nil {
+		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track, disc); err != nil {
 			ui.logger.PrintError("SongHandler Play", err)
 			return
 		}

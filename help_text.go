@@ -10,6 +10,7 @@ P      stop
 -/=(+) volume down/volume up
 ,/.    seek -10/+10 seconds
 r      add 50 random songs to queue
+s      start server library scan
 `
 
 const helpPageBrowser = `
@@ -34,6 +35,7 @@ D     remove all songs from queue
 y     toggle star on song
 k     move selected song up in queue
 j     move selected song down in queue
+s     save queue as a playlist
 S     shuffle the current queue
 `
 

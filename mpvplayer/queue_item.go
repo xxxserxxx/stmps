@@ -16,6 +16,7 @@ type QueueItem struct {
 	Album       string
 	TrackNumber int
 	CoverArtId  string
+	DiscNumber  int
 }
 
 var _ remote.TrackInterface = (*QueueItem)(nil)
@@ -54,4 +55,8 @@ func (q QueueItem) GetAlbum() string {
 
 func (q QueueItem) GetTrackNumber() int {
 	return q.TrackNumber
+}
+
+func (q QueueItem) GetDiscNumber() int {
+	return q.DiscNumber
 }

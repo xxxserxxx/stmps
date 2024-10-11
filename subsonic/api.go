@@ -6,6 +6,7 @@ package subsonic
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"image/gif"
@@ -14,6 +15,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -39,7 +41,7 @@ type SubsonicConnection struct {
 func Init(logger logger.LoggerInterface) *SubsonicConnection {
 	return &SubsonicConnection{
 		clientName:    "example",
-		clientVersion: "1.0.0",
+		clientVersion: "1.8.0",
 
 		logger:         logger,
 		directoryCache: make(map[string]SubsonicResponse),
@@ -118,6 +120,11 @@ type SubsonicResults struct {
 	Song   SubsonicEntities `json:"song"`
 }
 
+type ScanStatus struct {
+	Scanning bool `json:"scanning"`
+	Count    int  `json:"count"`
+}
+
 type Artist struct {
 	Id         string  `json:"id"`
 	Name       string  `json:"name"`
@@ -132,6 +139,7 @@ func (s Artist) ID() string {
 type Album struct {
 	Id            string           `json:"id"`
 	Created       string           `json:"created"`
+	ArtistId      string           `json:"artistId"`
 	Artist        string           `json:"artist"`
 	Artists       []Artist         `json:"artists"`
 	DisplayArtist string           `json:"displayArtist"`
@@ -145,6 +153,7 @@ type Album struct {
 	Genres        []Genre          `json:"genres"`
 	Year          int              `json:"year"`
 	Song          SubsonicEntities `json:"song"`
+	CoverArt      string           `json:"coverArt"`
 }
 
 func (s Album) ID() string {
@@ -160,11 +169,12 @@ type SubsonicEntity struct {
 	IsDirectory bool     `json:"isDir"`
 	Parent      string   `json:"parent"`
 	Title       string   `json:"title"`
+	ArtistId    string   `json:"artistId"`
 	Artist      string   `json:"artist"`
 	Artists     []Artist `json:"artists"`
 	Duration    int      `json:"duration"`
 	Track       int      `json:"track"`
-	DiskNumber  int      `json:"diskNumber"`
+	DiscNumber  int      `json:"discNumber"`
 	Path        string   `json:"path"`
 	CoverArtId  string   `json:"coverArt"`
 }
@@ -211,11 +221,19 @@ func (s SubsonicEntities) Less(i, j int) bool {
 		}
 		return true
 	}
-	// If the tracks are the same, sort alphabetically
-	if s[i].Track == s[j].Track {
-		return s[i].Title < s[j].Title
+	// Disk and track numbers are only relevant within the same parent
+	if s[i].Parent == s[j].Parent {
+		// sort first by DiskNumber
+		if s[i].DiscNumber == s[j].DiscNumber {
+			// Tracks on the same disk are sorted by track
+			return s[i].Track < s[j].Track
+		}
+		return s[i].DiscNumber < s[j].DiscNumber
 	}
-	return s[i].Track < s[j].Track
+	// If we get here, the songs are either from different albums, or else
+	// they're on the same disk
+
+	return s[i].Title < s[j].Title
 }
 
 type SubsonicIndexes struct {
@@ -252,6 +270,7 @@ type SubsonicResponse struct {
 	Artist        Artist            `json:"artist"`
 	Album         Album             `json:"album"`
 	SearchResults SubsonicResults   `json:"searchResult3"`
+	ScanStatus    ScanStatus        `json:"scanStatus"`
 }
 
 type responseWrapper struct {
@@ -304,6 +323,8 @@ func (connection *SubsonicConnection) GetArtist(id string) (*SubsonicResponse, e
 		connection.directoryCache[id] = *resp
 	}
 
+	sort.Sort(resp.Directory.Entities)
+
 	return resp, nil
 }
 
@@ -328,6 +349,8 @@ func (connection *SubsonicConnection) GetAlbum(id string) (*SubsonicResponse, er
 		connection.directoryCache[id] = *resp
 	}
 
+	sort.Sort(resp.Directory.Entities)
+
 	return resp, nil
 }
 
@@ -348,6 +371,8 @@ func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicRes
 	if resp.Status == "ok" {
 		connection.directoryCache[id] = *resp
 	}
+
+	sort.Sort(resp.Directory.Entities)
 
 	return resp, nil
 }
@@ -517,9 +542,26 @@ func (connection *SubsonicConnection) GetPlaylist(id string) (*SubsonicResponse,
 	return connection.getResponse("GetPlaylist", requestUrl)
 }
 
-func (connection *SubsonicConnection) CreatePlaylist(name string) (*SubsonicResponse, error) {
+// CreatePlaylist creates or updates a playlist on the server.
+// If id is provided, the existing playlist with that ID is updated with the new song list.
+// If name is provided, a new playlist is created with the song list.
+// Either id or name _must_ be populated, or the function returns an error.
+// If _both_ id and name are poplated, the function returns an error.
+// songIds may be nil, in which case the new playlist is created empty, or all
+// songs are removed from the existing playlist.
+func (connection *SubsonicConnection) CreatePlaylist(id, name string, songIds []string) (*SubsonicResponse, error) {
+	if (id == "" && name == "") || (id != "" && name != "") {
+		return nil, errors.New("CreatePlaylist: exactly one of id or name must be provided")
+	}
 	query := defaultQuery(connection)
-	query.Set("name", name)
+	if id != "" {
+		query.Set("id", id)
+	} else {
+		query.Set("name", name)
+	}
+	for _, sid := range songIds {
+		query.Add("songId", sid)
+	}
 	requestUrl := connection.Host + "/rest/createPlaylist" + "?" + query.Encode()
 	return connection.getResponse("GetPlaylist", requestUrl)
 }
@@ -606,4 +648,18 @@ func (connection *SubsonicConnection) Search(searchTerm string, artistOffset, al
 	requestUrl := connection.Host + "/rest/search3" + "?" + query.Encode()
 	res, err := connection.getResponse("Search", requestUrl)
 	return res, err
+}
+
+// StartScan tells the Subsonic server to initiate a media library scan. Whether
+// this is a deep or surface scan is dependent on the server implementation.
+// https://subsonic.org/pages/api.jsp#startScan
+func (connection *SubsonicConnection) StartScan() error {
+	query := defaultQuery(connection)
+	requestUrl := fmt.Sprintf("%s/rest/startScan?%s", connection.Host, query.Encode())
+	if res, err := connection.getResponse("StartScan", requestUrl); err != nil {
+		return err
+	} else if !res.ScanStatus.Scanning {
+		return fmt.Errorf("server returned false for scan status on scan attempt")
+	}
+	return nil
 }
