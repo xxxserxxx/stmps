@@ -250,6 +250,12 @@ func (p *PlaylistPage) UpdatePlaylists() {
 		}
 		p.updatingMutex.Lock()
 		defer p.updatingMutex.Unlock()
+		if response == nil {
+			p.logger.Print("unexpected nil response without error from GetPlaylists")
+			p.isUpdating = false
+			stop <- true
+			return
+		}
 		p.ui.playlists = response.Playlists.Playlists
 		p.ui.app.QueueUpdateDraw(func() {
 			p.playlistList.Clear()

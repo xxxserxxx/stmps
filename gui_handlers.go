@@ -99,6 +99,9 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		}
 		ui.queuePage.UpdateQueue()
 
+	case 'g':
+		ui.player.Gapless(!ui.player.IsGapless())
+
 	default:
 		return event
 	}

@@ -62,9 +62,10 @@ func (ui *Ui) guiEventLoop() {
 					continue
 				}
 				statusData := mpvEvent.Data.(mpvplayer.StatusData) // TODO is this safe to access? maybe we need a copy
+				gapless := ui.player.IsGapless()
 
 				ui.app.QueueUpdateDraw(func() {
-					ui.playerStatus.SetText(formatPlayerStatus(statusData.Volume, statusData.Position, statusData.Duration))
+					ui.playerStatus.SetText(formatPlayerStatus(statusData.Volume, statusData.Position, statusData.Duration, gapless))
 				})
 
 			case mpvplayer.EventStopped:

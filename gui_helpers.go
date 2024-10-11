@@ -18,7 +18,7 @@ func makeModal(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(p, 1, 1, 1, 1, 0, 0, true)
 }
 
-func formatPlayerStatus(volume int64, position int64, duration int64) string {
+func formatPlayerStatus(volume int64, position int64, duration int64, gapless bool) string {
 	if position < 0 {
 		position = 0
 	}
@@ -30,7 +30,12 @@ func formatPlayerStatus(volume int64, position int64, duration int64) string {
 	positionMin, positionSec := secondsToMinAndSec(position)
 	durationMin, durationSec := secondsToMinAndSec(duration)
 
-	return fmt.Sprintf("[%d%%][::b][%02d:%02d/%02d:%02d]", volume,
+	gap := " "
+	if gapless {
+		gap = "G"
+	}
+
+	return fmt.Sprintf("%s[%d%%][::b][%02d:%02d/%02d:%02d]", gap, volume,
 		positionMin, positionSec, durationMin, durationSec)
 }
 

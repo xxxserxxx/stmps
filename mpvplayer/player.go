@@ -24,6 +24,7 @@ type Player struct {
 
 	replaceInProgress bool
 	stopped           bool
+	gapless           bool
 
 	// player state
 	remoteState struct {
@@ -398,4 +399,15 @@ func (p *Player) PreviousTrack() (err error) {
 		return
 	}
 	return p.Pause()
+}
+
+// Gapless enables gapless playback if passed true, and disables it otherwise.
+func (p *Player) Gapless(enable bool) error {
+	p.gapless = enable
+	return p.instance.SetOption("gapless-audio", mpv.FORMAT_FLAG, enable)
+}
+
+// IsGapless returns the current gapless state
+func (p *Player) IsGapless() bool {
+	return p.gapless
 }
