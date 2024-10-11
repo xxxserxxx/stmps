@@ -160,7 +160,7 @@ type SubsonicEntity struct {
 	Artists     []Artist `json:"artists"`
 	Duration    int      `json:"duration"`
 	Track       int      `json:"track"`
-	DiskNumber  int      `json:"diskNumber"`
+	DiscNumber  int      `json:"discNumber"`
 	Path        string   `json:"path"`
 }
 
@@ -304,7 +304,10 @@ func (connection *SubsonicConnection) GetArtist(id string) (*SubsonicResponse, e
 
 func (connection *SubsonicConnection) GetAlbum(id string) (*SubsonicResponse, error) {
 	if cachedResponse, present := connection.directoryCache[id]; present {
-		return &cachedResponse, nil
+		// This is because Albums that were fetched as Directories aren't populated correctly
+		if cachedResponse.Album.Name != "" {
+			return &cachedResponse, nil
+		}
 	}
 
 	query := defaultQuery(connection)

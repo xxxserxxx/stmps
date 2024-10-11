@@ -6,11 +6,14 @@ package mpvplayer
 import "github.com/spezifisch/stmps/remote"
 
 type QueueItem struct {
-	Id       string
-	Uri      string
-	Title    string
-	Artist   string
-	Duration int
+	Id          string
+	Uri         string
+	Title       string
+	Artist      string
+	Duration    int
+	Album       string
+	TrackNumber int
+	DiscNumber  int
 }
 
 var _ remote.TrackInterface = (*QueueItem)(nil)
@@ -44,9 +47,13 @@ func (q QueueItem) GetUri() string {
 }
 
 func (q QueueItem) GetAlbum() string {
-	return ""
+	return q.Album
 }
 
 func (q QueueItem) GetTrackNumber() int {
-	return 0
+	return q.TrackNumber
+}
+
+func (q QueueItem) GetDiscNumber() int {
+	return q.DiscNumber
 }
