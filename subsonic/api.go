@@ -111,6 +111,11 @@ type SubsonicResults struct {
 	Song   SubsonicEntities `json:"song"`
 }
 
+type ScanStatus struct {
+	Scanning bool `json:"scanning"`
+	Count    int  `json:"count"`
+}
+
 type Artist struct {
 	Id         string  `json:"id"`
 	Name       string  `json:"name"`
@@ -244,6 +249,7 @@ type SubsonicResponse struct {
 	Artist        Artist            `json:"artist"`
 	Album         Album             `json:"album"`
 	SearchResults SubsonicResults   `json:"searchResult3"`
+	ScanStatus    ScanStatus        `json:"scanStatus"`
 }
 
 type responseWrapper struct {
@@ -539,4 +545,18 @@ func (connection *SubsonicConnection) Search(searchTerm string, artistOffset, al
 	requestUrl := connection.Host + "/rest/search3" + "?" + query.Encode()
 	res, err := connection.getResponse("Search", requestUrl)
 	return res, err
+}
+
+// StartScan tells the Subsonic server to initiate a media library scan. Whether
+// this is a deep or surface scan is dependent on the server implementation.
+// https://subsonic.org/pages/api.jsp#startScan
+func (connection *SubsonicConnection) StartScan() error {
+	query := defaultQuery(connection)
+	requestUrl := fmt.Sprintf("%s/rest/startScan?%s", connection.Host, query.Encode())
+	if res, err := connection.getResponse("StartScan", requestUrl); err != nil {
+		return err
+	} else if !res.ScanStatus.Scanning {
+		return fmt.Errorf("server returned false for scan status on scan attempt")
+	}
+	return nil
 }

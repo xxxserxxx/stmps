@@ -99,6 +99,11 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		}
 		ui.queuePage.UpdateQueue()
 
+	case 's':
+		if err := ui.connection.StartScan(); err != nil {
+			ui.logger.PrintError("startScan:", err)
+		}
+
 	default:
 		return event
 	}

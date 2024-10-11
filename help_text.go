@@ -10,6 +10,7 @@ P      stop
 -/=(+) volume down/volume up
 ,/.    seek -10/+10 seconds
 r      add 50 random songs to queue
+s      start server library scan
 `
 
 const helpPageBrowser = `
