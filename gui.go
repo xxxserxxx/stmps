@@ -104,7 +104,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		SetDynamicColors(true).
 		SetScrollable(false)
 
-	statusRight := formatPlayerStatus(0, 0, 0, player.IsGapless())
+	statusRight := formatPlayerStatus(0, 0, 0, player.GetGapless())
 	ui.playerStatus = tview.NewTextView().SetText(statusRight).
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true).

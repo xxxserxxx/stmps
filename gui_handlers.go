@@ -100,7 +100,14 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.queuePage.UpdateQueue()
 
 	case 'g':
-		ui.player.Gapless(!ui.player.IsGapless())
+		switch ui.player.GetGapless() {
+		case mpvplayer.NO:
+			ui.player.SetGapless(mpvplayer.YES)
+		case mpvplayer.YES:
+			ui.player.SetGapless(mpvplayer.WEAK)
+		case mpvplayer.WEAK:
+			ui.player.SetGapless(mpvplayer.NO)
+		}
 
 	default:
 		return event
