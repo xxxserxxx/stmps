@@ -468,10 +468,8 @@ func (connection *SubsonicConnection) CreatePlaylist(id, name string, songIds []
 	} else {
 		query.Set("name", name)
 	}
-	if songIds != nil {
-		for _, sid := range songIds {
-			query.Add("songId", sid)
-		}
+	for _, sid := range songIds {
+		query.Add("songId", sid)
 	}
 	requestUrl := connection.Host + "/rest/createPlaylist" + "?" + query.Encode()
 	return connection.getResponse("GetPlaylist", requestUrl)
