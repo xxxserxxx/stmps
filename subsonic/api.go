@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -207,11 +208,19 @@ func (s SubsonicEntities) Less(i, j int) bool {
 		}
 		return true
 	}
-	// If the tracks are the same, sort alphabetically
-	if s[i].Track == s[j].Track {
-		return s[i].Title < s[j].Title
+	// Disk and track numbers are only relevant within the same parent
+	if s[i].Parent == s[j].Parent {
+		// sort first by DiskNumber
+		if s[i].DiscNumber == s[j].DiscNumber {
+			// Tracks on the same disk are sorted by track
+			return s[i].Track < s[j].Track
+		}
+		return s[i].DiscNumber < s[j].DiscNumber
 	}
-	return s[i].Track < s[j].Track
+	// If we get here, the songs are either from different albums, or else
+	// they're on the same disk
+
+	return s[i].Title < s[j].Title
 }
 
 type SubsonicIndexes struct {
@@ -300,6 +309,8 @@ func (connection *SubsonicConnection) GetArtist(id string) (*SubsonicResponse, e
 		connection.directoryCache[id] = *resp
 	}
 
+	sort.Sort(resp.Directory.Entities)
+
 	return resp, nil
 }
 
@@ -324,6 +335,8 @@ func (connection *SubsonicConnection) GetAlbum(id string) (*SubsonicResponse, er
 		connection.directoryCache[id] = *resp
 	}
 
+	sort.Sort(resp.Directory.Entities)
+
 	return resp, nil
 }
 
@@ -344,6 +357,8 @@ func (connection *SubsonicConnection) GetMusicDirectory(id string) (*SubsonicRes
 	if resp.Status == "ok" {
 		connection.directoryCache[id] = *resp
 	}
+
+	sort.Sort(resp.Directory.Entities)
 
 	return resp, nil
 }
