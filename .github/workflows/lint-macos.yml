@@ -4,6 +4,7 @@ on:
   push:
     paths-ignore:
       - "*.md"
+  workflow_dispatch:
 
 # do a separate lint job on macOS to catch platform-dependent problems
 jobs:

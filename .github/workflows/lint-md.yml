@@ -2,6 +2,7 @@ name: markdownlint
 
 on:
   push:
+  workflow_dispatch:
 
 permissions:
   contents: read
