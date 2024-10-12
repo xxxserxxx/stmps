@@ -27,19 +27,11 @@ These screenshots use [Navidrome's demo server](https://demo.navidrome.org/) ([c
 
 ### Queue
 
-![Queue View](./docs/screenshots/queue_scaled.png)
+![Queue View](./docs/screenshots/queue.png)
 
 ### Browser
 
-![Browser View](./docs/screenshots/browser_scaled.png)
-
-### Playlists
-
-![Playlists View](./docs/screenshots/playlists_scaled.png)
-
-### Search
-
-![Search View](./docs/screenshots/search_scaled.png)
+![Browser View](./docs/screenshots/browser.png)
 
 ## Dependencies
 
