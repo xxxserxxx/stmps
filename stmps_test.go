@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"flag"
+	"log"
 	"os"
 	"runtime"
 	"testing"
@@ -19,12 +22,15 @@ func TestPlayerInitialization(t *testing.T) {
 }
 
 func TestMainWithoutTUI(t *testing.T) {
+	// Reset flags before each test, needed for flag usage in main()
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
 	// Mock osExit to prevent actual exit during test
 	exitCalled := false
 	osExit = func(code int) {
 		exitCalled = true
 
-		if code != 0 {
+		if code != 0x23420001 {
 			// Capture and print the stack trace
 			stackBuf := make([]byte, 1024)
 			stackSize := runtime.Stack(stackBuf, false)
@@ -57,6 +63,9 @@ func TestMainWithoutTUI(t *testing.T) {
 
 // Regression test for https://github.com/spezifisch/stmps/issues/70
 func TestMainWithConfigFileEmptyString(t *testing.T) {
+	// Reset flags before each test
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
 	// Mock osExit to prevent actual exit during test
 	exitCalled := false
 	osExit = func(code int) {
@@ -86,9 +95,27 @@ func TestMainWithConfigFileEmptyString(t *testing.T) {
 	// Set command-line arguments to trigger the help flag
 	os.Args = []string{"stmps"}
 
-	main()
+	// Capture output of the main function
+	output := captureOutput(func() {
+		main()
+	})
 
+	// Check for the expected conditions
 	if !exitCalled {
 		t.Fatalf("osExit was not called")
 	}
+
+	// Either no error or a specific error message should pass the test
+	expectedErrorPrefix := "Config file error: Config File \"stmp\" Not Found"
+	if output != "" && !assert.Contains(t, output, expectedErrorPrefix) {
+		t.Fatalf("Unexpected error output: %s", output)
+	}
+}
+
+func captureOutput(f func()) string {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	f()
+	log.SetOutput(os.Stderr)
+	return buf.String()
 }

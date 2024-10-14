@@ -177,7 +177,7 @@ func main() {
 
 	if testMode {
 		fmt.Println("Running in test mode for testing.")
-		osExit(0)
+		osExit(0x23420001)
 		return
 	}
 
