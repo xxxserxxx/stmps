@@ -175,6 +175,7 @@ func (ui *Ui) createSearchPage() *SearchPage {
 			}
 		case tcell.KeyEnter:
 			search <- ""
+			searchPage.artistList.Clear()
 			searchPage.artists = make([]*subsonic.Artist, 0)
 			searchPage.albumList.Clear()
 			searchPage.albums = make([]*subsonic.Album, 0)
