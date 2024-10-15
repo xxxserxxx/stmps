@@ -5,6 +5,7 @@ package main
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -46,7 +47,7 @@ func (ui *Ui) createSearchPage() *SearchPage {
 	searchPage.artistList = tview.NewList().
 		ShowSecondaryText(false)
 	searchPage.artistList.Box.
-		SetTitle(" artist ").
+		SetTitle(" artist matches ").
 		SetTitleAlign(tview.AlignLeft).
 		SetBorder(true)
 
@@ -54,7 +55,7 @@ func (ui *Ui) createSearchPage() *SearchPage {
 	searchPage.albumList = tview.NewList().
 		ShowSecondaryText(false)
 	searchPage.albumList.Box.
-		SetTitle(" album ").
+		SetTitle(" album matches ").
 		SetTitleAlign(tview.AlignLeft).
 		SetBorder(true)
 
@@ -62,7 +63,7 @@ func (ui *Ui) createSearchPage() *SearchPage {
 	searchPage.songList = tview.NewList().
 		ShowSecondaryText(false)
 	searchPage.songList.Box.
-		SetTitle(" song ").
+		SetTitle(" song matches ").
 		SetTitleAlign(tview.AlignLeft).
 		SetBorder(true)
 
@@ -211,6 +212,7 @@ func (ui *Ui) createSearchPage() *SearchPage {
 	return &searchPage
 }
 
+// TODO fork this off and search until there are no more results
 func (s *SearchPage) search() {
 	if len(s.searchField.GetText()) == 0 {
 		return
@@ -223,17 +225,24 @@ func (s *SearchPage) search() {
 		return
 	}
 
+	query = strings.ToLower(query)
 	for _, artist := range res.SearchResults.Artist {
-		s.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
-		s.artists = append(s.artists, &artist)
+		if strings.Contains(strings.ToLower(artist.Name), query) {
+			s.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
+			s.artists = append(s.artists, &artist)
+		}
 	}
 	for _, album := range res.SearchResults.Album {
-		s.albumList.AddItem(tview.Escape(album.Name), "", 0, nil)
-		s.albums = append(s.albums, &album)
+		if strings.Contains(strings.ToLower(album.Name), query) {
+			s.albumList.AddItem(tview.Escape(album.Name), "", 0, nil)
+			s.albums = append(s.albums, &album)
+		}
 	}
 	for _, song := range res.SearchResults.Song {
-		s.songList.AddItem(tview.Escape(song.Title), "", 0, nil)
-		s.songs = append(s.songs, &song)
+		if strings.Contains(strings.ToLower(song.Title), query) {
+			s.songList.AddItem(tview.Escape(song.Title), "", 0, nil)
+			s.songs = append(s.songs, &song)
+		}
 	}
 
 	s.artistOffset += len(res.SearchResults.Artist)
