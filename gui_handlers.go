@@ -114,6 +114,8 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 func (ui *Ui) ShowPage(name string) {
 	ui.pages.SwitchToPage(name)
 	ui.menuWidget.SetActivePage(name)
+	_, prim := ui.pages.GetFrontPage()
+	ui.app.SetFocus(prim)
 }
 
 func (ui *Ui) Quit() {
