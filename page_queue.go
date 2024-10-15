@@ -123,6 +123,9 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	// Song info
 	queuePage.songInfo = tview.NewTextView()
 	queuePage.songInfo.SetDynamicColors(true).SetScrollable(true)
+	queuePage.songInfo.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		return action, nil
+	})
 
 	queuePage.queueList.SetSelectionChangedFunc(queuePage.changeSelection)
 
