@@ -118,6 +118,7 @@ func (ui *Ui) ShowPage(name string) {
 
 func (ui *Ui) Quit() {
 	// TODO savePlayQueue/getPlayQueue
+	ui.queuePage.coverArtCache.Close()
 	ui.player.Quit()
 	ui.app.Stop()
 }
