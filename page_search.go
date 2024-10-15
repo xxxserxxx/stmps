@@ -267,6 +267,7 @@ func (s *SearchPage) search(search chan string) {
 		if artOff == 0 && albOff == 0 && songOff == 0 {
 			s.aproposFocus()
 		}
+
 		artOff += len(res.SearchResults.Artist)
 		albOff += len(res.SearchResults.Album)
 		songOff += len(res.SearchResults.Song)
