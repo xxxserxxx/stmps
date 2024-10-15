@@ -218,7 +218,6 @@ func (s *SearchPage) search(search chan string) {
 			artOff = 0
 			albOff = 0
 			songOff = 0
-			s.logger.Printf("searching for %q [%d, %d, %d]", query, artOff, albOff, songOff)
 			for len(more) > 0 {
 				<-more
 			}
@@ -226,7 +225,6 @@ func (s *SearchPage) search(search chan string) {
 				continue
 			}
 		case <-more:
-			s.logger.Printf("fetching more %q [%d, %d, %d]", query, artOff, albOff, songOff)
 		}
 		res, err := s.ui.connection.Search(query, artOff, albOff, songOff)
 		if err != nil {
@@ -265,6 +263,10 @@ func (s *SearchPage) search(search chan string) {
 			s.songList.Box.SetTitle(fmt.Sprintf(" song matches (%d) ", len(s.songs)))
 		})
 
+		// Only do this the one time, to prevent loops from stealing the user's focus
+		if artOff == 0 && albOff == 0 && songOff == 0 {
+			s.aproposFocus()
+		}
 		artOff += len(res.SearchResults.Artist)
 		albOff += len(res.SearchResults.Album)
 		songOff += len(res.SearchResults.Song)
