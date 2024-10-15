@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -233,18 +234,21 @@ func (s *SearchPage) search(search chan string) {
 					s.artists = append(s.artists, &artist)
 				}
 			}
+			s.artistList.Box.SetTitle(fmt.Sprintf(" artist matches (%d) ", len(s.artists)))
 			for _, album := range res.SearchResults.Album {
 				if strings.Contains(strings.ToLower(album.Name), query) {
 					s.albumList.AddItem(tview.Escape(album.Name), "", 0, nil)
 					s.albums = append(s.albums, &album)
 				}
 			}
+			s.albumList.Box.SetTitle(fmt.Sprintf(" album matches (%d) ", len(s.albums)))
 			for _, song := range res.SearchResults.Song {
 				if strings.Contains(strings.ToLower(song.Title), query) {
 					s.songList.AddItem(tview.Escape(song.Title), "", 0, nil)
 					s.songs = append(s.songs, &song)
 				}
 			}
+			s.songList.Box.SetTitle(fmt.Sprintf(" song matches (%d) ", len(s.songs)))
 		})
 
 		artOff += len(res.SearchResults.Artist)
