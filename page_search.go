@@ -28,10 +28,6 @@ type SearchPage struct {
 	albums  []*subsonic.Album
 	songs   []*subsonic.SubsonicEntity
 
-	artistOffset int
-	albumOffset  int
-	songOffset   int
-
 	// external refs
 	ui     *Ui
 	logger logger.LoggerInterface
@@ -104,9 +100,6 @@ func (ui *Ui) createSearchPage() *SearchPage {
 		case '/':
 			searchPage.ui.app.SetFocus(searchPage.searchField)
 			return nil
-		case 'n':
-			searchPage.search()
-			return nil
 		}
 
 		return event
@@ -133,9 +126,6 @@ func (ui *Ui) createSearchPage() *SearchPage {
 			return nil
 		case '/':
 			searchPage.ui.app.SetFocus(searchPage.searchField)
-			return nil
-		case 'n':
-			searchPage.search()
 			return nil
 		}
 
@@ -165,13 +155,11 @@ func (ui *Ui) createSearchPage() *SearchPage {
 		case '/':
 			searchPage.ui.app.SetFocus(searchPage.searchField)
 			return nil
-		case 'n':
-			searchPage.search()
-			return nil
 		}
 
 		return event
 	})
+	search := make(chan string, 5)
 	searchPage.searchField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyUp, tcell.KeyESC:
@@ -185,69 +173,85 @@ func (ui *Ui) createSearchPage() *SearchPage {
 				ui.app.SetFocus(searchPage.artistList)
 			}
 		case tcell.KeyEnter:
-			searchPage.artistList.Clear()
+			search <- ""
 			searchPage.artists = make([]*subsonic.Artist, 0)
 			searchPage.albumList.Clear()
 			searchPage.albums = make([]*subsonic.Album, 0)
 			searchPage.songList.Clear()
 			searchPage.songs = make([]*subsonic.SubsonicEntity, 0)
 
-			searchPage.artistOffset = 0
-			searchPage.albumOffset = 0
-			searchPage.songOffset = 0
-			searchPage.search()
-			if len(searchPage.artists) > 0 {
-				ui.app.SetFocus(searchPage.artistList)
-			} else if len(searchPage.albums) > 0 {
-				ui.app.SetFocus(searchPage.albumList)
-			} else if len(searchPage.songs) > 0 {
-				ui.app.SetFocus(searchPage.songList)
-			}
+			queryStr := searchPage.searchField.GetText()
+			search <- queryStr
 		default:
 			return event
 		}
 		return nil
 	})
+	go searchPage.search(search)
 
 	return &searchPage
 }
 
-// TODO fork this off and search until there are no more results
-func (s *SearchPage) search() {
-	if len(s.searchField.GetText()) == 0 {
-		return
-	}
-	query := s.searchField.GetText()
-
-	res, err := s.ui.connection.Search(query, s.artistOffset, s.albumOffset, s.songOffset)
-	if err != nil {
-		s.logger.PrintError("SearchPage.search", err)
-		return
-	}
-
-	query = strings.ToLower(query)
-	for _, artist := range res.SearchResults.Artist {
-		if strings.Contains(strings.ToLower(artist.Name), query) {
-			s.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
-			s.artists = append(s.artists, &artist)
+func (s *SearchPage) search(search chan string) {
+	var query string
+	var artOff, albOff, songOff int
+	more := make(chan bool, 5)
+	for {
+		// quit searching if we receive an interrupt
+		select {
+		case query = <-search:
+			artOff = 0
+			albOff = 0
+			songOff = 0
+			s.logger.Printf("searching for %q [%d, %d, %d]", query, artOff, albOff, songOff)
+			for len(more) > 0 {
+				<-more
+			}
+			if query == "" {
+				continue
+			}
+		case <-more:
+			s.logger.Printf("fetching more %q [%d, %d, %d]", query, artOff, albOff, songOff)
 		}
-	}
-	for _, album := range res.SearchResults.Album {
-		if strings.Contains(strings.ToLower(album.Name), query) {
-			s.albumList.AddItem(tview.Escape(album.Name), "", 0, nil)
-			s.albums = append(s.albums, &album)
+		res, err := s.ui.connection.Search(query, artOff, albOff, songOff)
+		if err != nil {
+			s.logger.PrintError("SearchPage.search", err)
+			return
 		}
-	}
-	for _, song := range res.SearchResults.Song {
-		if strings.Contains(strings.ToLower(song.Title), query) {
-			s.songList.AddItem(tview.Escape(song.Title), "", 0, nil)
-			s.songs = append(s.songs, &song)
+		// Quit searching if there are no more results
+		if len(res.SearchResults.Artist) == 0 &&
+			len(res.SearchResults.Album) == 0 &&
+			len(res.SearchResults.Song) == 0 {
+			continue
 		}
-	}
 
-	s.artistOffset += len(res.SearchResults.Artist)
-	s.albumOffset += len(res.SearchResults.Album)
-	s.songOffset += len(res.SearchResults.Song)
+		query = strings.ToLower(query)
+		s.ui.app.QueueUpdate(func() {
+			for _, artist := range res.SearchResults.Artist {
+				if strings.Contains(strings.ToLower(artist.Name), query) {
+					s.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
+					s.artists = append(s.artists, &artist)
+				}
+			}
+			for _, album := range res.SearchResults.Album {
+				if strings.Contains(strings.ToLower(album.Name), query) {
+					s.albumList.AddItem(tview.Escape(album.Name), "", 0, nil)
+					s.albums = append(s.albums, &album)
+				}
+			}
+			for _, song := range res.SearchResults.Song {
+				if strings.Contains(strings.ToLower(song.Title), query) {
+					s.songList.AddItem(tview.Escape(song.Title), "", 0, nil)
+					s.songs = append(s.songs, &song)
+				}
+			}
+		})
+
+		artOff += len(res.SearchResults.Artist)
+		albOff += len(res.SearchResults.Album)
+		songOff += len(res.SearchResults.Song)
+		more <- true
+	}
 }
 
 func (s *SearchPage) addArtistToQueue(entity subsonic.Ider) {
