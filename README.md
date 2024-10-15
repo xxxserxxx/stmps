@@ -58,7 +58,7 @@ Compile STMPS with `go build`. Cgo is needed for interfacing with libmpv.
 
 STMPS can be installed without checking out the repository by running:
 
-```
+```bash
   go install github.com/spezifisch/stmps@latest
 ```
 
@@ -75,7 +75,6 @@ These tasks depend on the following tools:
 - [git-cliff](https://git-cliff.org/) for updating the CHANGELOG.md
 - [markdownlint](https://github.com/igorshubovych/markdownlint-cli) for running the markdown linting test
 - [golangci-lint](https://github.com/golangci/golangci-lint) for linting the Go code
-
 
 ## Configuration
 

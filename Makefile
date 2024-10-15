@@ -1,13 +1,13 @@
-.PHONY: all test
+.PHONY: all test changelog
 
-all: test stmps CHANGELOG.md
+all: test stmps changelog
 
 VERSION != git describe --tags HEAD
 
 stmps:
 	go build -ldflags="-X main.Version=$(VERSION)" -o stmps .
 
-CHANGELOG.md:
+changelog:
 	git cliff -o CHANGELOG.md
 
 test:
