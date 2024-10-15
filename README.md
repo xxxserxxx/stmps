@@ -32,19 +32,11 @@ These screenshots use [Navidrome's demo server](https://demo.navidrome.org/) ([c
 
 ### Queue
 
-![Queue View](./docs/screenshots/queue_scaled.png)
+![Queue View](./docs/screenshots/queue.png)
 
 ### Browser
 
-![Browser View](./docs/screenshots/browser_scaled.png)
-
-### Playlists
-
-![Playlists View](./docs/screenshots/playlists_scaled.png)
-
-### Search
-
-![Search View](./docs/screenshots/search_scaled.png)
+![Browser View](./docs/screenshots/browser.png)
 
 ## Dependencies
 
@@ -63,6 +55,27 @@ These screenshots use [Navidrome's demo server](https://demo.navidrome.org/) ([c
 ## Compiling
 
 Compile STMPS with `go build`. Cgo is needed for interfacing with libmpv.
+
+STMPS can be installed without checking out the repository by running:
+
+```
+  go install github.com/spezifisch/stmps@latest
+```
+
+### Developers & Distribution Packagers
+
+There's a Makefile with tasks for:
+
+- Updating the CHANGELOG.md
+- Running tests & linting commands
+- Compiling an executable with a derived tag for the version
+
+These tasks depend on the following tools:
+
+- [git-cliff](https://git-cliff.org/) for updating the CHANGELOG.md
+- [markdownlint](https://github.com/igorshubovych/markdownlint-cli) for running the markdown linting test
+- [golangci-lint](https://github.com/golangci/golangci-lint) for linting the Go code
+
 
 ## Configuration
 

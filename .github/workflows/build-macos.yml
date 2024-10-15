@@ -4,6 +4,7 @@ on:
   push:
     paths-ignore:
       - "*.md"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,7 +20,7 @@ jobs:
           - arm64
         go:
           - "1.22"
-          - stable
+          - "1.23"
 
     runs-on: ${{ matrix.os }}
 
