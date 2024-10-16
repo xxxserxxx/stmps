@@ -29,9 +29,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-    outputs:
-      architecture: ${{ matrix.architecture }}
-
     steps:
       - name: Install Dependencies
         run: |
@@ -88,11 +85,8 @@ jobs:
           name: stmps-linux-${{ matrix.architecture }}
 
   screenshot:
-    # This run after, but only on arm64, so we don't do redundant screenshots.
     needs: build
     runs-on: ubuntu-latest
-
-    if: needs.build.outputs.architecture == 'arm64'
 
     steps:
       - name: Download and unpack termshot
