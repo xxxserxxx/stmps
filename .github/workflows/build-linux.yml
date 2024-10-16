@@ -6,6 +6,9 @@ on:
       - "*.md"
   workflow_dispatch:
 
+env:
+  TERMSHOT_VERSION: "0.2.10"
+
 jobs:
   build:
     strategy:
@@ -93,6 +96,12 @@ jobs:
     if: needs.build.outputs.architecture == 'arm64'
 
     steps:
+      - name: Download and unpack termshot
+        run: |
+          wget https://github.com/homeport/termshot/releases/download/v${{ env.TERMSHOT_VERSION }}/termshot_${{ env.TERMSHOT_VERSION }}_linux_arm64.tar.gz
+          tar -xzf termshot_${{ env.TERMSHOT_VERSION }}_linux_arm64.tar.gz
+          chmod +x termshot
+
       - name: Download binary from build job
         uses: actions/download-artifact@v4
         with:
