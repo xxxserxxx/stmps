@@ -46,7 +46,10 @@ type QueuePage struct {
 	queueData queueData
 
 	songInfo *tview.TextView
+	lyrics   *tview.TextView
 	coverArt *tview.Image
+
+	changeLyrics chan string
 
 	// external refs
 	ui     *Ui
@@ -149,6 +152,12 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		return action, nil
 	})
 
+	queuePage.lyrics = tview.NewTextView()
+	queuePage.lyrics.SetBorder(true)
+	queuePage.lyrics.SetTitle(" lyrics ")
+	queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
+	queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
+
 	queuePage.queueList.SetSelectionChangedFunc(queuePage.changeSelection)
 
 	queuePage.coverArt = tview.NewImage()
@@ -156,6 +165,7 @@ func (ui *Ui) createQueuePage() *QueuePage {
 
 	infoFlex := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(queuePage.songInfo, 0, 1, false).
+		AddItem(queuePage.lyrics, 0, 1, false).
 		AddItem(queuePage.coverArt, 0, 1, false)
 	infoFlex.SetBorder(true)
 	infoFlex.SetTitle(" song info ")
@@ -169,6 +179,15 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.queueData = queueData{
 		starIdList: ui.starIdList,
 	}
+
+	go func() {
+		for {
+			select {
+			case songId := <-queuePage.changeLyrics:
+				// queuePage.connection.GetLyrics(songId)
+			}
+		}
+	}()
 
 	return &queuePage
 }
