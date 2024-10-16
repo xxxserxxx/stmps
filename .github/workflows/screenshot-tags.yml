@@ -1,0 +1,41 @@
+name: Make Screenshots
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Go environment
+      uses: actions/setup-go@v5
+      with:
+        go-version: stable
+
+    - name: Install dependencies
+      run: go mod tidy
+
+    - name: Build STMPS
+      run: go build -o stmps .
+
+    - name: Install termshot
+      run: sudo apt-get install termshot
+
+    - name: Run and screenshot STMPS
+      run: |
+        termshot ./stmps --output stmps_screenshot.png
+      continue-on-error: true
+
+    - name: Upload screenshot
+      uses: actions/upload-artifact@v
+      with:
+        name: stmps_screenshot
+        path: stmps_screenshot.png
+
