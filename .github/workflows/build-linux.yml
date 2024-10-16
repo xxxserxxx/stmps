@@ -26,6 +26,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    outputs:
+      architecture: ${{ matrix.architecture }}
+
     steps:
       - name: Install Dependencies
         run: |
@@ -33,7 +36,8 @@ jobs:
           sudo apt-get install -y libmpv-dev libglx-dev libgl-dev \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
             gcc-arm-linux-gnueabi g++-arm-linux-gnueabi \
-            gcc-riscv64-linux-gnu g++-riscv64-linux-gnu
+            gcc-riscv64-linux-gnu g++-riscv64-linux-gnu \
+            termshot
 
       - uses: actions/checkout@v4
 
@@ -80,3 +84,33 @@ jobs:
         with:
           path: stmps-linux-${{ matrix.architecture }}
           name: stmps-linux-${{ matrix.architecture }}
+
+  screenshot:
+    # This run after, but only on arm64, so we don't do redundant screenshots.
+    needs: build
+    runs-on: ubuntu-latest
+
+    if: needs.build.outputs.architecture == 'arm64'
+
+    steps:
+      - name: Download binary from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: stmps-linux-arm64
+          path: .
+
+      - name: Make binary executable and rename it
+        run: |
+          chmod +x stmps-linux-arm64
+          mv stmps-linux-arm64 ./stmps
+
+      - name: Run and screenshot STMPS
+        run: |
+          termshot ./stmps --output stmps_screenshot.png
+        continue-on-error: true
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: stmps_screenshot
+          path: stmps_screenshot.png
