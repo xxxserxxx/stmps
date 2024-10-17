@@ -108,7 +108,7 @@ jobs:
 
       - name: Run and screenshot STMPS
         run: |
-          termshot ./stmps --output stmps_screenshot.png
+          ./termshot ./stmps --output stmps_screenshot.png
         continue-on-error: true
 
       - name: Upload screenshot
