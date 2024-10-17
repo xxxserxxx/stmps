@@ -20,7 +20,7 @@ jobs:
           - ubuntu-latest
         go:
           - "1.22"
-          - "1.23"
+          - "stable"
         architecture:
           - amd64
           - arm64
@@ -78,7 +78,7 @@ jobs:
         run: go build -o stmps-linux-${{ matrix.architecture }}
 
       - name: Upload binary as artifact
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' && matrix.go == 'stable' && matrix.architecture == 'amd64'
         uses: actions/upload-artifact@v4
         with:
           path: stmps-linux-${{ matrix.architecture }}
