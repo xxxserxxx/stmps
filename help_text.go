@@ -46,12 +46,17 @@ a     add playlist or song to queue
 `
 
 const helpSearchPage = `
-artist, album, or song column
+artist, album/genre, or song column
   Down/Up navigate within the column
   Left    previous column
   Right   next column
-  Enter/a recursively add item to quue
+  a       recursively add item to quue
   /       start search
+  g       toggle genre search
+In album tab
+  Enter   recursively add item to quue
+In genre tab
+  Enter   shows songs with genre
 search field
   Enter   search for text
   Esc     cancel search
