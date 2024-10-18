@@ -55,11 +55,9 @@ artist, album/genre, or song column
   g       toggle genre search
   /       start search
 In album tab
-  Enter/a recursively add item to quue
+  Enter   recursively add item to quue
 In genre tab
   Enter   shows songs with genre
-In song tab
-  Enter/a adds song to queue
 search field
   Enter   search for text
   Esc     cancel search
