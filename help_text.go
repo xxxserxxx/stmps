@@ -52,6 +52,7 @@ artist, album, or song tab
   Right   next column
   Enter   recursively add item to quue
   a       recursively add item to quue
+  g       toggle genre search
   /       start search
 search field
   Enter   search for text

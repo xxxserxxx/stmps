@@ -154,11 +154,14 @@ In any of the columns:
 - `Enter` / `a`: Adds the selected item recursively to the queue.
 - Left/right arrow keys (`←`, `→`) navigate between the columns
 - Up/down arrow keys (`↓`, `↑`) navigate the selected column list
+- `g`: toggle genre search
 
 In the search field:
 
 - `Enter`: Perform the query.
 - `Escape`: Escapes into the columns, where the global key bindings work.
+
+In Genre Search mode, the genres known by the server are displayed in the middle column. Pressing `Enter` on one of these will load all of the songs with that genre in the third column. Searching with the search field will fill the third column with songs whose genres match the search. Searching for a genre by typing it in should return the same songs as selecting it in the middle column. Note that genre searches may (depending on your Subsonic server's search implementation) be case sensitive.
 
 ## Advanced Configuration and Features
 
