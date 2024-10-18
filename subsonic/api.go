@@ -187,6 +187,7 @@ type SubsonicEntity struct {
 	DiscNumber  int      `json:"discNumber"`
 	Path        string   `json:"path"`
 	CoverArtId  string   `json:"coverArt"`
+	Year        int      `json:"year"`
 }
 
 func (s SubsonicEntity) ID() string {

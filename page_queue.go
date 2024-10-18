@@ -241,6 +241,7 @@ func (q *QueuePage) updateQueue() {
 		q.queueList.ScrollToBeginning()
 	}
 
+	q.queueList.Box.SetTitle(fmt.Sprintf(" queue (%d) ", q.queueList.GetRowCount()))
 	r, c := q.queueList.GetSelection()
 	q.changeSelection(r, c)
 }
@@ -443,6 +444,7 @@ var songInfoTemplateString = `[blue::b]Title:[-:-:-:-] [green::i]{{.Title}}[-:-:
 [blue::b]Artist:[-:-:-:-] [::i]{{.Artist}}[-:-:-:-]
 [blue::b]Album:[-:-:-:-] [::i]{{.GetAlbum}}[-:-:-:-]
 [blue::b]Disc:[-:-:-:-] [::i]{{.GetDiscNumber}}[-:-:-:-]
+[blue::b]Year:[-:-:-:-] [::i]{{.GetYear}}[-:-:-:-]
 [blue::b]Track:[-:-:-:-] [::i]{{.GetTrackNumber}}[-:-:-:-]
 [blue::b]Duration:[-:-:-:-] [::i]{{formatTime .Duration}}[-:-:-:-] `
 
