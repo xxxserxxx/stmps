@@ -492,13 +492,12 @@ func (q *queueData) GetColumnCount() int {
 	return queueDataColumns
 }
 
-var songInfoTemplateString = `[blue::b]Title:[-:-:-:-] [green::i]{{.Title}}[-:-:-:-]
+var songInfoTemplateString = `[blue::b]Title:[-:-:-:-] [green::i]{{.Title}}[-:-:-:-] [yellow::i]({{formatTime .Duration}})[-:-:-:-]
 [blue::b]Artist:[-:-:-:-] [::i]{{.Artist}}[-:-:-:-]
 [blue::b]Album:[-:-:-:-] [::i]{{.GetAlbum}}[-:-:-:-]
-[blue::b]Disc:[-:-:-:-] [::i]{{.GetDiscNumber}}[-:-:-:-]
+[blue::b]Disc:[-:-:-:-] [::i]{{.GetDiscNumber}}[-:-:-:-]  [blue::b]Track:[-:-:-:-] [::i]{{.GetTrackNumber}}[-:-:-:-]
 [blue::b]Year:[-:-:-:-] [::i]{{.GetYear}}[-:-:-:-]
-[blue::b]Track:[-:-:-:-] [::i]{{.GetTrackNumber}}[-:-:-:-]
-[blue::b]Duration:[-:-:-:-] [::i]{{formatTime .Duration}}[-:-:-:-] `
+`
 
 //go:embed docs/stmps_logo.png
 var _stmps_logo []byte
