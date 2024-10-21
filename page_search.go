@@ -137,18 +137,13 @@ func (ui *Ui) createSearchPage() *SearchPage {
 			ui.app.SetFocus(searchPage.songList)
 			return nil
 		case tcell.KeyEnter:
-<<<<<<< HEAD
-			if len(searchPage.albums) != 0 {
-				idx := searchPage.albumList.GetCurrentItem()
-				searchPage.addAlbumToQueue(searchPage.albums[idx])
-				return nil
-			}
-			return event
-=======
 			if !searchPage.queryGenre {
-				idx := searchPage.albumList.GetCurrentItem()
-				searchPage.addAlbumToQueue(searchPage.albums[idx])
-				return nil
+				if len(searchPage.albums) != 0 {
+					idx := searchPage.albumList.GetCurrentItem()
+					searchPage.addAlbumToQueue(searchPage.albums[idx])
+					return nil
+				}
+				return event
 			} else {
 				search <- ""
 				searchPage.artistList.Clear()
@@ -162,20 +157,10 @@ func (ui *Ui) createSearchPage() *SearchPage {
 				search <- queryStr
 				return nil
 			}
->>>>>>> feat-52-search-by-genre
 		}
 
 		switch event.Rune() {
 		case 'a':
-<<<<<<< HEAD
-			if len(searchPage.albums) != 0 {
-				idx := searchPage.albumList.GetCurrentItem()
-				searchPage.logger.Printf("albumList adding (%d) %s", idx, searchPage.albums[idx].Name)
-				searchPage.addAlbumToQueue(searchPage.albums[idx])
-				return nil
-			}
-			return event
-=======
 			if searchPage.queryGenre {
 				idx := searchPage.albumList.GetCurrentItem()
 				if idx < searchPage.albumList.GetItemCount() {
@@ -184,11 +169,13 @@ func (ui *Ui) createSearchPage() *SearchPage {
 				}
 				return nil
 			}
-			idx := searchPage.albumList.GetCurrentItem()
-			searchPage.logger.Printf("albumList adding (%d) %s", idx, searchPage.albums[idx].Name)
-			searchPage.addAlbumToQueue(searchPage.albums[idx])
-			return nil
->>>>>>> feat-52-search-by-genre
+			if len(searchPage.albums) != 0 {
+				idx := searchPage.albumList.GetCurrentItem()
+				searchPage.logger.Printf("albumList adding (%d) %s", idx, searchPage.albums[idx].Name)
+				searchPage.addAlbumToQueue(searchPage.albums[idx])
+				return nil
+			}
+			return event
 		case '/':
 			searchPage.ui.app.SetFocus(searchPage.searchField)
 			return nil

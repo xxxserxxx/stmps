@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- #76, clarify search results
+- #67, user can disable song info panel
+- #67, updates readme for how to disable the panel
+- #52, search by genre
+- Add entire genre; show item counts in queue and genre columns
+
+### 🐛 Bug Fixes
+
+- Second edge case of #33
+- User interactions in search page with no results resulting in NPE.
+- Clarifies search help text
+
+### ⚙️ Miscellaneous Tasks
+
+- Add screenshotter which maybe works
+- Typo
+- Merge screenshot job into build job
+- Download binary of termshot
+- Fix leftover
+- Remove if-arm64
+- Fix build
+- Fix if cond
+- Typo
+
+### Add
+
+- Search now pro-actively searches until no more results are returned. It still queries in batches of 20, and updates the list(s) as results are available.
+- Search result counts in the column titles
+- Fetch version information from build info
+
+## [0.1.0] - 2024-10-15
+
+### 🐛 Bug Fixes
+
+- #33 selected entry gets stuck
+- Second edge case of #33
+- Readme linting errors from last commit
+- Makefile rule was never updating the change log
+
+## [0.0.9] - 2024-09-12
+
 ### 🐛 Bug Fixes
 
 - Mpris not implementing the right interface
