@@ -52,6 +52,7 @@ artist, album, or song column
   Left    previous column
   Right   next column
   Enter/a recursively add item to quue
+  g       toggle genre search
   /       start search
 search field
   Enter   search for text
