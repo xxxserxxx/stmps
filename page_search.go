@@ -114,6 +114,9 @@ func (ui *Ui) createSearchPage() *SearchPage {
 			searchPage.ui.app.SetFocus(searchPage.searchField)
 			return nil
 		case 'g':
+			searchPage.albumList.Clear()
+			searchPage.artistList.Clear()
+			searchPage.songList.Clear()
 			if searchPage.queryGenre {
 				searchPage.albumList.SetTitle(" album matches ")
 			} else {
@@ -179,6 +182,9 @@ func (ui *Ui) createSearchPage() *SearchPage {
 			searchPage.ui.app.SetFocus(searchPage.searchField)
 			return nil
 		case 'g':
+			searchPage.albumList.Clear()
+			searchPage.artistList.Clear()
+			searchPage.songList.Clear()
 			if searchPage.queryGenre {
 				searchPage.albumList.SetTitle(" album matches ")
 			} else {
@@ -223,6 +229,9 @@ func (ui *Ui) createSearchPage() *SearchPage {
 			searchPage.ui.app.SetFocus(searchPage.searchField)
 			return nil
 		case 'g':
+			searchPage.albumList.Clear()
+			searchPage.artistList.Clear()
+			searchPage.songList.Clear()
 			if searchPage.queryGenre {
 				searchPage.albumList.SetTitle(" album matches ")
 			} else {
@@ -253,6 +262,7 @@ func (ui *Ui) createSearchPage() *SearchPage {
 
 			queryStr := searchPage.searchField.GetText()
 			search <- queryStr
+			searchPage.aproposFocus()
 		default:
 			return event
 		}
