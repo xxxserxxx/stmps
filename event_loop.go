@@ -65,12 +65,38 @@ func (ui *Ui) guiEventLoop() {
 
 				ui.app.QueueUpdateDraw(func() {
 					ui.playerStatus.SetText(formatPlayerStatus(statusData.Volume, statusData.Position, statusData.Duration))
+					cl := ui.queuePage.currentLyrics.Lines
+					lcl := len(cl)
+					if lcl == 0 {
+						ui.queuePage.lyrics.SetText("\n[::i]No lyrics[-:-:-]")
+					} else {
+						p := statusData.Position * 1000
+						_, _, _, fh := ui.queuePage.lyrics.GetInnerRect()
+						ui.logger.Printf("field height is %d", fh)
+						for i := 0; i < lcl-1; i++ {
+							if p >= cl[i].Start && p < cl[i+1].Start {
+								txt := ""
+								if i > 1 {
+									txt = cl[i-2].Value + "\n"
+								}
+								if i > 0 {
+									txt += "[::b]" + cl[i-1].Value + "[-:-:-]\n"
+								}
+								for k := i; k < lcl && k-i < fh; k++ {
+									txt += cl[k].Value + "\n"
+								}
+								ui.queuePage.lyrics.SetText(txt)
+								break
+							}
+						}
+					}
 				})
 
 			case mpvplayer.EventStopped:
 				ui.logger.Print("mpvEvent: stopped")
 				ui.app.QueueUpdateDraw(func() {
 					ui.startStopStatus.SetText("[red::b]Stopped[::-]")
+					ui.queuePage.lyrics.SetText("")
 					ui.queuePage.UpdateQueue()
 				})
 
@@ -115,6 +141,11 @@ func (ui *Ui) guiEventLoop() {
 				ui.app.QueueUpdateDraw(func() {
 					ui.startStopStatus.SetText(statusText)
 					ui.queuePage.UpdateQueue()
+					if len(ui.queuePage.currentLyrics.Lines) == 0 {
+						ui.queuePage.lyrics.SetText("\n[::i]No lyrics[-:-:-]")
+					} else {
+						ui.queuePage.lyrics.SetText("")
+					}
 				})
 
 			case mpvplayer.EventPaused:
