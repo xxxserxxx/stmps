@@ -278,6 +278,7 @@ type SubsonicResponse struct {
 	SearchResults SubsonicResults   `json:"searchResult3"`
 	ScanStatus    ScanStatus        `json:"scanStatus"`
 	PlayQueue     PlayQueue         `json:"playQueue"`
+	LyricsList    LyricsList        `json:"lyricsList"`
 }
 
 type responseWrapper struct {
@@ -438,6 +439,48 @@ func (connection *SubsonicConnection) GetCoverArt(id string) (image.Image, error
 		connection.coverArts[id] = art
 	}
 	return art, err
+}
+
+// GetLyricsBySongId fetches time synchronized song lyrics. If the server does
+// not support this, an error is returned.
+func (connection *SubsonicConnection) GetLyricsBySongId(id string) ([]StructuredLyrics, error) {
+	if id == "" {
+		return []StructuredLyrics{}, fmt.Errorf("GetLyricsBySongId: no ID provided")
+	}
+	query := defaultQuery(connection)
+	query.Set("id", id)
+	query.Set("f", "json")
+	caller := "GetLyricsBySongId"
+	res, err := http.Get(connection.Host + "/rest/getLyricsBySongId" + "?" + query.Encode())
+	if err != nil {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] failed to make GET request: %v", caller, err)
+	}
+
+	if res.Body != nil {
+		defer res.Body.Close()
+	} else {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] response body is nil", caller)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] unexpected status code: %d, status: %s", caller, res.StatusCode, res.Status)
+	}
+
+	if len(res.Header["Content-Type"]) == 0 {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] unknown image type (no content-type from server)", caller)
+	}
+
+	responseBody, readErr := io.ReadAll(res.Body)
+	if readErr != nil {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] failed to read response body: %v", caller, readErr)
+	}
+
+	var decodedBody responseWrapper
+	err = json.Unmarshal(responseBody, &decodedBody)
+	if err != nil {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] failed to unmarshal response body: %v", caller, err)
+	}
+	return decodedBody.Response.LyricsList.StructuredLyrics, nil
 }
 
 func (connection *SubsonicConnection) GetRandomSongs(Id string, randomType string) (*SubsonicResponse, error) {
@@ -687,4 +730,19 @@ func (connection *SubsonicConnection) LoadPlayQueue() (*SubsonicResponse, error)
 	query := defaultQuery(connection)
 	requestUrl := fmt.Sprintf("%s/rest/getPlayQueue?%s", connection.Host, query.Encode())
 	return connection.getResponse("GetPlayQueue", requestUrl)
+}
+
+type LyricsList struct {
+	StructuredLyrics []StructuredLyrics `json:"structuredLyrics"`
+}
+
+type StructuredLyrics struct {
+	Lang   string       `json:"lang"`
+	Synced bool         `json:"synced"`
+	Lines  []LyricsLine `json:"line"`
+}
+
+type LyricsLine struct {
+	Start int64  `json:"start"`
+	Value string `json:"value"`
 }

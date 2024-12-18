@@ -49,7 +49,7 @@ type QueuePage struct {
 	lyrics   *tview.TextView
 	coverArt *tview.Image
 
-	changeLyrics chan string
+	currentLyrics subsonic.StructuredLyrics
 
 	// external refs
 	ui     *Ui
@@ -157,6 +157,9 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.lyrics.SetTitle(" lyrics ")
 	queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
 	queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
+	queuePage.lyrics.SetWrap(true)
+	queuePage.lyrics.SetWordWrap(true)
+	queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
 
 	queuePage.queueList.SetSelectionChangedFunc(queuePage.changeSelection)
 
@@ -179,15 +182,6 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.queueData = queueData{
 		starIdList: ui.starIdList,
 	}
-
-	go func() {
-		for {
-			select {
-			case songId := <-queuePage.changeLyrics:
-				// queuePage.connection.GetLyrics(songId)
-			}
-		}
-	}()
 
 	return &queuePage
 }
@@ -212,6 +206,15 @@ func (q *QueuePage) changeSelection(row, column int) {
 		}
 	}
 	q.coverArt.SetImage(art)
+	lyrics, err := q.ui.connection.GetLyricsBySongId(currentSong.Id)
+	if err != nil {
+		q.logger.Printf("error fetching lyrics for %s: %v", currentSong.Title, err)
+	} else if len(lyrics) > 0 {
+		q.logger.Printf("got lyrics for %s", currentSong.Title)
+		q.currentLyrics = lyrics[0]
+	} else {
+		q.currentLyrics = subsonic.StructuredLyrics{Lines: []subsonic.LyricsLine{}}
+	}
 	_ = q.songInfoTemplate.Execute(q.songInfo, currentSong)
 }
 
