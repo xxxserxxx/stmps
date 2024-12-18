@@ -47,7 +47,10 @@ type QueuePage struct {
 	queueData queueData
 
 	songInfo *tview.TextView
+	lyrics   *tview.TextView
 	coverArt *tview.Image
+
+	currentLyrics subsonic.StructuredLyrics
 
 	// external refs
 	ui     *Ui
@@ -146,11 +149,21 @@ func (ui *Ui) createQueuePage() *QueuePage {
 			return action, nil
 		})
 
+		queuePage.lyrics = tview.NewTextView()
+		queuePage.lyrics.SetBorder(true)
+		queuePage.lyrics.SetTitle(" lyrics ")
+		queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
+		queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
+		queuePage.lyrics.SetWrap(true)
+		queuePage.lyrics.SetWordWrap(true)
+		queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
+
 		queuePage.coverArt = tview.NewImage()
 		queuePage.coverArt.SetImage(STMPS_LOGO)
 
 		infoFlex := tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(queuePage.songInfo, 0, 1, false).
+			AddItem(queuePage.lyrics, 0, 1, false).
 			AddItem(queuePage.coverArt, 0, 1, false)
 		infoFlex.SetBorder(true)
 		infoFlex.SetTitle(" song info ")
@@ -168,6 +181,7 @@ func (ui *Ui) createQueuePage() *QueuePage {
 				if row >= len(queuePage.queueData.playerQueue) || row < 0 {
 					ui.app.QueueUpdate(func() {
 						queuePage.coverArt.SetImage(STMPS_LOGO)
+						queuePage.lyrics.SetText("")
 					})
 					return
 				}
@@ -180,6 +194,15 @@ func (ui *Ui) createQueuePage() *QueuePage {
 				// Otherwise, the asset is for the current song, so update it
 				ui.app.QueueUpdate(func() {
 					queuePage.coverArt.SetImage(img)
+					lyrics, err := queuePage.ui.connection.GetLyricsBySongId(currentSong.Id)
+					if err != nil {
+						queuePage.logger.Printf("error fetching lyrics for %s: %v", currentSong.Title, err)
+					} else if len(lyrics) > 0 {
+						queuePage.logger.Printf("got lyrics for %s", currentSong.Title)
+						queuePage.currentLyrics = lyrics[0]
+					} else {
+						queuePage.currentLyrics = subsonic.StructuredLyrics{Lines: []subsonic.LyricsLine{}}
+					}
 				})
 			},
 			// function called to check if asset is invalid:
