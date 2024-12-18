@@ -70,19 +70,21 @@ func (ui *Ui) guiEventLoop() {
 					if lcl == 0 {
 						ui.queuePage.lyrics.SetText("\n[::i]No lyrics[-:-:-]")
 					} else {
-						p := statusData.Position * 1000
+						// We only get an update every second or so, and Position is truncated
+						// to seconds. Make sure that, by the time our tick comes, we're already showing
+						// the lyric that's being sung. Do this by pretending that we're a half-second
+						// in the future
+						p := statusData.Position*1000 + 500
 						_, _, _, fh := ui.queuePage.lyrics.GetInnerRect()
 						ui.logger.Printf("field height is %d", fh)
 						for i := 0; i < lcl-1; i++ {
 							if p >= cl[i].Start && p < cl[i+1].Start {
 								txt := ""
-								if i > 1 {
-									txt = cl[i-2].Value + "\n"
-								}
 								if i > 0 {
-									txt += "[::b]" + cl[i-1].Value + "[-:-:-]\n"
+									txt = cl[i-1].Value + "\n"
 								}
-								for k := i; k < lcl && k-i < fh; k++ {
+								txt += "[::b]" + cl[i].Value + "[-:-:-]\n"
+								for k := i + 1; k < lcl && k-i < fh; k++ {
 									txt += cl[k].Value + "\n"
 								}
 								ui.queuePage.lyrics.SetText(txt)
