@@ -15,6 +15,15 @@ Dev Branch:
 [![Build+Test Linux](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-linux.yml)
 [![Build+Test macOS](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml/badge.svg?branch=dev)](https://github.com/spezifisch/stmps/actions/workflows/build-macos.yml)
 
+## xxxserxxx merged branches/features
+
+These are PRs not yet merged upstream.
+
+- Synced lyrics support (lyrics)
+- A minor, aesthic change that compacts the song info panel a bit (compact-songinfo)
+- Search by genre support (feat-52-search-by-genre)
+- Load album art concurrently, in the background, to eliminate lags on slow servers (concurrent-album-art)
+
 ## Features
 
 - Browse by folder
