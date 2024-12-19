@@ -46,6 +46,7 @@ type QueuePage struct {
 	queueList *tview.Table
 	queueData queueData
 
+	infoFlex *tview.Flex
 	songInfo *tview.TextView
 	lyrics   *tview.TextView
 	coverArt *tview.Image
@@ -122,6 +123,35 @@ func (ui *Ui) createQueuePage() *QueuePage {
 				queuePage.ui.ShowSelectPlaylist()
 			case 'S':
 				queuePage.shuffle()
+			case 'l':
+				go func() {
+					ssr, err := queuePage.ui.connection.LoadPlayQueue()
+					if err != nil {
+						queuePage.logger.Printf("unable to load play queue from server: %s", err)
+						return
+					}
+					queuePage.queueList.Clear()
+					queuePage.queueData.Clear()
+					if ssr.PlayQueue.Entries != nil {
+						for _, ent := range ssr.PlayQueue.Entries {
+							ui.addSongToQueue(&ent)
+						}
+						ui.queuePage.UpdateQueue()
+						if err := ui.player.Play(); err != nil {
+							queuePage.logger.Printf("error playing: %s", err)
+						}
+						if err = ui.player.Seek(ssr.PlayQueue.Position); err != nil {
+							queuePage.logger.Printf("unable to seek to position %s: %s", time.Duration(ssr.PlayQueue.Position)*time.Second, err)
+						}
+						_ = ui.player.Pause()
+					}
+				}()
+			case 'i':
+				if queuePage.Root.GetItemCount() == 2 {
+					queuePage.Root.RemoveItem(queuePage.infoFlex)
+				} else {
+					queuePage.Root.AddItem(queuePage.infoFlex, 0, 1, false)
+				}
 			default:
 				return event
 			}
@@ -161,13 +191,17 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		queuePage.coverArt = tview.NewImage()
 		queuePage.coverArt.SetImage(STMPS_LOGO)
 
-		infoFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		queuePage.infoFlex = tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(queuePage.songInfo, 0, 1, false).
 			AddItem(queuePage.lyrics, 0, 1, false).
 			AddItem(queuePage.coverArt, 0, 1, false)
-		infoFlex.SetBorder(true)
-		infoFlex.SetTitle(" song info ")
-		queuePage.Root.AddItem(infoFlex, 0, 1, false)
+		queuePage.infoFlex.SetBorder(true)
+		queuePage.infoFlex.SetTitle(" song info ")
+
+		// flex wrapper
+		queuePage.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(queuePage.queueList, 0, 2, true).
+			AddItem(queuePage.infoFlex, 0, 1, false)
 
 		queuePage.coverArtCache = NewCache(
 			// zero value

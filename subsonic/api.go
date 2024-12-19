@@ -133,6 +133,12 @@ type GenreEntry struct {
 	Name       string `json:"value"`
 }
 
+type PlayQueue struct {
+	Current  string           `json:"current"`
+	Position int              `json:"position"`
+	Entries  SubsonicEntities `json:"entry"`
+}
+
 type Artist struct {
 	Id         string  `json:"id"`
 	Name       string  `json:"name"`
@@ -283,6 +289,7 @@ type SubsonicResponse struct {
 	Genres        GenreEntries      `json:"genres"`
 	SongsByGenre  SubsonicSongs     `json:"songsByGenre"`
 	LyricsList    LyricsList        `json:"lyricsList"`
+	PlayQueue     PlayQueue         `json:"playQueue"`
 }
 
 type responseWrapper struct {
@@ -735,6 +742,24 @@ func (connection *SubsonicConnection) GetSongsByGenre(genre string, offset int, 
 		return resp, err
 	}
 	return resp, nil
+}
+
+func (connection *SubsonicConnection) SavePlayQueue(queueIds []string, current string, position int) error {
+	query := defaultQuery(connection)
+	for _, songId := range queueIds {
+		query.Add("id", songId)
+	}
+	query.Set("current", current)
+	query.Set("position", fmt.Sprintf("%d", position))
+	requestUrl := fmt.Sprintf("%s/rest/savePlayQueue?%s", connection.Host, query.Encode())
+	_, err := connection.getResponse("SavePlayQueue", requestUrl)
+	return err
+}
+
+func (connection *SubsonicConnection) LoadPlayQueue() (*SubsonicResponse, error) {
+	query := defaultQuery(connection)
+	requestUrl := fmt.Sprintf("%s/rest/getPlayQueue?%s", connection.Host, query.Encode())
+	return connection.getResponse("GetPlayQueue", requestUrl)
 }
 
 type LyricsList struct {
