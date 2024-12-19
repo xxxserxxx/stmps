@@ -113,7 +113,6 @@ func main() {
 	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
 	configFile := flag.String("config", "", "use config `file`")
 	version := flag.Bool("version", false, "print the stmps version and exit")
-	logFile := flag.String("log", "", "also write logs to this file")
 
 	flag.Parse()
 	if *help {
@@ -158,8 +157,7 @@ func main() {
 		osExit(2)
 	}
 
-	logger := logger.Init(*logFile)
-	defer logger.Close()
+	logger := logger.Init()
 	initCommandHandler(logger)
 
 	// init mpv engine
