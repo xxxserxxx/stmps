@@ -23,6 +23,7 @@ These are PRs not yet merged upstream.
 - A minor, aesthic change that compacts the song info panel a bit (compact-songinfo)
 - Search by genre support (feat-52-search-by-genre)
 - Load album art concurrently, in the background, to eliminate lags on slow servers (concurrent-album-art)
+- Ability to toggle info panel with `i`
 
 ## Features
 
