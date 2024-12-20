@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
+	"sync"
+	"time"
 
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/mpvplayer"
@@ -109,6 +111,7 @@ func main() {
 	help := flag.Bool("help", false, "Print usage")
 	enableMpris := flag.Bool("mpris", false, "Enable MPRIS2")
 	list := flag.Bool("list", false, "list server data")
+	pl := flag.Bool("playlists", false, "include playlist info (only used with --list; playlists can take a long time to load)")
 	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to `file`")
 	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
 	configFile := flag.String("config", "", "use config `file`")
@@ -204,43 +207,103 @@ func main() {
 	connection.Scrobble = viper.GetBool("server.scrobble")
 	connection.RandomSongNumber = viper.GetUint("client.random-songs")
 
-	indexResponse, err := connection.GetIndexes()
+	artistInd, err := connection.GetArtists()
 	if err != nil {
-		fmt.Printf("Error fetching playlists from server: %s\n", err)
+		fmt.Printf("Error fetching indexes from server: %s\n", err)
 		osExit(1)
+	}
+	// Sparse artist information: id, name, albumCount, coverArt, artistImageUrl
+	artists := make([]subsonic.Artist, 0)
+	artistCount := 0
+	albumCount := 0
+	for _, ind := range artistInd.Index {
+		artistCount += len(ind.Artists)
+		for _, art := range ind.Artists {
+			albumCount += art.AlbumCount
+			artists = append(artists, art)
+		}
 	}
 
 	if *list {
-		fmt.Printf("Index response:\n")
-		fmt.Printf("  Directory: %s\n", indexResponse.Directory.Name)
-		fmt.Printf("  Status: %s\n", indexResponse.Status)
-		fmt.Printf("  Error: %s\n", indexResponse.Error.Message)
-		fmt.Printf("  Playlist: %s\n", indexResponse.Playlist.Name)
-		fmt.Printf("  Playlists: (%d)\n", len(indexResponse.Playlists.Playlists))
-		for _, pl := range indexResponse.Playlists.Playlists {
-			fmt.Printf("    [%d] %s\n", pl.Entries.Len(), pl.Name)
+		var playlists subsonic.Playlists
+		var err error
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		if *pl {
+			go func() {
+				playlists, err = connection.GetPlaylists()
+				wg.Done()
+			}()
 		}
-		fmt.Printf("  Indexes:\n")
-		for _, pl := range indexResponse.Indexes.Index {
-			fmt.Printf("    %s\n", pl.Name)
+		if si, err := connection.GetServerInfo(); err == nil {
+			fmt.Printf("Server %-20s: %s\n", "status", si.Status)
+			fmt.Printf("Server %-20s: %s\n", "Subsonic API version", si.Version)
+			fmt.Printf("Server %-20s: %s\n", "type", si.Type)
+			fmt.Printf("Server %-20s: %s\n", "version", si.ServerVersion)
+			fmt.Printf("Server %-20s: %t\n", "is OpenSubsonic", si.OpenSubsonic)
+		} else {
+			fmt.Printf("\n  Error fetching playlists from server: %s\n", err)
 		}
-		fmt.Printf("Playlist response: (this can take a while)\n")
-		playlistResponse, err := connection.GetPlaylists()
-		if err != nil {
-			fmt.Printf("Error fetching indexes from server: %s\n", err)
-			osExit(1)
+		indexes, err := connection.GetIndexes()
+		fmt.Printf("%-27s: %d\n", "Indexes", len(indexes.Index))
+		directoryCount := 0
+		subDirCount := 0
+		for _, ind := range indexes.Index {
+			directoryCount += len(ind.Artists)
+			for _, art := range ind.Artists {
+				subDirCount += art.AlbumCount
+			}
 		}
-		fmt.Printf("  Directory: %s\n", playlistResponse.Directory.Name)
-		fmt.Printf("  Status: %s\n", playlistResponse.Status)
-		fmt.Printf("  Error: %s\n", playlistResponse.Error.Message)
-		fmt.Printf("  Playlist: %s\n", playlistResponse.Playlist.Name)
-		fmt.Printf("  Playlists: (%d)\n", len(indexResponse.Playlists.Playlists))
-		for _, pl := range playlistResponse.Playlists.Playlists {
-			fmt.Printf("    [%d] %s\n", pl.Entries.Len(), pl.Name)
+		fmt.Printf("%-27s: %d\n", "Directories", directoryCount)
+		fmt.Printf("%-27s: %d\n", "Subdirectories", subDirCount)
+		fmt.Printf("%-27s: %d\n", "Artists", artistCount)
+		fmt.Printf("%-27s: %d\n", "Albums", albumCount)
+		if st, err := connection.GetStarred(); err == nil {
+			fmt.Printf("%-27s: %d\n", "Starred albums", len(st.Albums))
+			fmt.Printf("%-27s: %d\n", "Starred artists", len(st.Artists))
+			fmt.Printf("%-27s: %d\n", "Starred songs", len(st.Songs))
 		}
-		fmt.Printf("  Indexes:\n")
-		for _, pl := range playlistResponse.Indexes.Index {
-			fmt.Printf("    %s\n", pl.Name)
+		if *pl {
+			var spinnerText []rune = []rune(viper.GetString("ui.spinner"))
+			if len(spinnerText) == 0 {
+				spinnerText = []rune("┤┘┴└├┌┬┐")
+			}
+			fmt.Printf("%-27s: %c", "Playlists", spinnerText[0])
+			stop := make(chan struct{})
+			go func() {
+				defer wg.Done()
+				spinnerMax := len(spinnerText) - 1
+				timer := time.NewTicker(500 * time.Millisecond)
+				defer timer.Stop()
+				idx := 1
+				for {
+					select {
+					case <-timer.C:
+						fmt.Printf("\b%c", spinnerText[idx])
+						idx++
+						if idx > spinnerMax {
+							idx = 0
+						}
+					case <-stop:
+						fmt.Printf("\b")
+						return
+					}
+				}
+			}()
+			wg.Wait()
+			wg.Add(1)
+			stop <- struct{}{}
+			wg.Wait()
+			if err == nil {
+				fmt.Printf("%d\n", len(playlists.Playlists))
+				for _, pl := range playlists.Playlists {
+					if len(pl.Entries) > 0 {
+						fmt.Printf("  %25s: %d\n", pl.Name, len(pl.Entries))
+					}
+				}
+			} else {
+				fmt.Printf("\n  Error fetching playlists from server: %s\n", err)
+			}
 		}
 
 		osExit(0)
@@ -252,11 +315,7 @@ func main() {
 		return
 	}
 
-	ui := InitGui(&indexResponse.Indexes.Index,
-		connection,
-		player,
-		logger,
-		mprisPlayer)
+	ui := InitGui(artists, connection, player, logger, mprisPlayer)
 
 	// run main loop
 	if err := ui.Run(); err != nil {

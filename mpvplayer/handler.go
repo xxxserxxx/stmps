@@ -4,6 +4,7 @@
 package mpvplayer
 
 import (
+	"github.com/spezifisch/stmps/remote"
 	"github.com/supersonic-app/go-mpv"
 )
 
@@ -158,8 +159,8 @@ func (p *Player) sendRemoteEvent(typ UiEventType, data interface{}) {
 	}
 }
 
-func (p *Player) sendSongChange(track QueueItem) {
+func (p *Player) sendSongChange(track remote.TrackInterface) {
 	for _, cb := range p.cbOnSongChange {
-		cb(&track)
+		cb(track)
 	}
 }

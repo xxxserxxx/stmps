@@ -55,8 +55,8 @@ type Ui struct {
 	mpvEvents   chan mpvplayer.UiEvent
 	mprisPlayer *remote.MprisPlayer
 
-	playlists  []subsonic.SubsonicPlaylist
-	connection *subsonic.SubsonicConnection
+	playlists  []subsonic.Playlist
+	connection *subsonic.Connection
 	player     *mpvplayer.Player
 	logger     *logger.Logger
 }
@@ -77,18 +77,20 @@ const (
 	PageSelectPlaylist = "selectPlaylist"
 )
 
-func InitGui(indexes *[]subsonic.SubsonicIndex,
-	connection *subsonic.SubsonicConnection,
+func InitGui(artists []subsonic.Artist,
+	connection *subsonic.Connection,
 	player *mpvplayer.Player,
 	logger *logger.Logger,
 	mprisPlayer *remote.MprisPlayer) (ui *Ui) {
+	// The artists list we get is sparse, containing little more than ID and name.
+	// Details need to be fetched when accessed
 	ui = &Ui{
 		starIdList: map[string]struct{}{},
 
 		eventLoop: nil, // initialized by initEventLoops()
 		mpvEvents: make(chan mpvplayer.UiEvent, 5),
 
-		playlists:   []subsonic.SubsonicPlaylist{},
+		playlists:   []subsonic.Playlist{},
 		connection:  connection,
 		player:      player,
 		logger:      logger,
@@ -154,7 +156,7 @@ func InitGui(indexes *[]subsonic.SubsonicIndex,
 		AddItem(ui.playerStatus, 20, 0, false)
 
 	// browser page
-	ui.browserPage = ui.createBrowserPage(indexes)
+	ui.browserPage = ui.createBrowserPage(artists)
 
 	// queue page
 	ui.queuePage = ui.createQueuePage()

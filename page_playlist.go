@@ -244,21 +244,21 @@ func (p *PlaylistPage) UpdatePlaylists() {
 	}()
 
 	go func() {
-		response, err := p.ui.connection.GetPlaylists()
+		playlists, err := p.ui.connection.GetPlaylists()
 		if err != nil {
 			p.logger.PrintError("GetPlaylists", err)
 			p.isUpdating = false
 			stop <- true
 			return
 		}
-		if response == nil {
+		if len(playlists.Playlists) == 0 {
 			p.logger.Printf("no error from GetPlaylists, but also no response!")
 			stop <- true
 			return
 		}
 		p.updatingMutex.Lock()
 		defer p.updatingMutex.Unlock()
-		p.ui.playlists = response.Playlists.Playlists
+		p.ui.playlists = playlists.Playlists
 		p.ui.app.QueueUpdateDraw(func() {
 			p.playlistList.Clear()
 			p.ui.addToPlaylistList.Clear()
@@ -273,7 +273,7 @@ func (p *PlaylistPage) UpdatePlaylists() {
 	}()
 }
 
-func (p *PlaylistPage) addPlaylist(playlist subsonic.SubsonicPlaylist) {
+func (p *PlaylistPage) addPlaylist(playlist subsonic.Playlist) {
 	p.playlistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
 	p.ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
 }
@@ -297,7 +297,7 @@ func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
 	}
 
 	entity := p.ui.playlists[playlistIndex].Entries[entityIndex]
-	p.ui.addSongToQueue(&entity)
+	p.ui.addSongToQueue(entity)
 
 	p.ui.queuePage.UpdateQueue()
 }
@@ -315,34 +315,34 @@ func (p *PlaylistPage) handleAddPlaylistToQueue() {
 
 	playlist := p.ui.playlists[currentIndex]
 	for _, entity := range playlist.Entries {
-		p.ui.addSongToQueue(&entity)
+		p.ui.addSongToQueue(entity)
 	}
 
 	p.ui.queuePage.UpdateQueue()
 }
 
-func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.SubsonicPlaylist) {
+func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.Playlist) {
 	p.selectedPlaylist.Clear()
 	p.selectedPlaylist.SetSelectedFocusOnly(true)
 
 	for _, entity := range playlist.Entries {
-		handler := makeSongHandler(&entity, p.ui, entity.Artist)
+		handler := p.ui.makeSongHandler(entity)
 		line := formatSongForPlaylistEntry(entity)
 		p.selectedPlaylist.AddItem(line, "", 0, handler)
 	}
 }
 
 func (p *PlaylistPage) newPlaylist(name string) {
-	response, err := p.ui.connection.CreatePlaylist("", name, nil)
+	playlist, err := p.ui.connection.CreatePlaylist("", name, nil)
 	if err != nil {
 		p.logger.Printf("newPlaylist: CreatePlaylist %s -- %s", name, err.Error())
 		return
 	}
 
-	p.ui.playlists = append(p.ui.playlists, response.Playlist)
+	p.ui.playlists = append(p.ui.playlists, playlist)
 
-	p.playlistList.AddItem(tview.Escape(response.Playlist.Name), "", 0, nil)
-	p.ui.addToPlaylistList.AddItem(tview.Escape(response.Playlist.Name), "", 0, nil)
+	p.playlistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
+	p.ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
 }
 
 func (p *PlaylistPage) deletePlaylist(index int) {

@@ -25,9 +25,9 @@ type SearchPage struct {
 	songList    *tview.List
 	searchField *tview.InputField
 
-	artists []*subsonic.Artist
-	albums  []*subsonic.Album
-	songs   []*subsonic.SubsonicEntity
+	artists []subsonic.Artist
+	albums  []subsonic.Album
+	songs   []subsonic.Entity
 
 	// external refs
 	ui     *Ui
@@ -189,11 +189,11 @@ func (ui *Ui) createSearchPage() *SearchPage {
 		case tcell.KeyEnter:
 			search <- ""
 			searchPage.artistList.Clear()
-			searchPage.artists = make([]*subsonic.Artist, 0)
+			searchPage.artists = make([]subsonic.Artist, 0)
 			searchPage.albumList.Clear()
-			searchPage.albums = make([]*subsonic.Album, 0)
+			searchPage.albums = make([]subsonic.Album, 0)
 			searchPage.songList.Clear()
-			searchPage.songs = make([]*subsonic.SubsonicEntity, 0)
+			searchPage.songs = make([]subsonic.Entity, 0)
 
 			queryStr := searchPage.searchField.GetText()
 			search <- queryStr
@@ -228,81 +228,81 @@ func (s *SearchPage) search(search chan string) {
 		case <-more:
 			s.logger.Printf("fetching more %q [%d, %d, %d]", query, artOff, albOff, songOff)
 		}
-		res, err := s.ui.connection.Search(query, artOff, albOff, songOff)
+		searchResults, err := s.ui.connection.Search(query, artOff, albOff, songOff)
 		if err != nil {
 			s.logger.PrintError("SearchPage.search", err)
 			return
 		}
 		// Quit searching if there are no more results
-		if len(res.SearchResults.Artist) == 0 &&
-			len(res.SearchResults.Album) == 0 &&
-			len(res.SearchResults.Song) == 0 {
+		if len(searchResults.Artists) == 0 &&
+			len(searchResults.Albums) == 0 &&
+			len(searchResults.Songs) == 0 {
 			continue
 		}
 
 		query = strings.ToLower(query)
 		s.ui.app.QueueUpdate(func() {
-			for _, artist := range res.SearchResults.Artist {
+			for _, artist := range searchResults.Artists {
 				if strings.Contains(strings.ToLower(artist.Name), query) {
 					s.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
-					s.artists = append(s.artists, &artist)
+					s.artists = append(s.artists, artist)
 				}
 			}
 			s.artistList.Box.SetTitle(fmt.Sprintf(" artist matches (%d) ", len(s.artists)))
-			for _, album := range res.SearchResults.Album {
+			for _, album := range searchResults.Albums {
 				if strings.Contains(strings.ToLower(album.Name), query) {
 					s.albumList.AddItem(tview.Escape(album.Name), "", 0, nil)
-					s.albums = append(s.albums, &album)
+					s.albums = append(s.albums, album)
 				}
 			}
 			s.albumList.Box.SetTitle(fmt.Sprintf(" album matches (%d) ", len(s.albums)))
-			for _, song := range res.SearchResults.Song {
+			for _, song := range searchResults.Songs {
 				if strings.Contains(strings.ToLower(song.Title), query) {
 					s.songList.AddItem(tview.Escape(song.Title), "", 0, nil)
-					s.songs = append(s.songs, &song)
+					s.songs = append(s.songs, song)
 				}
 			}
 			s.songList.Box.SetTitle(fmt.Sprintf(" song matches (%d) ", len(s.songs)))
 		})
 
-		artOff += len(res.SearchResults.Artist)
-		albOff += len(res.SearchResults.Album)
-		songOff += len(res.SearchResults.Song)
+		artOff += len(searchResults.Artists)
+		albOff += len(searchResults.Albums)
+		songOff += len(searchResults.Songs)
 		more <- true
 	}
 }
 
 func (s *SearchPage) addArtistToQueue(entity subsonic.Ider) {
-	response, err := s.ui.connection.GetArtist(entity.ID())
+	artist, err := s.ui.connection.GetArtist(entity.ID())
 	if err != nil {
 		s.logger.Printf("addArtistToQueue: GetArtist %s -- %s", entity.ID(), err.Error())
 		return
 	}
 
-	artistId := response.Artist.Id
-	for _, album := range response.Artist.Album {
-		response, err = s.ui.connection.GetAlbum(album.Id)
+	artistId := artist.Id
+	for _, album := range artist.Albums {
+		response, err := s.ui.connection.GetAlbum(album.Id)
 		if err != nil {
 			s.logger.Printf("error getting album %s while adding artist to queue", album.Id)
 			return
 		}
-		sort.Sort(response.Album.Song)
+		sort.Sort(response.Songs)
 		// We make sure we add only albums who's artists match the artist
 		// being added; this prevents collection albums with many different
 		// artists that show up in the Album column having _all_ of the songs
 		// on the album -- even ones that don't match the artist -- from
 		// being added when the user adds an album from the search results.
-		for _, e := range response.Album.Song {
+		for _, e := range response.Songs {
 			// Depending on the server implementation, the server may or may not
 			// respond with a list of artists. If either the Artist field matches,
 			// or the artist name is in a list of artists, then we add the song.
 			if e.ArtistId == artistId {
-				s.ui.addSongToQueue(&e)
+				s.ui.addSongToQueue(e)
 				continue
 			}
 			for _, art := range e.Artists {
 				if art.Id == artistId {
-					s.ui.addSongToQueue(&e)
+					s.ui.addSongToQueue(e)
 					break
 				}
 			}
@@ -318,9 +318,9 @@ func (s *SearchPage) addAlbumToQueue(entity subsonic.Ider) {
 		s.logger.Printf("addToQueue: GetMusicDirectory %s -- %s", entity.ID(), err.Error())
 		return
 	}
-	sort.Sort(response.Album.Song)
-	for _, e := range response.Album.Song {
-		s.ui.addSongToQueue(&e)
+	sort.Sort(response.Songs)
+	for _, e := range response.Songs {
+		s.ui.addSongToQueue(e)
 	}
 	s.ui.queuePage.UpdateQueue()
 }

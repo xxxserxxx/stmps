@@ -112,23 +112,23 @@ func (ui *Ui) createQueuePage() *QueuePage {
 				queuePage.shuffle()
 			case 'l':
 				go func() {
-					ssr, err := queuePage.ui.connection.LoadPlayQueue()
+					playQueue, err := queuePage.ui.connection.LoadPlayQueue()
 					if err != nil {
 						queuePage.logger.Printf("unable to load play queue from server: %s", err)
 						return
 					}
 					queuePage.queueList.Clear()
 					queuePage.queueData.Clear()
-					if ssr.PlayQueue.Entries != nil {
-						for _, ent := range ssr.PlayQueue.Entries {
-							ui.addSongToQueue(&ent)
+					if playQueue.Entries != nil {
+						for _, ent := range playQueue.Entries {
+							ui.addSongToQueue(ent)
 						}
 						ui.queuePage.UpdateQueue()
 						if err := ui.player.Play(); err != nil {
 							queuePage.logger.Printf("error playing: %s", err)
 						}
-						if err = ui.player.Seek(ssr.PlayQueue.Position); err != nil {
-							queuePage.logger.Printf("unable to seek to position %s: %s", time.Duration(ssr.PlayQueue.Position)*time.Second, err)
+						if err = ui.player.Seek(playQueue.Position); err != nil {
+							queuePage.logger.Printf("unable to seek to position %s: %s", time.Duration(playQueue.Position)*time.Second, err)
 						}
 						_ = ui.player.Pause()
 					}
@@ -363,7 +363,7 @@ func (q *QueuePage) saveQueue(playlistName string) {
 			break
 		}
 	}
-	var response *subsonic.SubsonicResponse
+	var response subsonic.Playlist
 	var err error
 	if playlistId == "" {
 		q.logger.Printf("Saving %d items to playlist %s", len(q.queueData.playerQueue), playlistName)
@@ -380,15 +380,15 @@ func (q *QueuePage) saveQueue(playlistName string) {
 		if playlistId != "" {
 			for i, pl := range q.ui.playlists {
 				if string(pl.Id) == playlistId {
-					q.ui.playlists[i] = response.Playlist
+					q.ui.playlists[i] = response
 					break
 				}
 			}
 		} else {
-			q.ui.playlistPage.addPlaylist(response.Playlist)
-			q.ui.playlists = append(q.ui.playlists, response.Playlist)
+			q.ui.playlistPage.addPlaylist(response)
+			q.ui.playlists = append(q.ui.playlists, response)
 		}
-		q.ui.playlistPage.handlePlaylistSelected(response.Playlist)
+		q.ui.playlistPage.handlePlaylistSelected(response)
 	}
 }
 

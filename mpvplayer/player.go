@@ -125,8 +125,18 @@ func (p *Player) PlayNextTrack() error {
 	return nil
 }
 
-func (p *Player) PlayUri(id, uri, title, artist, album string, duration, track, disc int, coverArtId string) error {
-	p.queue = []QueueItem{{id, uri, title, artist, duration, album, track, coverArtId, disc}}
+func (p *Player) PlayUri(uri, coverArtId string, song remote.TrackInterface) error {
+	p.queue = []QueueItem{{
+		Id:          song.GetId(),
+		Uri:         uri,
+		Title:       song.GetTitle(),
+		Artist:      song.GetArtist(),
+		Duration:    song.GetDuration(),
+		Album:       song.GetAlbum(),
+		TrackNumber: song.GetTrackNumber(),
+		CoverArtId:  coverArtId,
+		DiscNumber:  song.GetDiscNumber()},
+	}
 	p.replaceInProgress = true
 	if ip, e := p.IsPaused(); ip && e == nil {
 		if err := p.Pause(); err != nil {

@@ -57,7 +57,7 @@ func TestGetResponse(t *testing.T) {
 			defer server.Close()
 
 			// Create an instance of SubsonicConnection
-			connection := &SubsonicConnection{}
+			connection := &Connection{}
 
 			// Call the function
 			response, err := connection.getResponse(tc.caller, server.URL)

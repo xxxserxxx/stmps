@@ -47,7 +47,7 @@ func formatSongForStatusBar(currentSong *mpvplayer.QueueItem) (text string) {
 	return
 }
 
-func formatSongForPlaylistEntry(entity subsonic.SubsonicEntity) (text string) {
+func formatSongForPlaylistEntry(entity subsonic.Entity) (text string) {
 	if entity.Title != "" {
 		text += "[::-] [white]" + tview.Escape(entity.Title)
 	}

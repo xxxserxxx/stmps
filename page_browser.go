@@ -22,21 +22,24 @@ type BrowserPage struct {
 	entityList  *tview.List
 	searchField *tview.InputField
 
-	currentDirectory *subsonic.SubsonicDirectory
-	artistIdList     []string
+	currentArtist subsonic.Artist
+	currentAlbum  subsonic.Album
+
+	artistObjectList []subsonic.Artist
 
 	// external refs
 	ui     *Ui
 	logger logger.LoggerInterface
 }
 
-func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage {
+func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 	browserPage := BrowserPage{
 		ui:     ui,
 		logger: ui.logger,
 
-		currentDirectory: nil,
-		artistIdList:     []string{},
+		currentArtist: subsonic.Artist{},
+		// artistObjectList is initially sparse artist info: name & id (and artist image & album count)
+		artistObjectList: artists,
 	}
 
 	// artist list
@@ -47,12 +50,10 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 		SetTitleAlign(tview.AlignLeft).
 		SetBorder(true)
 
-	for _, index := range *indexes {
-		for _, artist := range index.Artists {
-			browserPage.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
-			browserPage.artistIdList = append(browserPage.artistIdList, artist.Id)
-		}
+	for _, artist := range artists {
+		browserPage.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
 	}
+	browserPage.artistObjectList = artists
 
 	// album list
 	browserPage.entityList = tview.NewList().
@@ -115,29 +116,34 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			return nil
 		case 'S':
 			browserPage.handleAddRandomSongs("similar")
+			return nil
 		case 'R':
 			goBackTo := browserPage.artistList.GetCurrentItem()
+
 			// REFRESH artists
-			indexResponse, err := ui.connection.GetIndexes()
+			artistsIndex, err := ui.connection.GetArtists()
 			if err != nil {
-				ui.logger.Printf("Error fetching indexes from server: %s\n", err)
+				ui.logger.Printf("Error fetching artists from server: %s\n", err)
 				return event
 			}
-
-			browserPage.artistList.Clear()
-			browserPage.artistIdList = []string{}
-			ui.connection.ClearCache()
-
-			// Sort the indexes before adding to the list
-			for _, index := range indexResponse.Indexes.Index {
-				sort.Slice(index.Artists, func(i, j int) bool {
-					return index.Artists[i].Name < index.Artists[j].Name
-				})
-				for _, artist := range index.Artists {
-					browserPage.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
-					browserPage.artistIdList = append(browserPage.artistIdList, artist.Id)
+			artists := make([]subsonic.Artist, 0)
+			for _, ind := range artistsIndex.Index {
+				for _, art := range ind.Artists {
+					artists = append(artists, art)
 				}
 			}
+			sort.Slice(artists, func(i, j int) bool {
+				return artists[i].Name < artists[j].Name
+			})
+
+			browserPage.artistList.Clear()
+			ui.connection.ClearCache()
+
+			for _, artist := range artists {
+				browserPage.artistList.AddItem(tview.Escape(artist.Name), "", 0, nil)
+			}
+			browserPage.artistObjectList = artists
+			ui.logger.Printf("added %d items to artistList and artistObjectList", len(artists))
 
 			// Try to put the user to about where they were
 			if goBackTo < browserPage.artistList.GetItemCount() {
@@ -149,8 +155,9 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 	})
 
 	browserPage.artistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
-		if index < len(browserPage.artistIdList) {
-			browserPage.handleEntitySelected(browserPage.artistIdList[index])
+		ui.logger.Printf("artistList changed, index %d, artistList %d, artistObjectList %d", index, browserPage.artistList.GetItemCount(), len(browserPage.artistObjectList))
+		if index < len(browserPage.artistObjectList) {
+			browserPage.handleArtistSelected(browserPage.artistObjectList[index])
 		}
 	})
 
@@ -175,7 +182,7 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 			return nil
 		} else if event.Key() == tcell.KeyEnter {
 			playlist := ui.playlists[ui.addToPlaylistList.GetCurrentItem()]
-			browserPage.handleAddSongToPlaylist(&playlist)
+			browserPage.handleAddEntityToPlaylist(&playlist)
 
 			ui.pages.HidePage(PageAddToPlaylist)
 			ui.pages.SwitchToPage(PageBrowser)
@@ -212,10 +219,9 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 		// REFRESH only the artist
 		if event.Rune() == 'R' {
 			artistIdx := browserPage.artistList.GetCurrentItem()
-			entity := browserPage.artistIdList[artistIdx]
-			//ui.logger.Printf("refreshing artist idx %d, entity %s (%s)", artistIdx, entity, ui.connection.directoryCache[entity].Directory.Name)
-			ui.connection.RemoveCacheEntry(entity)
-			browserPage.handleEntitySelected(browserPage.artistIdList[artistIdx])
+			entity := browserPage.artistObjectList[artistIdx]
+			ui.connection.RemoveArtistCacheEntry(entity.Id)
+			browserPage.handleArtistSelected(browserPage.artistObjectList[artistIdx])
 			return nil
 		}
 		if event.Rune() == 'S' {
@@ -225,8 +231,8 @@ func (ui *Ui) createBrowserPage(indexes *[]subsonic.SubsonicIndex) *BrowserPage 
 	})
 
 	// open first artist by default so we don't get stuck when there's only one artist
-	if len(browserPage.artistIdList) > 0 {
-		browserPage.handleEntitySelected(browserPage.artistIdList[0])
+	if len(browserPage.artistObjectList) > 0 {
+		browserPage.handleArtistSelected(browserPage.artistObjectList[0])
 	}
 
 	return &browserPage
@@ -247,8 +253,12 @@ func (b *BrowserPage) IsSearchFocused(focused tview.Primitive) bool {
 
 func (b *BrowserPage) UpdateStars() {
 	// reload album/song list if one is open
-	if b.currentDirectory != nil {
-		b.handleEntitySelected(b.currentDirectory.Id)
+	if b.currentArtist.Id != "" {
+		if b.currentAlbum.Id != "" {
+			b.handleEntitySelected(b.currentAlbum.Id)
+		} else {
+			b.handleArtistSelected(b.currentArtist)
+		}
 	}
 }
 
@@ -258,14 +268,8 @@ func (b *BrowserPage) handleAddArtistToQueue() {
 		return
 	}
 
-	sort.Sort(b.currentDirectory.Entities)
-
-	for _, entity := range b.currentDirectory.Entities {
-		if entity.IsDirectory {
-			b.addDirectoryToQueue(&entity)
-		} else {
-			b.ui.addSongToQueue(&entity)
-		}
+	for _, album := range b.currentArtist.Albums {
+		b.addAlbumToQueue(album)
 	}
 
 	if currentIndex+1 < b.artistList.GetItemCount() {
@@ -276,161 +280,222 @@ func (b *BrowserPage) handleAddArtistToQueue() {
 }
 
 func (b *BrowserPage) handleAddRandomSongs(randomType string) {
-	currentIndex := b.entityList.GetCurrentItem()
-	if b.currentDirectory.Parent != "" {
-		// account for [..] entry that we show, see handleEntitySelected()
-		currentIndex--
+	defer b.ui.queuePage.UpdateQueue()
+	if randomType == "random" || b.currentAlbum.Id == "" {
+		b.ui.addRandomSongsToQueue("")
+		return
 	}
+
+	currentIndex := b.entityList.GetCurrentItem()
+	// account for [..] entry that we show, see handleEntitySelected()
+	currentIndex--
 	if currentIndex < 0 {
 		return
 	}
+	if currentIndex > len(b.currentAlbum.Songs) {
+		b.logger.Printf("error: handleAddRandomSongs invalid state, index %d > %d number of songs", currentIndex, len(b.currentAlbum.Songs))
+		return
+	}
 
-	entity := b.currentDirectory.Entities[currentIndex]
-
-	b.ui.addRandomSongsToQueue(entity.Id, randomType)
-	b.ui.queuePage.UpdateQueue()
+	b.ui.addRandomSongsToQueue(b.currentAlbum.Songs[currentIndex].Id)
 }
 
-func (b *BrowserPage) handleAddEntityToQueue() {
-	currentIndex := b.entityList.GetCurrentItem()
-	if currentIndex < 0 {
+// handleArtistSelected takes an artist ID and sets up the contents of the
+// entityList, including setting up selection handlers for each item in the
+// list. It also refreshes the artist from the server if it has a sparse copy.
+func (b *BrowserPage) handleArtistSelected(artist subsonic.Artist) {
+	// Refresh the artist and update the object list
+	artist, err := b.ui.connection.GetArtist(artist.Id)
+	if err != nil {
+		b.logger.PrintError("handleArtistSelected", err)
+	}
+	idx := b.artistList.GetCurrentItem()
+	if idx >= len(b.artistObjectList) {
+		b.logger.Printf("error: handleArtistSelected index %d > %d size of artist object list", idx, len(b.artistObjectList))
 		return
 	}
+	b.artistObjectList[idx] = artist
 
-	if currentIndex+1 < b.entityList.GetItemCount() {
-		b.entityList.SetCurrentItem(currentIndex + 1)
-	}
-
-	// if we have a parent directory subtract 1 to account for the [..]
-	// which would be index 0 in that case with index 1 being the first entity
-	if b.currentDirectory.Parent != "" {
-		currentIndex--
-	}
-
-	if currentIndex == -1 || len(b.currentDirectory.Entities) <= currentIndex {
-		return
-	}
-
-	entity := b.currentDirectory.Entities[currentIndex]
-
-	if entity.IsDirectory {
-		b.addDirectoryToQueue(&entity)
-	} else {
-		b.ui.addSongToQueue(&entity)
-	}
-
-	b.ui.queuePage.UpdateQueue()
-}
-
-func (b *BrowserPage) handleEntitySelected(directoryId string) {
-	if directoryId == "" {
-		return
-	}
-
-	if response, err := b.ui.connection.GetMusicDirectory(directoryId); err != nil || response == nil {
-		b.logger.Printf("handleEntitySelected: GetMusicDirectory %s -- %v", directoryId, err)
-		return
-	} else {
-		b.currentDirectory = &response.Directory
-		sort.Sort(response.Directory.Entities)
-	}
+	b.currentArtist = artist
 
 	b.entityList.Clear()
-	if b.currentDirectory.Parent != "" {
-		// has parent entity
+	b.currentAlbum = subsonic.Album{}
+
+	b.entityList.Box.SetTitle(" album ")
+
+	for _, album := range artist.Albums {
+		title := entityListTextFormat(album.Id, album.Name, true, b.ui.starIdList)
+		b.entityList.AddItem(title, "", 0, func() { b.handleEntitySelected(album.Id) })
+	}
+}
+
+// hasArtist tests whether artist is the artist, or is in either
+// the artist or album artist lists
+func hasArtist(song subsonic.Entity, artist subsonic.Artist) bool {
+	if song.ArtistId == artist.Id {
+		return true
+	}
+	for _, art := range song.Artists {
+		if art.Id == artist.Id {
+			return true
+		}
+	}
+	for _, art := range song.AlbumArtists {
+		if art.Id == artist.Id {
+			return true
+		}
+	}
+	return false
+}
+
+// handleEntitySelected takes an album or song ID and sets up the
+// contents of the entityList, including setting up selection handlers for each
+// item in the list.
+//
+// If an album is selected, it displays only songs that have the selected artist
+// as their artist.
+func (b *BrowserPage) handleEntitySelected(id string) {
+	if id == "" {
+		return
+	}
+
+	if b.currentAlbum.Id == "" {
+		// entityList contains albums, so set the album
+		album, err := b.ui.connection.GetAlbum(id)
+		if err != nil {
+			b.logger.Printf("handleEntitySelected: GetAlbum %s -- %v", id, err)
+			return
+		}
+		b.currentAlbum = album
+		// Browsing an album
+		b.entityList.Clear()
 		b.entityList.Box.SetTitle(" song ")
 		b.entityList.AddItem(
 			tview.Escape("[..]"), "", 0,
-			b.makeEntityHandler(b.currentDirectory.Parent))
-	} else {
-		// no parent
-		b.entityList.Box.SetTitle(" album ")
-	}
-
-	for _, entity := range b.currentDirectory.Entities {
-		var handler func()
-		title := entityListTextFormat(entity, b.ui.starIdList) // handles escaping
-
-		if entity.IsDirectory {
-			// it's an album/directory
-			handler = b.makeEntityHandler(entity.Id)
-		} else {
-			// it's a song
-			handler = makeSongHandler(&entity, b.ui, b.currentDirectory.Name)
+			func() { b.handleArtistSelected(b.currentArtist) })
+		for _, song := range album.Songs {
+			if hasArtist(song, b.currentArtist) {
+				b.entityList.AddItem(song.Title, "", 0, b.ui.makeSongHandler(song))
+			}
 		}
-
-		b.entityList.AddItem(title, "", 0, handler)
+		return
 	}
-}
 
-func (b *BrowserPage) makeEntityHandler(directoryId string) func() {
-	return func() {
-		b.handleEntitySelected(directoryId)
+	// entityList contains songs, so activate the song
+
+	// Derive the song from the selection list
+	currentIndex := b.entityList.GetCurrentItem()
+	// We don't handle [..] here
+	if currentIndex < 1 {
+		return
 	}
+	b.entityList.Clear()
+	song := b.currentAlbum.Songs[currentIndex]
+
+	uri := b.ui.connection.GetPlayUrl(song)
+	coverArtId := song.CoverArtId
+	if err := b.ui.player.PlayUri(uri, coverArtId, song); err != nil {
+		b.ui.logger.PrintError("SongHandler Play", err)
+		return
+	}
+	b.ui.queuePage.UpdateQueue()
 }
 
 func (b *BrowserPage) handleToggleEntityStar() {
 	currentIndex := b.entityList.GetCurrentItem()
+	// Keep the original so we can update the label later
 	originalIndex := currentIndex
-	if b.currentDirectory.Parent != "" {
-		// account for [..] entry that we show, see handleEntitySelected()
+	var idToStar, title string
+	var isAlbum bool
+	if b.currentAlbum.Id != "" {
+		// We're in an album; remove 1 for the [..]
 		currentIndex--
+		if currentIndex < 0 {
+			return
+		}
+		if currentIndex >= len(b.currentAlbum.Songs) {
+			b.logger.Printf("error: handleToggleEntityStar bad state; index %d > %d number of songs", currentIndex, len(b.currentAlbum.Songs))
+			return
+		}
+		song := b.currentAlbum.Songs[currentIndex-1]
+		idToStar = song.Id
+		title = song.Title
+	} else {
+		// We're in a list of albums
+		if currentIndex >= len(b.currentArtist.Albums) {
+			b.logger.Printf("error: handleToggleEntityStar bad state; index %d > %d number of albums", currentIndex, len(b.currentArtist.Albums))
+			return
+		}
+		album := b.currentArtist.Albums[currentIndex]
+		idToStar = album.Id
+		title = album.Name
+		isAlbum = true
 	}
-	if currentIndex < 0 {
-		return
-	}
-
-	entity := b.currentDirectory.Entities[currentIndex]
 
 	// If the song is already in the star list, remove it
-	_, remove := b.ui.starIdList[entity.Id]
+	_, remove := b.ui.starIdList[idToStar]
 
-	if _, err := b.ui.connection.ToggleStar(entity.Id, b.ui.starIdList); err != nil {
+	if _, err := b.ui.connection.ToggleStar(idToStar, b.ui.starIdList); err != nil {
 		b.logger.PrintError("ToggleStar", err)
 		return
 	}
 
 	if remove {
-		delete(b.ui.starIdList, entity.Id)
+		delete(b.ui.starIdList, idToStar)
 	} else {
-		b.ui.starIdList[entity.Id] = struct{}{}
+		b.ui.starIdList[idToStar] = struct{}{}
 	}
 
 	// update entity list entry
-	text := entityListTextFormat(entity, b.ui.starIdList)
+	text := entityListTextFormat(idToStar, title, isAlbum, b.ui.starIdList)
 	b.entityList.SetItemText(originalIndex, text, "")
 
 	b.ui.queuePage.UpdateQueue()
 }
 
-func entityListTextFormat(entity subsonic.SubsonicEntity, starredItems map[string]struct{}) string {
-	title := entity.Title
-	if entity.IsDirectory {
+func entityListTextFormat(id, title string, dir bool, starredItems map[string]struct{}) string {
+	if dir {
 		title = "[" + title + "]"
 	}
 
 	star := ""
-	_, hasStar := starredItems[entity.Id]
-	if hasStar {
+	if _, hasStar := starredItems[id]; hasStar {
 		star = " [red]♥"
 	}
 	return tview.Escape(title) + star
 }
 
-func (b *BrowserPage) addDirectoryToQueue(entity *subsonic.SubsonicEntity) {
-	response, err := b.ui.connection.GetMusicDirectory(entity.Id)
+func (b *BrowserPage) addArtistToQueue(artist subsonic.Artist) {}
+
+func (b *BrowserPage) addAlbumToQueue(album subsonic.Album) {
+	var err error
+	if len(album.Songs) == 0 {
+		album, err = b.ui.connection.GetAlbum(album.Id)
+	}
+	if err != nil {
+		b.logger.Printf("addAlbumToQueue: GetAlbum %s -- %s", album.Id, err.Error())
+		return
+	}
+
+	for _, s := range album.Songs {
+		// TODO maybe BrowserPage gets its own version of this function that uses dirname as artist name as fallback
+		b.ui.addSongToQueue(s)
+	}
+}
+
+func (b *BrowserPage) addDirectoryToQueue(entity *subsonic.Entity) {
+	directory, err := b.ui.connection.GetMusicDirectory(entity.Id)
 	if err != nil {
 		b.logger.Printf("addDirectoryToQueue: GetMusicDirectory %s -- %s", entity.Id, err.Error())
 		return
 	}
 
-	sort.Sort(response.Directory.Entities)
-	for _, e := range response.Directory.Entities {
+	for _, e := range directory.Entities {
 		if e.IsDirectory {
 			b.addDirectoryToQueue(&e)
 		} else {
 			// TODO maybe BrowserPage gets its own version of this function that uses dirname as artist name as fallback
-			b.ui.addSongToQueue(&e)
+			b.ui.addSongToQueue(e)
 		}
 	}
 }
@@ -478,31 +543,51 @@ func (b *BrowserPage) searchPrev() {
 	b.artistList.SetCurrentItem(idxs[len(idxs)-1])
 }
 
-func (b *BrowserPage) handleAddSongToPlaylist(playlist *subsonic.SubsonicPlaylist) {
+func (b *BrowserPage) handleAddEntityToX(add func(song subsonic.Entity), update func()) {
 	currentIndex := b.entityList.GetCurrentItem()
-
-	// if we have a parent directory subtract 1 to account for the [..]
-	// which would be index 0 in that case with index 1 being the first entity
-	if b.currentDirectory.Parent != "" {
-		currentIndex--
-	}
-
-	if currentIndex < 0 || len(b.currentDirectory.Entities) < currentIndex {
+	if currentIndex < 0 {
 		return
 	}
 
-	entity := b.currentDirectory.Entities[currentIndex]
-
-	if !entity.IsDirectory {
-		if err := b.ui.connection.AddSongToPlaylist(string(playlist.Id), entity.Id); err != nil {
-			b.logger.PrintError("AddSongToPlaylist", err)
+	if b.currentAlbum.Id != "" {
+		// account for [..] entry that we show, see handleEntitySelected()
+		currentIndex--
+		if currentIndex < 0 {
 			return
+		}
+		if currentIndex >= b.currentAlbum.Songs.Len() {
+			b.logger.Printf("error: handleAddEntityToX invalid state, index %d > %d number of songs", currentIndex, len(b.currentAlbum.Songs))
+			return
+		}
+		add(b.currentAlbum.Songs[currentIndex])
+	} else {
+		if currentIndex >= len(b.currentArtist.Albums) {
+			b.logger.Printf("error: handleAddEntityToX invalid state, index %d > %d number of albums", currentIndex, len(b.currentArtist.Albums))
+			return
+		}
+		for _, song := range b.currentArtist.Albums[currentIndex].Songs {
+			if hasArtist(song, b.currentArtist) {
+				add(song)
+			}
 		}
 	}
 
-	b.ui.playlistPage.UpdatePlaylists()
+	update()
 
 	if currentIndex+1 < b.entityList.GetItemCount() {
 		b.entityList.SetCurrentItem(currentIndex + 1)
 	}
+}
+
+func (b *BrowserPage) handleAddEntityToQueue() {
+	b.handleAddEntityToX(b.ui.addSongToQueue, b.ui.queuePage.UpdateQueue)
+}
+
+func (b *BrowserPage) handleAddEntityToPlaylist(playlist *subsonic.Playlist) {
+	b.handleAddEntityToX(func(song subsonic.Entity) {
+		if err := b.ui.connection.AddSongToPlaylist(string(playlist.Id), song.Id); err != nil {
+			b.logger.PrintError("AddSongToPlaylist", err)
+			return
+		}
+	}, b.ui.playlistPage.UpdatePlaylists)
 }

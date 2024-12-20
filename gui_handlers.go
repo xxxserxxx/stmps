@@ -42,7 +42,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 
 	case 'r':
 		// add random songs to queue
-		ui.handleAddRandomSongs("", "random")
+		ui.handleAddRandomSongs("")
 
 	case 'D':
 		// clear queue and stop playing
@@ -140,44 +140,37 @@ func (ui *Ui) Quit() {
 	ui.app.Stop()
 }
 
-func (ui *Ui) handleAddRandomSongs(Id string, randomType string) {
-	ui.addRandomSongsToQueue(Id, randomType)
+func (ui *Ui) handleAddRandomSongs(id string) {
+	ui.addRandomSongsToQueue(id)
 	ui.queuePage.UpdateQueue()
 }
 
-func (ui *Ui) addRandomSongsToQueue(Id string, randomType string) {
-	response, err := ui.connection.GetRandomSongs(Id, randomType)
+func (ui *Ui) addRandomSongsToQueue(id string) {
+	entities, err := ui.connection.GetRandomSongs(id)
 	if err != nil {
 		ui.logger.Printf("addRandomSongsToQueue %s", err.Error())
 	}
-	switch randomType {
-	case "random":
-		for _, e := range response.RandomSongs.Song {
-			ui.addSongToQueue(&e)
-		}
-	case "similar":
-		for _, e := range response.SimilarSongs.Song {
-			ui.addSongToQueue(&e)
-		}
+	for _, e := range entities {
+		ui.addSongToQueue(e)
 	}
 }
 
 // make sure to call ui.QueuePage.UpdateQueue() after this
-func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
+func (ui *Ui) addSongToQueue(entity subsonic.Entity) {
 	uri := ui.connection.GetPlayUrl(entity)
 
-	response, err := ui.connection.GetAlbum(entity.Parent)
-	album := ""
+	album, err := ui.connection.GetAlbum(entity.Parent)
+	albumName := ""
 	if err != nil {
 		ui.logger.PrintError("addSongToQueue", err)
 	} else {
 		switch {
-		case response.Album.Name != "":
-			album = response.Album.Name
-		case response.Album.Title != "":
-			album = response.Album.Title
-		case response.Album.Album != "":
-			album = response.Album.Album
+		case album.Name != "":
+			albumName = album.Name
+		case album.Title != "":
+			albumName = album.Title
+		case album.Album != "":
+			albumName = album.Album
 		}
 	}
 
@@ -187,7 +180,7 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 		Title:       entity.GetSongTitle(),
 		Artist:      entity.Artist,
 		Duration:    entity.Duration,
-		Album:       album,
+		Album:       albumName,
 		TrackNumber: entity.Track,
 		CoverArtId:  entity.CoverArtId,
 		DiscNumber:  entity.DiscNumber,
@@ -195,35 +188,10 @@ func (ui *Ui) addSongToQueue(entity *subsonic.SubsonicEntity) {
 	ui.player.AddToQueue(queueItem)
 }
 
-func makeSongHandler(entity *subsonic.SubsonicEntity, ui *Ui, fallbackArtist string) func() {
-	// make copy of values so this function can be used inside a loop iterating over entities
-	id := entity.Id
-	// TODO: Why aren't we doing all of this _inside_ the returned func?
-	uri := ui.connection.GetPlayUrl(entity)
-	title := entity.Title
-	artist := stringOr(entity.Artist, fallbackArtist)
-	duration := entity.Duration
-	track := entity.Track
-	coverArtId := entity.CoverArtId
-	disc := entity.DiscNumber
-
-	response, err := ui.connection.GetAlbum(entity.Parent)
-	album := ""
-	if err != nil {
-		ui.logger.PrintError("makeSongHandler", err)
-	} else {
-		switch {
-		case response.Album.Name != "":
-			album = response.Album.Name
-		case response.Album.Title != "":
-			album = response.Album.Title
-		case response.Album.Album != "":
-			album = response.Album.Album
-		}
-	}
-
+func (ui *Ui) makeSongHandler(entity subsonic.Entity) func() {
 	return func() {
-		if err := ui.player.PlayUri(id, uri, title, artist, album, duration, track, disc, coverArtId); err != nil {
+		uri := ui.connection.GetPlayUrl(entity)
+		if err := ui.player.PlayUri(uri, entity.CoverArtId, entity); err != nil {
 			ui.logger.PrintError("SongHandler Play", err)
 			return
 		}
