@@ -48,6 +48,7 @@ type QueuePage struct {
 	songInfo *tview.TextView
 	lyrics   *tview.TextView
 	coverArt *tview.Image
+	infoFlex *tview.Flex
 
 	currentLyrics subsonic.StructuredLyrics
 
@@ -166,22 +167,26 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.coverArt = tview.NewImage()
 	queuePage.coverArt.SetImage(STMPS_LOGO)
 
-	infoFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+	queuePage.infoFlex = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(queuePage.songInfo, 0, 1, false).
 		AddItem(queuePage.lyrics, 0, 1, false).
 		AddItem(queuePage.coverArt, 0, 1, false)
-	infoFlex.SetBorder(true)
-	infoFlex.SetTitle(" song info ")
+	queuePage.infoFlex.SetBorder(true)
+	queuePage.infoFlex.SetTitle(" song info ")
 
 	// flex wrapper
 	queuePage.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(queuePage.queueList, 0, 2, true).
-		AddItem(infoFlex, 0, 1, false)
+		AddItem(queuePage.infoFlex, 0, 1, false)
 
 	// private data
 	queuePage.queueData = queueData{
 		starIdList: ui.starIdList,
 	}
+
+	// flex wrapper
+	queuePage.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(queuePage.queueList, 0, 2, true)
 
 	return &queuePage
 }
