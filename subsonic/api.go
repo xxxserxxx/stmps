@@ -120,8 +120,6 @@ type Entity struct {
 	BitDepth           int
 	SamplingRate       int
 	ChannelCount       int
-	UserRating         int
-	AverageRating      int
 	ContentType        string
 	IsDirectory        bool `json:"isDir"`
 	IsVideo            bool
@@ -239,9 +237,15 @@ type Playlists struct {
 }
 
 type Playlist struct {
-	Id        Id       `json:"id"`
-	Name      string   `json:"name"`
-	SongCount int      `json:"songCount"`
+	Id        Id
+	Name      string
+	SongCount int
+	Comment   string
+	Owner     string
+	Public    bool
+	Duration  int
+	Created   string
+	Changed   string
 	Entries   Entities `json:"entry"`
 }
 
