@@ -10,7 +10,7 @@ P      stop
 -/=(+) volume down/volume up
 ,/.    seek -10/+10 seconds
 r      add 50 random songs to queue
-s      start server library scan
+c      start server library sCan
 `
 
 const helpPageBrowser = `
@@ -33,6 +33,7 @@ const helpPageQueue = `
 d/DEL remove currently selected song from the queue
 D     remove all songs from queue
 y     toggle star on song
+i     toggle song info panel
 k     move selected song up in queue
 j     move selected song down in queue
 s     save queue as a playlist
@@ -47,12 +48,17 @@ a     add playlist or song to queue
 `
 
 const helpSearchPage = `
-artist, album, or song column
+artist, album/genre, or song column
   Down/Up navigate within the column
   Left    previous column
   Right   next column
   Enter/a recursively add item to quue
+  g       toggle genre search
   /       start search
+In album tab
+  Enter   recursively add item to quue
+In genre tab
+  Enter   shows songs with genre
 search field
   Enter   search for text
   Esc     cancel search

@@ -43,18 +43,6 @@ type Results struct {
 	Songs   Entities `json:"song"`
 }
 
-type Artist struct {
-	Id             string
-	Name           string
-	AlbumCount     int
-	ArtistImageUrl string
-	Albums         []Album `json:"album"`
-}
-
-func (s Artist) ID() string {
-	return s.Id
-}
-
 type ScanStatus struct {
 	Scanning bool `json:"scanning"`
 	Count    int  `json:"count"`
@@ -83,6 +71,28 @@ type EntityBase struct {
 	Artists []Artist
 	// MusicBrainzId is only available for Albums from Navidrome
 	MusicBrainzId string
+}
+
+type Artist struct {
+	Id             string
+	Name           string
+	AlbumCount     int
+	ArtistImageUrl string
+	Albums         []Album `json:"album"`
+}
+
+func (s Artist) ID() string {
+	return s.Id
+}
+
+type GenreEntries struct {
+	Genres []GenreEntry `json:"genre"`
+}
+
+type GenreEntry struct {
+	SongCount  int    `json:"songCount"`
+	AlbumCount int    `json:"albumCount"`
+	Name       string `json:"value"`
 }
 
 type Album struct {
@@ -273,10 +283,14 @@ type Response struct {
 	Artist         Artist
 	ScanStatus     ScanStatus
 	PlayQueue      PlayQueue
-	Genres         []Genre
+	Genres         GenreEntries
+	SongsByGenre   Songs
 	Indexes        Indexes
+	LyricsList     LyricsList
 	Playlists      Playlists
 	Playlist       Playlist
+
+	Error Error
 }
 
 type Id string
@@ -292,4 +306,19 @@ func (si *Id) UnmarshalJSON(b []byte) error {
 	s := strconv.Itoa(i)
 	*si = Id(s)
 	return nil
+}
+
+type LyricsList struct {
+	StructuredLyrics []StructuredLyrics `json:"structuredLyrics"`
+}
+
+type StructuredLyrics struct {
+	Lang   string       `json:"lang"`
+	Synced bool         `json:"synced"`
+	Lines  []LyricsLine `json:"line"`
+}
+
+type LyricsLine struct {
+	Start int64  `json:"start"`
+	Value string `json:"value"`
 }

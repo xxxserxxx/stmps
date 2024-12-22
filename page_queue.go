@@ -45,8 +45,12 @@ type QueuePage struct {
 	queueList *tview.Table
 	queueData queueData
 
+	infoFlex *tview.Flex
 	songInfo *tview.TextView
+	lyrics   *tview.TextView
 	coverArt *tview.Image
+
+	currentLyrics subsonic.StructuredLyrics
 
 	// external refs
 	ui     *Ui
@@ -133,7 +137,12 @@ func (ui *Ui) createQueuePage() *QueuePage {
 						_ = ui.player.Pause()
 					}
 				}()
-
+			case 'i':
+				if queuePage.Root.GetItemCount() == 2 {
+					queuePage.Root.RemoveItem(queuePage.infoFlex)
+				} else {
+					queuePage.Root.AddItem(queuePage.infoFlex, 0, 1, false)
+				}
 			default:
 				return event
 			}
@@ -149,26 +158,40 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		return action, nil
 	})
 
+	queuePage.lyrics = tview.NewTextView()
+	queuePage.lyrics.SetBorder(true)
+	queuePage.lyrics.SetTitle(" lyrics ")
+	queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
+	queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
+	queuePage.lyrics.SetWrap(true)
+	queuePage.lyrics.SetWordWrap(true)
+	queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
+
 	queuePage.queueList.SetSelectionChangedFunc(queuePage.changeSelection)
 
 	queuePage.coverArt = tview.NewImage()
 	queuePage.coverArt.SetImage(STMPS_LOGO)
 
-	infoFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+	queuePage.infoFlex = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(queuePage.songInfo, 0, 1, false).
+		AddItem(queuePage.lyrics, 0, 1, false).
 		AddItem(queuePage.coverArt, 0, 1, false)
-	infoFlex.SetBorder(true)
-	infoFlex.SetTitle(" song info ")
+	queuePage.infoFlex.SetBorder(true)
+	queuePage.infoFlex.SetTitle(" song info ")
 
 	// flex wrapper
 	queuePage.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(queuePage.queueList, 0, 2, true).
-		AddItem(infoFlex, 0, 1, false)
+		AddItem(queuePage.infoFlex, 0, 1, false)
 
 	// private data
 	queuePage.queueData = queueData{
 		starIdList: ui.starIdList,
 	}
+
+	// flex wrapper
+	queuePage.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(queuePage.queueList, 0, 2, true)
 
 	return &queuePage
 }
@@ -193,6 +216,15 @@ func (q *QueuePage) changeSelection(row, column int) {
 		}
 	}
 	q.coverArt.SetImage(art)
+	lyrics, err := q.ui.connection.GetLyricsBySongId(currentSong.Id)
+	if err != nil {
+		q.logger.Printf("error fetching lyrics for %s: %v", currentSong.Title, err)
+	} else if len(lyrics) > 0 {
+		q.logger.Printf("got lyrics for %s", currentSong.Title)
+		q.currentLyrics = lyrics[0]
+	} else {
+		q.currentLyrics = subsonic.StructuredLyrics{Lines: []subsonic.LyricsLine{}}
+	}
 	_ = q.songInfoTemplate.Execute(q.songInfo, currentSong)
 }
 
@@ -268,6 +300,7 @@ func (q *QueuePage) updateQueue() {
 		q.queueList.ScrollToBeginning()
 	}
 
+	q.queueList.Box.SetTitle(fmt.Sprintf(" queue (%d) ", q.queueList.GetRowCount()))
 	r, c := q.queueList.GetSelection()
 	q.changeSelection(r, c)
 }

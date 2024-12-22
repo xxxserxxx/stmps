@@ -101,7 +101,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		}
 		ui.queuePage.UpdateQueue()
 
-	case 's':
+	case 'c':
 		if err := ui.connection.StartScan(); err != nil {
 			ui.logger.PrintError("startScan:", err)
 		}
@@ -184,6 +184,7 @@ func (ui *Ui) addSongToQueue(entity subsonic.Entity) {
 		TrackNumber: entity.Track,
 		CoverArtId:  entity.CoverArtId,
 		DiscNumber:  entity.DiscNumber,
+		Year:        entity.Year,
 	}
 	ui.player.AddToQueue(queueItem)
 }

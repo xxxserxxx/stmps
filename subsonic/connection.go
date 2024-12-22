@@ -349,6 +349,7 @@ func (connection *Connection) ToggleStar(id string, starredItems map[string]stru
 	return resp, nil
 }
 
+// FIXME this diverges from the rest of the code by recursively fetching all the data, which is why all of the background loading code was necessary. Strip all that out, and have playlists load as the user scrolls
 func (connection *Connection) GetPlaylists() (Playlists, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getPlaylists" + "?" + query.Encode()
@@ -528,4 +529,73 @@ func (connection *Connection) LoadPlayQueue() (PlayQueue, error) {
 	requestUrl := fmt.Sprintf("%s/rest/getPlayQueue?%s", connection.Host, query.Encode())
 	resp, err := connection.GetResponse("GetPlayQueue", requestUrl)
 	return resp.PlayQueue, err
+}
+
+// GetLyricsBySongId fetches time synchronized song lyrics. If the server does
+// not support this, an error is returned.
+func (connection *Connection) GetLyricsBySongId(id string) ([]StructuredLyrics, error) {
+	if id == "" {
+		return []StructuredLyrics{}, fmt.Errorf("GetLyricsBySongId: no ID provided")
+	}
+	query := defaultQuery(connection)
+	query.Set("id", id)
+	query.Set("f", "json")
+	caller := "GetLyricsBySongId"
+	res, err := http.Get(connection.Host + "/rest/getLyricsBySongId" + "?" + query.Encode())
+	if err != nil {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] failed to make GET request: %v", caller, err)
+	}
+
+	if res.Body != nil {
+		defer res.Body.Close()
+	} else {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] response body is nil", caller)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] unexpected status code: %d, status: %s", caller, res.StatusCode, res.Status)
+	}
+
+	if len(res.Header["Content-Type"]) == 0 {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] unknown image type (no content-type from server)", caller)
+	}
+
+	responseBody, readErr := io.ReadAll(res.Body)
+	if readErr != nil {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] failed to read response body: %v", caller, readErr)
+	}
+
+	var decodedBody responseWrapper
+	err = json.Unmarshal(responseBody, &decodedBody)
+	if err != nil {
+		return []StructuredLyrics{}, fmt.Errorf("[%s] failed to unmarshal response body: %v", caller, err)
+	}
+	return decodedBody.Response.LyricsList.StructuredLyrics, nil
+}
+
+func (connection *Connection) GetGenres() ([]GenreEntry, error) {
+	query := defaultQuery(connection)
+	requestUrl := connection.Host + "/rest/getGenres" + "?" + query.Encode()
+	resp, err := connection.GetResponse("GetGenres", requestUrl)
+	if err != nil {
+		return resp.Genres.Genres, err
+	}
+	return resp.Genres.Genres, nil
+}
+
+func (connection *Connection) GetSongsByGenre(genre string, offset int, musicFolderID string) (Entities, error) {
+	query := defaultQuery(connection)
+	query.Add("genre", genre)
+	if offset != 0 {
+		query.Add("offset", strconv.Itoa(offset))
+	}
+	if musicFolderID != "" {
+		query.Add("musicFolderId", musicFolderID)
+	}
+	requestUrl := connection.Host + "/rest/getSongsByGenre" + "?" + query.Encode()
+	resp, err := connection.GetResponse("GetPlaylists", requestUrl)
+	if err != nil {
+		return resp.SongsByGenre.Songs, err
+	}
+	return resp.SongsByGenre.Songs, nil
 }
