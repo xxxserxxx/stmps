@@ -99,7 +99,8 @@ func defaultQuery(connection *Connection) url.Values {
 func (connection *Connection) GetServerInfo() (Response, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/ping" + "?" + query.Encode()
-	return connection.GetResponse("GetServerInfo", requestUrl)
+	r, e := connection.getResponse("GetServerInfo", requestUrl)
+	return *r, e
 }
 
 // GetIndexes returns an indexed structure of all artists
@@ -107,7 +108,7 @@ func (connection *Connection) GetServerInfo() (Response, error) {
 func (connection *Connection) GetIndexes() (Indexes, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getIndexes" + "?" + query.Encode()
-	i, e := connection.GetResponse("GetIndexes", requestUrl)
+	i, e := connection.getResponse("GetIndexes", requestUrl)
 	return i.Indexes, e
 }
 
@@ -117,7 +118,7 @@ func (connection *Connection) GetIndexes() (Indexes, error) {
 func (connection *Connection) GetArtists() (Indexes, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getArtists" + "?" + query.Encode()
-	i, e := connection.GetResponse("GetArtists", requestUrl)
+	i, e := connection.getResponse("GetArtists", requestUrl)
 	return i.Artists, e
 }
 
@@ -134,7 +135,7 @@ func (connection *Connection) GetArtist(id string) (Artist, error) {
 	query := defaultQuery(connection)
 	query.Set("id", id)
 	requestUrl := connection.Host + "/rest/getArtist" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetArtist", requestUrl)
+	resp, err := connection.getResponse("GetArtist", requestUrl)
 	if err != nil {
 		return resp.Artist, err
 	}
@@ -170,7 +171,7 @@ func (connection *Connection) GetAlbum(id string) (Album, error) {
 	query := defaultQuery(connection)
 	query.Set("id", id)
 	requestUrl := connection.Host + "/rest/getAlbum" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetAlbum", requestUrl)
+	resp, err := connection.getResponse("GetAlbum", requestUrl)
 	if err != nil {
 		return resp.Album, err
 	}
@@ -202,7 +203,7 @@ func (connection *Connection) GetMusicDirectory(id string) (Directory, error) {
 	query := defaultQuery(connection)
 	query.Set("id", id)
 	requestUrl := connection.Host + "/rest/getMusicDirectory" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetMusicDirectory", requestUrl)
+	resp, err := connection.getResponse("GetMusicDirectory", requestUrl)
 	if err != nil {
 		return resp.Directory, err
 	}
@@ -295,14 +296,14 @@ func (connection *Connection) GetRandomSongs(Id string) (Entities, error) {
 	if Id == "" {
 		query.Set("size", size)
 		requestUrl := connection.Host + "/rest/getRandomSongs?" + query.Encode()
-		resp, err := connection.GetResponse("GetRandomSongs", requestUrl)
+		resp, err := connection.getResponse("GetRandomSongs", requestUrl)
 		return resp.RandomSongs.Songs, err
 	}
 
 	query.Set("id", Id)
 	query.Set("count", size)
 	requestUrl := connection.Host + "/rest/getSimilarSongs?" + query.Encode()
-	resp, err := connection.GetResponse("GetSimilar", requestUrl)
+	resp, err := connection.getResponse("GetSimilar", requestUrl)
 	return resp.SimilarSongs.Songs, err
 }
 
@@ -314,14 +315,14 @@ func (connection *Connection) ScrobbleSubmission(id string, isSubmission bool) (
 	query.Set("submission", strconv.FormatBool(isSubmission))
 
 	requestUrl := connection.Host + "/rest/scrobble" + "?" + query.Encode()
-	resp, err := connection.GetResponse("ScrobbleSubmission", requestUrl)
-	return resp, err
+	resp, err := connection.getResponse("ScrobbleSubmission", requestUrl)
+	return *resp, err
 }
 
 func (connection *Connection) GetStarred() (Results, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getStarred" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetStarred", requestUrl)
+	resp, err := connection.getResponse("GetStarred", requestUrl)
 	return resp.Starred, err
 }
 
@@ -337,23 +338,23 @@ func (connection *Connection) ToggleStar(id string, starredItems map[string]stru
 	}
 
 	requestUrl := connection.Host + "/rest/" + action + "?" + query.Encode()
-	resp, err := connection.GetResponse("ToggleStar", requestUrl)
+	resp, err := connection.getResponse("ToggleStar", requestUrl)
 	if err != nil {
 		if ok {
 			delete(starredItems, id)
 		} else {
 			starredItems[id] = struct{}{}
 		}
-		return resp, err
+		return *resp, err
 	}
-	return resp, nil
+	return *resp, nil
 }
 
 // FIXME this diverges from the rest of the code by recursively fetching all the data, which is why all of the background loading code was necessary. Strip all that out, and have playlists load as the user scrolls
 func (connection *Connection) GetPlaylists() (Playlists, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getPlaylists" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetPlaylists", requestUrl)
+	resp, err := connection.getResponse("GetPlaylists", requestUrl)
 	if err != nil {
 		return resp.Playlists, err
 	}
@@ -384,7 +385,7 @@ func (connection *Connection) GetPlaylist(id string) (Playlist, error) {
 	query.Set("id", id)
 
 	requestUrl := connection.Host + "/rest/getPlaylist" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetPlaylist", requestUrl)
+	resp, err := connection.getResponse("GetPlaylist", requestUrl)
 	return resp.Playlist, err
 }
 
@@ -409,39 +410,38 @@ func (connection *Connection) CreatePlaylist(id, name string, songIds []string) 
 		query.Add("songId", sid)
 	}
 	requestUrl := connection.Host + "/rest/createPlaylist" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetPlaylist", requestUrl)
+	resp, err := connection.getResponse("GetPlaylist", requestUrl)
 	return resp.Playlist, err
 }
 
-func (connection *Connection) GetResponse(caller, requestUrl string) (Response, error) {
-	zero := Response{}
+func (connection *Connection) getResponse(caller, requestUrl string) (*Response, error) {
 	res, err := http.Get(requestUrl)
 	if err != nil {
-		return zero, fmt.Errorf("[%s] failed to make GET request: %v", caller, err)
+		return nil, fmt.Errorf("[%s] failed to make GET request: %v", caller, err)
 	}
 
 	if res.Body != nil {
 		defer res.Body.Close()
 	} else {
-		return zero, fmt.Errorf("[%s] response body is nil", caller)
+		return nil, fmt.Errorf("[%s] response body is nil", caller)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return zero, fmt.Errorf("[%s] unexpected status code: %d, status: %s", caller, res.StatusCode, res.Status)
+		return nil, fmt.Errorf("[%s] unexpected status code: %d, status: %s", caller, res.StatusCode, res.Status)
 	}
 
 	responseBody, readErr := io.ReadAll(res.Body)
 	if readErr != nil {
-		return zero, fmt.Errorf("[%s] failed to read response body: %v", caller, readErr)
+		return nil, fmt.Errorf("[%s] failed to read response body: %v", caller, readErr)
 	}
 
 	var decodedBody responseWrapper
 	err = json.Unmarshal(responseBody, &decodedBody)
 	if err != nil {
-		return zero, fmt.Errorf("[%s] failed to unmarshal response body: %v", caller, err)
+		return nil, fmt.Errorf("[%s] failed to unmarshal response body: %v", caller, err)
 	}
 
-	return decodedBody.Response, nil
+	return &decodedBody.Response, nil
 }
 
 func (connection *Connection) DeletePlaylist(id string) error {
@@ -494,7 +494,7 @@ func (connection *Connection) Search(searchTerm string, artistOffset, albumOffse
 	query.Set("albumOffset", strconv.Itoa(albumOffset))
 	query.Set("songOffset", strconv.Itoa(songOffset))
 	requestUrl := connection.Host + "/rest/search3" + "?" + query.Encode()
-	res, err := connection.GetResponse("Search", requestUrl)
+	res, err := connection.getResponse("Search", requestUrl)
 	return Results(res.SearchResult3), err
 }
 
@@ -504,7 +504,7 @@ func (connection *Connection) Search(searchTerm string, artistOffset, albumOffse
 func (connection *Connection) StartScan() error {
 	query := defaultQuery(connection)
 	requestUrl := fmt.Sprintf("%s/rest/startScan?%s", connection.Host, query.Encode())
-	if res, err := connection.GetResponse("StartScan", requestUrl); err != nil {
+	if res, err := connection.getResponse("StartScan", requestUrl); err != nil {
 		return err
 	} else if !res.ScanStatus.Scanning {
 		return fmt.Errorf("server returned false for scan status on scan attempt")
@@ -520,14 +520,14 @@ func (connection *Connection) SavePlayQueue(queueIds []string, current string, p
 	query.Set("current", current)
 	query.Set("position", fmt.Sprintf("%d", position))
 	requestUrl := fmt.Sprintf("%s/rest/savePlayQueue?%s", connection.Host, query.Encode())
-	_, err := connection.GetResponse("SavePlayQueue", requestUrl)
+	_, err := connection.getResponse("SavePlayQueue", requestUrl)
 	return err
 }
 
 func (connection *Connection) LoadPlayQueue() (PlayQueue, error) {
 	query := defaultQuery(connection)
 	requestUrl := fmt.Sprintf("%s/rest/getPlayQueue?%s", connection.Host, query.Encode())
-	resp, err := connection.GetResponse("GetPlayQueue", requestUrl)
+	resp, err := connection.getResponse("GetPlayQueue", requestUrl)
 	return resp.PlayQueue, err
 }
 
@@ -576,7 +576,7 @@ func (connection *Connection) GetLyricsBySongId(id string) ([]StructuredLyrics, 
 func (connection *Connection) GetGenres() ([]GenreEntry, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getGenres" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetGenres", requestUrl)
+	resp, err := connection.getResponse("GetGenres", requestUrl)
 	if err != nil {
 		return resp.Genres.Genres, err
 	}
@@ -593,7 +593,7 @@ func (connection *Connection) GetSongsByGenre(genre string, offset int, musicFol
 		query.Add("musicFolderId", musicFolderID)
 	}
 	requestUrl := connection.Host + "/rest/getSongsByGenre" + "?" + query.Encode()
-	resp, err := connection.GetResponse("GetPlaylists", requestUrl)
+	resp, err := connection.getResponse("GetPlaylists", requestUrl)
 	if err != nil {
 		return resp.SongsByGenre.Songs, err
 	}

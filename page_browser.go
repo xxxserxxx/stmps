@@ -128,9 +128,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 			}
 			artists := make([]subsonic.Artist, 0)
 			for _, ind := range artistsIndex.Index {
-				for _, art := range ind.Artists {
-					artists = append(artists, art)
-				}
+				artists = append(artists, ind.Artists...)
 			}
 			sort.Slice(artists, func(i, j int) bool {
 				return artists[i].Name < artists[j].Name
@@ -465,7 +463,37 @@ func entityListTextFormat(id, title string, dir bool, starredItems map[string]st
 	return tview.Escape(title) + star
 }
 
-func (b *BrowserPage) addArtistToQueue(artist subsonic.Artist) {}
+//nolint:golint,unused
+func (b *BrowserPage) addArtistToQueue(artist subsonic.Artist) {
+	var err error
+	// If the artist is sparse, populate it
+	if len(artist.Albums) == 0 {
+		artist, err = b.ui.connection.GetArtist(artist.Id)
+		if err != nil {
+			b.logger.Printf("addArtistToQueue: GetArtist %s -- %s", artist.Id, err.Error())
+			return
+		}
+		// If it's _still_ sparse, return, as there's nothing to do
+		if len(artist.Albums) == 0 {
+			b.logger.Printf("addArtistToQueue: artist %q (%q) has no albums", artist.Name, artist.Id)
+			return
+		}
+	}
+
+	for _, album := range artist.Albums {
+		if len(album.Songs) == 0 {
+			album, err = b.ui.connection.GetAlbum(album.Id)
+			if err != nil {
+				b.logger.Printf("addArtistToQueue: GetAlbum %s -- %s", album.Id, err.Error())
+				// Hope the error is transient
+				continue
+			}
+		}
+		for _, s := range album.Songs {
+			b.ui.addSongToQueue(s)
+		}
+	}
+}
 
 func (b *BrowserPage) addAlbumToQueue(album subsonic.Album) {
 	var err error
@@ -483,6 +511,7 @@ func (b *BrowserPage) addAlbumToQueue(album subsonic.Album) {
 	}
 }
 
+//nolint:golint,unused
 func (b *BrowserPage) addDirectoryToQueue(entity *subsonic.Entity) {
 	directory, err := b.ui.connection.GetMusicDirectory(entity.Id)
 	if err != nil {

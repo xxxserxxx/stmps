@@ -41,6 +41,7 @@ All notable changes to this project will be documented in this file.
 - Browser now works on metadata, not directory structure. Not all functions fully tested, but it works.
 - Tweaks the lyrics timing offset to try to hit that sweet spot that makes up for the inaccuracy of mpv
 - Rolls back the (unrelated, unnecessary) logger changes
+- Changelog is updated, and readme updated to list the extra merged features
 
 ## [0.1.0] - 2024-10-15
 

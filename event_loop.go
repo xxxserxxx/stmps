@@ -77,6 +77,7 @@ func (ui *Ui) guiEventLoop() {
 							// in the future
 							p := statusData.Position*1000 + 500
 							_, _, _, fh := ui.queuePage.lyrics.GetInnerRect()
+							// FIXME the lyrics lookup would perform better as a binary search
 							for i := 0; i < lcl-1; i++ {
 								if p >= cl[i].Start && p < cl[i+1].Start {
 									txt := ""

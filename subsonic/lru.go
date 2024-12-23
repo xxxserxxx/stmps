@@ -24,9 +24,7 @@ func NewLRU[T any](m map[string]T, size int) LRU[T] {
 // Push a key onto the front of the stack. If Push is called repeatedly with the
 // same key, it will flush all other items out of the stack.
 func (l *LRU[T]) Push(key string) {
-	if _, ok := l.managedMap[l.ring[l.idx]]; ok {
-		delete(l.managedMap, l.ring[l.idx])
-	}
+	delete(l.managedMap, l.ring[l.idx])
 	if l.idx < len(l.ring)-1 {
 		l.idx++
 	} else {

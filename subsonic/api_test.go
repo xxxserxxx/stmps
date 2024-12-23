@@ -73,6 +73,7 @@ func TestGetResponse(t *testing.T) {
 				if err != nil {
 					t.Errorf("expected no error but got: %v", err)
 				}
+
 				if response == nil {
 					t.Errorf("expected a response but got nil")
 				}

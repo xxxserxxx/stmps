@@ -11,7 +11,10 @@ const (
 )
 
 // if the first argument isn't empty, return it, otherwise return the second
+//
+//nolint:golint,unused
 func stringOr(firstChoice string, secondChoice string) string {
+	// TODO stringOr is not used anymore, so commented out until removal.
 	if firstChoice != "" {
 		return firstChoice
 	}
