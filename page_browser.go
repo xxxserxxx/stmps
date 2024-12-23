@@ -330,9 +330,31 @@ func (b *BrowserPage) handleArtistSelected(idx int, artist subsonic.Artist) {
 	}
 }
 
+const VARIOUS_ARTISTS = "Various Artists"
+
 // hasArtist tests whether artist is the artist, or is in either
 // the artist or album artist lists
 func hasArtist(song subsonic.Entity, artist subsonic.Artist) bool {
+	// Navidrome doesn't correctly populate artist fields, so we have to jump through some hoops here.
+	// The convention among Subsonic servers (and many media servers, in general) is that albums with
+	// multiple artists:
+	// 1. Set the artist field to the actual artist of the song
+	// 2. Set the albumArtist field to "Various Artists"
+	// Navidrome does not return the albumArtists field through the API, which means that clients
+	// can't check this convention.
+	//
+	// This code wants to help the caller determine whether a given song matches a
+	// specific artist, even when the song is part of a collection. The issue is when
+	// the user is browsing under "Various Artists"; gonic populates the
+	// "albumArtists" field in each song, allowing us to match the "Various Artists"
+	// artist with the song. Since Navidrome does not, no songs will match.
+	//
+	// We work around this by testing whether the artist is "Various Artist"; if so, we
+	// return "true". It's a hack, but the cases where the results are undesireable should
+	// be edge cases.
+	if artist.Name == VARIOUS_ARTISTS {
+		return true
+	}
 	if song.ArtistId == artist.Id {
 		return true
 	}
@@ -573,7 +595,8 @@ func (b *BrowserPage) handleAddEntityToX(add func(song subsonic.Entity), update 
 		if len(album.Songs) == 0 {
 			a, e := b.ui.connection.GetAlbum(album.Id)
 			if e != nil {
-
+				b.logger.Printf("error: handleAddEntityToX failed to get album %s: %s", album.Id, e)
+				return
 			}
 			b.currentArtist.Albums[currentIndex], album = a, a
 		}
