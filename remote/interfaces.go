@@ -44,6 +44,7 @@ type TrackInterface interface {
 	GetAlbum() string
 	GetTrackNumber() int
 	GetDiscNumber() int
+	GetGenre() string
 
 	// something like ID != ""
 	IsValid() bool

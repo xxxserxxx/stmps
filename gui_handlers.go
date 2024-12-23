@@ -174,6 +174,15 @@ func (ui *Ui) addSongToQueue(entity subsonic.Entity) {
 		}
 	}
 
+	// Populate the genre, by hook or crook
+	genre := entity.Genre
+	if genre == "" {
+		genre = album.Genre
+	}
+	if genre == "" && len(album.Genres) > 0 {
+		genre = album.Genres[0].Name
+	}
+
 	queueItem := &mpvplayer.QueueItem{
 		Id:          entity.Id,
 		Uri:         uri,
@@ -185,6 +194,7 @@ func (ui *Ui) addSongToQueue(entity subsonic.Entity) {
 		CoverArtId:  entity.CoverArtId,
 		DiscNumber:  entity.DiscNumber,
 		Year:        entity.Year,
+		Genre:       genre,
 	}
 	ui.player.AddToQueue(queueItem)
 }

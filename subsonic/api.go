@@ -169,6 +169,9 @@ func (e Entity) GetTrackNumber() int {
 func (e Entity) GetDiscNumber() int {
 	return e.DiscNumber
 }
+func (e Entity) GetGenre() string {
+	return e.Genre
+}
 func (e Entity) IsValid() bool {
 	return true
 }

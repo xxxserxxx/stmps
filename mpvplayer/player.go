@@ -135,8 +135,9 @@ func (p *Player) PlayUri(uri, coverArtId string, song remote.TrackInterface) err
 		Album:       song.GetAlbum(),
 		TrackNumber: song.GetTrackNumber(),
 		CoverArtId:  coverArtId,
-		DiscNumber:  song.GetDiscNumber()},
-	}
+		DiscNumber:  song.GetDiscNumber(),
+		Genre:       song.GetGenre(),
+	}}
 	p.replaceInProgress = true
 	if ip, e := p.IsPaused(); ip && e == nil {
 		if err := p.Pause(); err != nil {

@@ -499,7 +499,7 @@ var songInfoTemplateString = `[blue::b]Title:[-:-:-:-] [green::i]{{.Title}}[-:-:
 [blue::b]Artist:[-:-:-:-] [::i]{{.Artist}}[-:-:-:-]
 [blue::b]Album:[-:-:-:-] [::i]{{.GetAlbum}}[-:-:-:-]
 [blue::b]Disc:[-:-:-:-] [::i]{{.GetDiscNumber}}[-:-:-:-]  [blue::b]Track:[-:-:-:-] [::i]{{.GetTrackNumber}}[-:-:-:-]
-[blue::b]Year:[-:-:-:-] [::i]{{.GetYear}}[-:-:-:-]
+[blue::b]Year:[-:-:-:-] [::i]{{.GetYear}}[-:-:-:-]  [blue::b]Genre[-:-:-] [::i]{{.GetGenre}}[-:-:-:-]
 `
 
 //go:embed docs/stmps_logo.png
