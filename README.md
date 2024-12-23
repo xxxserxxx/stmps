@@ -21,6 +21,13 @@ Dev Branch:
 - Server-side scrobbling (e.g., on Navidrome, gonic)
 - [MPRIS2](https://mpris2.readthedocs.io/en/latest/) control and metadata
 
+### Additional features in this branch
+
+- Fix for #88, the global key binding for "refresh server" overrode "save playlist"; it was changed to 'c'
+- Song info panel (song information, lyrics, and cover art) can be toggled with 'i'
+- Synced lyrics are shown, and synced with the music, if the server supports `getLyricsBySongId/`. Currently, a PR in gonic provides this through filesystem `.lrc` files. This version of gonic is in the main branch of [@danielepintore's fork](https://github.com/danielepintore/gonic.git).
+- The search tab can toggle between "search for anything" (via `search3/`), or search-by-genre (via `getSongsByGenre/`. As part of this, switching to the genre search in the search tab with 'g' also shows a list of all known genres, which can be browsed.
+
 ## Screenshots
 
 These screenshots use [Navidrome's demo server](https://demo.navidrome.org/) ([config file](./stmp-navidromedemo.toml)).
