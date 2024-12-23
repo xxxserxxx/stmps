@@ -5,17 +5,6 @@ package main
 
 import "math"
 
-// if the first argument isn't empty, return it, otherwise return the second
-//
-//nolint:golint,unused
-func stringOr(firstChoice string, secondChoice string) string {
-	// TODO stringOr is not used anymore, so commented out until removal.
-	if firstChoice != "" {
-		return firstChoice
-	}
-	return secondChoice
-}
-
 func secondsToMinAndSec(seconds int64) (int, int) {
 	minutes := math.Floor(float64(seconds) / 60)
 	remainingSeconds := int(seconds) % 60

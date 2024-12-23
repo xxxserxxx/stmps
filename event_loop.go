@@ -61,7 +61,8 @@ func (ui *Ui) guiEventLoop() {
 				if mpvEvent.Data == nil {
 					continue
 				}
-				statusData := mpvEvent.Data.(mpvplayer.StatusData) // TODO is this safe to access? maybe we need a copy
+				// TODO (E) is mpvEvent.Data thread-safe? maybe we need a copy
+				statusData := mpvEvent.Data.(mpvplayer.StatusData)
 				if ui.scanning {
 					scanning, err := ui.connection.ScanStatus()
 					if err != nil {
@@ -85,7 +86,7 @@ func (ui *Ui) guiEventLoop() {
 							// in the future
 							p := statusData.Position*1000 + 500
 							_, _, _, fh := ui.queuePage.lyrics.GetInnerRect()
-							// FIXME the lyrics lookup would perform better as a binary search
+							// FIXME (A) the lyrics lookup would perform better as a binary search
 							for i := 0; i < lcl-1; i++ {
 								if p >= cl[i].Start && p < cl[i+1].Start {
 									txt := ""
@@ -118,7 +119,8 @@ func (ui *Ui) guiEventLoop() {
 
 				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
-					currentSong = mpvEvent.Data.(mpvplayer.QueueItem) // TODO is this safe to access? maybe we need a copy
+					// TODO (E) is mpvEvent.Data thread safe? maybe we need a copy
+					currentSong = mpvEvent.Data.(mpvplayer.QueueItem)
 					statusText += formatSongForStatusBar(&currentSong)
 
 					// Update MprisPlayer with new track info
@@ -166,7 +168,8 @@ func (ui *Ui) guiEventLoop() {
 
 				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
-					currentSong = mpvEvent.Data.(mpvplayer.QueueItem) // TODO is this safe to access? maybe we need a copy
+					// TODO mpvEvent.Data thread safe? maybe we need a copy
+					currentSong = mpvEvent.Data.(mpvplayer.QueueItem)
 					statusText += formatSongForStatusBar(&currentSong)
 				}
 
@@ -180,7 +183,8 @@ func (ui *Ui) guiEventLoop() {
 
 				var currentSong mpvplayer.QueueItem
 				if mpvEvent.Data != nil {
-					currentSong = mpvEvent.Data.(mpvplayer.QueueItem) // TODO is this safe to access? maybe we need a copy
+					// TODO is mpvEvent.Data thread safe? maybe we need a copy
+					currentSong = mpvEvent.Data.(mpvplayer.QueueItem)
 					statusText += formatSongForStatusBar(&currentSong)
 				}
 

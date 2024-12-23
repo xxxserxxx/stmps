@@ -25,10 +25,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-// TODO Update screenshots in the README
-// TODO Add mocking library
-// TODO Get unit tests up to some non-embarassing percentage
-// TODO Merge feature_27_save_queue / issue-54-save-queue-on-exit / seekable-queue-load, and finish the restoring play location on first run, or hotkey
+// TODO (D) Update screenshots in the README
+// TODO (A) Add mocking library
+// TODO (C) Get unit tests up to some non-embarassing percentage
+// TODO (B) Merge feature_27_save_queue / issue-54-save-queue-on-exit / seekable-queue-load, and finish the restoring play location on first run, or hotkey
 
 var osExit = os.Exit  // A variable to allow mocking os.Exit in tests
 var headlessMode bool // This can be set to true during tests
@@ -53,9 +53,11 @@ func readConfig(configFile *string) error {
 		viper.SetConfigFile(*configFile)
 	} else {
 		// lookup default dirs
-		viper.SetConfigName("stmp") // TODO this should be stmps
+		// TODO (D) The config name should be stmps; changing it will screw up users unless we migrate it automagically
+		viper.SetConfigName("stmp")
 		viper.SetConfigType("toml")
-		viper.AddConfigPath("$HOME/.config/stmp") // TODO this should be stmps only
+		// TODO The config file should also be stmps. Again, disruptive for users.
+		viper.AddConfigPath("$HOME/.config/stmp")
 		viper.AddConfigPath("$HOME/.config/stmps")
 		viper.AddConfigPath(".")
 	}
@@ -123,7 +125,7 @@ func initCommandHandler(logger *logger.Logger) {
 // 2 - keybinding config errors
 func main() {
 	// parse flags and config
-	// TODO help should better explain the arguments, especially the currently undocumented server URL argument
+	// TODO (D) help should better explain the arguments, especially the currently undocumented server URL argument
 	help := flag.Bool("help", false, "Print usage")
 	enableMpris := flag.Bool("mpris", false, "Enable MPRIS2")
 	list := flag.Bool("list", false, "list server data")

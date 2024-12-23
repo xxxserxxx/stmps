@@ -221,17 +221,17 @@ func (m *MprisPlayer) PlayPause() *dbus.Error {
 }
 
 func (m *MprisPlayer) Previous() *dbus.Error {
-	// TODO not implemented
+	// TODO (B) MprisPlayer.Previous() -- not implemented
 	return nil
 }
 
 func (m *MprisPlayer) Seek(offset int64, _ int) (int64, error) {
-	// TODO not implemented
+	// TODO (B) MprisPlayer.Seek() -- not implemented
 	return 0, nil
 }
 
 func (m *MprisPlayer) SetPosition(trackId dbus.ObjectPath, position int64) *dbus.Error {
-	// TODO not implemented
+	// TODO (B) MprisPlayer.SetPosition() -- not implemented
 	return nil
 }
 

@@ -5,8 +5,8 @@ package logger
 
 import "fmt"
 
-// TODO Add option to also log to file
-// TODO Support log levels github.com/d2g/logfilter
+// TODO (B) Add option to also log to file
+// TODO (B) Support log levels github.com/d2g/logfilter
 type Logger struct {
 	Prints chan string
 }

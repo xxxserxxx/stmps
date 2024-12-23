@@ -65,7 +65,7 @@ func (ui *Ui) createPlaylistSelectionWidget() (m *PlaylistSelectionWidget) {
 	m.inputField.SetDoneFunc(func(key tcell.Key) {
 		m.focusNext(nil)
 	})
-	// FIXME with this code in place, the list isn't navigable
+	// TODO (D) createPlaylist could have autocomplete, but it interferes with the list navigation.
 	// m.inputField.SetAutocompletedFunc(func(text string, index int, source int) bool {
 	// 	m.inputField.SetText(text)
 	// 	for _, p := range ui.playlists {
@@ -232,7 +232,7 @@ func (m PlaylistSelectionWidget) focusPrev(event *tcell.EventKey) *tcell.EventKe
 			m.ui.app.SetFocus(m.inputField)
 		}
 	case m.cancel:
-		// FIXME There's some bug in back-tabbing from cancel; _something_ is disabling the overwriteEnabled field, and I can't find it. Tabbing forward works fine, but tabbing backward fails to work properly when the playlist name matches an existing playlist
+		// FIXME (D) There's a bug in back-tabbing from cancel; _something_ is disabling the overwriteEnabled field. Tabbing forward works fine, but tabbing backward fails to work properly when the playlist name matches an existing playlist
 		if m.overwriteEnabled {
 			if m.overwrite.IsChecked() {
 				m.ui.app.SetFocus(m.accept)

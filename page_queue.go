@@ -21,8 +21,6 @@ import (
 	"github.com/spezifisch/stmps/subsonic"
 )
 
-// TODO show total # of entries somewhere (top?)
-
 // columns: star, title, artist, duration
 const queueDataColumns = 4
 const starIcon = "♥"
@@ -199,7 +197,7 @@ func (ui *Ui) createQueuePage() *QueuePage {
 }
 
 func (q *QueuePage) changeSelection(row, column int) {
-	// TODO Merge concurrent cover art code
+	// TODO (A) Merge concurrent cover art code
 	q.songInfo.Clear()
 	if row >= len(q.queueData.playerQueue) || row < 0 || column < 0 {
 		q.coverArt.SetImage(STMPS_LOGO)

@@ -35,7 +35,7 @@ type Connection struct {
 	clientVersion string
 
 	logger logger.LoggerInterface
-	// TODO Connect album art and album caches to an LRU; artists probably don't take up much space, but review.
+	// TODO (A) Connect album art and album caches to an LRU; artists probably don't take up much space, but review.
 	directoryCache map[string]Directory
 	albumCache     map[string]Album
 	artistCache    map[string]Artist
@@ -173,7 +173,6 @@ func (connection *Connection) GetArtist(id string) (Artist, error) {
 // The songs in the album are sorted before return.
 // https://opensubsonic.netlify.app/docs/endpoints/getalbum/
 func (connection *Connection) GetAlbum(id string) (Album, error) {
-	// FIXME implement an LPR for the album cache, lest we end up with the entire DB local
 	if cachedResponse, present := connection.albumCache[id]; present {
 		// This is because Albums that were fetched as Directories aren't populated correctly
 		if cachedResponse.Name != "" {
@@ -294,7 +293,6 @@ func (connection *Connection) GetCoverArt(id string) (image.Image, error) {
 		return nil, fmt.Errorf("[%s] unhandled image type %s: %v", caller, res.Header["Content-Type"][0], err)
 	}
 	if art != nil {
-		// FIXME connection.coverArts shouldn't grow indefinitely. Add some LRU cleanup after loading a few hundred cover arts.
 		connection.coverArts[id] = art
 	}
 	return art, err
@@ -381,7 +379,6 @@ func (connection *Connection) ToggleStar(id string, starredItems map[string]stru
 	return *resp, nil
 }
 
-// FIXME this diverges from the rest of the code by recursively fetching all the data, which is why all of the background loading code was necessary. Strip all that out, and have playlists load as the user scrolls
 func (connection *Connection) GetPlaylists() (Playlists, error) {
 	query := defaultQuery(connection)
 	requestUrl := connection.Host + "/rest/getPlaylists" + "?" + query.Encode()

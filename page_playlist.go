@@ -123,7 +123,7 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 		return event
 	})
 
-	// TODO Add filter/search to playlist coluumn
+	// TODO (C) Add filter/search to playlist coluumn
 	playlistPage.selectedPlaylist.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyLeft {
 			ui.app.SetFocus(playlistPage.playlistList)
@@ -198,7 +198,7 @@ func (p *PlaylistPage) UpdatePlaylists() {
 		return
 	}
 	p.isUpdating = true
-	// FIXME Stop pro-actively deeply loading the playlists. This will remove all of the threading and spinner code.
+	// TODO (B) Stop pro-actively deeply loading the playlists. This will remove all of the threading and spinner code.
 
 	var spinnerText []rune = []rune(viper.GetString("ui.spinner"))
 	if len(spinnerText) == 0 {

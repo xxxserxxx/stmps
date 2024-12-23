@@ -276,11 +276,12 @@ func (p *Player) ClearQueue() {
 	if err := p.Stop(); err != nil {
 		p.logger.PrintError("Stop", err)
 	}
-	p.queue = make([]QueueItem, 0) // TODO mutex queue access
+	// TODO (D) make p.queue access thread-safe mutex queue access
+	p.queue = make([]QueueItem, 0)
 }
 
 func (p *Player) DeleteQueueItem(index int) {
-	// TODO mutex queue access
+	// TODO (D) make p.queue access thread-safe mutex queue access
 	if index >= len(p.queue) {
 		p.logger.Printf("DeleteQueueItem bad index %d (len %d)", index, len(p.queue))
 	} else if len(p.queue) > 1 {
@@ -356,7 +357,8 @@ func (p *Player) GetPlayingTrack() (QueueItem, error) {
 		return QueueItem{}, errors.New("not playing")
 	}
 
-	if len(p.queue) == 0 { // TODO mutex queue access
+	// TODO (D) make p.queue access thread-safe mutex queue access
+	if len(p.queue) == 0 {
 		return QueueItem{}, errors.New("queue empty")
 	}
 	currentSong := p.queue[0]
