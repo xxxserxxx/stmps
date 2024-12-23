@@ -590,11 +590,23 @@ func (b *BrowserPage) handleAddEntityToX(add func(song subsonic.Entity), update 
 		}
 		add(b.currentAlbum.Songs[currentIndex])
 	} else {
+		// We're viewing the artist's albums, so find the album the user wants to add
 		if currentIndex >= len(b.currentArtist.Albums) {
 			b.logger.Printf("error: handleAddEntityToX invalid state, index %d > %d number of albums", currentIndex, len(b.currentArtist.Albums))
 			return
 		}
-		for _, song := range b.currentArtist.Albums[currentIndex].Songs {
+		album := b.currentArtist.Albums[currentIndex]
+		// The album may be sparse; if so, populate it
+		if len(album.Songs) == 0 {
+			a, e := b.ui.connection.GetAlbum(album.Id)
+			if e != nil {
+
+			}
+			b.currentArtist.Albums[currentIndex], album = a, a
+		}
+		// This code handles the case where Artist X has a song in Album Y, but Y also
+		// has songs from other artists.
+		for _, song := range album.Songs {
 			if hasArtist(song, b.currentArtist) {
 				add(song)
 			}
