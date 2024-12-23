@@ -189,10 +189,6 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		starIdList: ui.starIdList,
 	}
 
-	// flex wrapper
-	queuePage.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(queuePage.queueList, 0, 2, true)
-
 	return &queuePage
 }
 
