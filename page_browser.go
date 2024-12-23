@@ -43,6 +43,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 	}
 
 	// artist list
+	// TODO Subsonic can provide artist images. Find a place to display them in the browser
 	browserPage.artistList = tview.NewList().
 		ShowSecondaryText(false)
 	browserPage.artistList.Box.
@@ -56,6 +57,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 	browserPage.artistObjectList = artists
 
 	// album list
+	// TODO add filter/search to entity list (albums/songs)
 	browserPage.entityList = tview.NewList().
 		ShowSecondaryText(false).
 		SetSelectedFocusOnly(true)
@@ -86,6 +88,8 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 	browserPage.Root = tview.NewFlex().SetDirection(tview.FlexRow)
 	browserPage.showSearchField(false) // add artist/search items
 
+	// TODO Add a toggle to switch the browser to a directory browser
+
 	// going right from the artist list should focus the album/song list
 	browserPage.artistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRight {
@@ -97,6 +101,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 			ui.app.SetFocus(browserPage.artistList)
 			return nil
 		}
+		// TODO Enter on an artist should... what? Add & play? Switch to the Entity list?
 
 		switch event.Rune() {
 		case 'a':

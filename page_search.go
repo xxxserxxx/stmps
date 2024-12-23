@@ -83,6 +83,8 @@ func (ui *Ui) createSearchPage() *SearchPage {
 		AddItem(searchPage.columnsFlex, 0, 1, true).
 		AddItem(searchPage.searchField, 1, 1, false)
 
+	// TODO add filter/search to all of the results columns
+	// TODO browsing genres should autoload the genres, rather than waiting for Enter
 	searchPage.artistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyLeft:

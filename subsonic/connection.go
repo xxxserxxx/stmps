@@ -34,7 +34,8 @@ type Connection struct {
 	clientName    string
 	clientVersion string
 
-	logger         logger.LoggerInterface
+	logger logger.LoggerInterface
+	// TODO Connect album art and album caches to an LRU; artists probably don't take up much space, but review.
 	directoryCache map[string]Directory
 	albumCache     map[string]Album
 	artistCache    map[string]Artist

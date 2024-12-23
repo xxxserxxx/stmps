@@ -131,10 +131,16 @@ func (ui *Ui) createQueuePage() *QueuePage {
 						if err := ui.player.Play(); err != nil {
 							queuePage.logger.Printf("error playing: %s", err)
 						}
+						_ = ui.player.Pause()
+						for {
+							if seekable, err := ui.player.IsSeekable(); err == nil && seekable {
+								break
+							}
+							time.Sleep(100 * time.Millisecond)
+						}
 						if err = ui.player.Seek(playQueue.Position); err != nil {
 							queuePage.logger.Printf("unable to seek to position %s: %s", time.Duration(playQueue.Position)*time.Second, err)
 						}
-						_ = ui.player.Pause()
 					}
 				}()
 			case 'i':
@@ -193,6 +199,7 @@ func (ui *Ui) createQueuePage() *QueuePage {
 }
 
 func (q *QueuePage) changeSelection(row, column int) {
+	// TODO Merge concurrent cover art code
 	q.songInfo.Clear()
 	if row >= len(q.queueData.playerQueue) || row < 0 || column < 0 {
 		q.coverArt.SetImage(STMPS_LOGO)
