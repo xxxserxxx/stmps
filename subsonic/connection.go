@@ -556,6 +556,20 @@ func (connection *Connection) StartScan() error {
 	return nil
 }
 
+// ScanStatus returns the state of any current scanning processes.
+// https://subsonic.org/pages/api.jsp#scanStatus
+func (connection *Connection) ScanStatus() (ScanStatus, error) {
+	query := defaultQuery(connection)
+	requestUrl := fmt.Sprintf("%s/rest/getScanStatus?%s", connection.Host, query.Encode())
+	if resp, err := connection.getResponse("GetScanStatus", requestUrl); err != nil {
+		return ScanStatus{}, err
+	} else if resp == nil {
+		return ScanStatus{}, err
+	} else {
+		return resp.ScanStatus, nil
+	}
+}
+
 func (connection *Connection) SavePlayQueue(queueIds []string, current string, position int) error {
 	query := defaultQuery(connection)
 	for _, songId := range queueIds {

@@ -5,11 +5,6 @@ package main
 
 import "math"
 
-const (
-	clientName    = "stmps"
-	clientVersion = "0.9.9"
-)
-
 // if the first argument isn't empty, return it, otherwise return the second
 //
 //nolint:golint,unused

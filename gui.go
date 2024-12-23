@@ -22,6 +22,7 @@ type Ui struct {
 	// top bar
 	startStopStatus *tview.TextView
 	playerStatus    *tview.TextView
+	scanning        bool
 
 	// bottom bar
 	menuWidget *MenuWidget
@@ -103,7 +104,7 @@ func InitGui(artists []subsonic.Artist,
 	ui.pages = tview.NewPages()
 
 	// status text at the top
-	statusLeft := fmt.Sprintf("[::b]%s[::-] v%s", clientName, clientVersion)
+	statusLeft := fmt.Sprintf("[::b]%s[::-] v%s", Name, Version)
 	ui.startStopStatus = tview.NewTextView().SetText(statusLeft).
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true).
@@ -112,7 +113,14 @@ func InitGui(artists []subsonic.Artist,
 		return action, nil
 	})
 
-	statusRight := formatPlayerStatus(0, 0, 0)
+	if ui.scanning {
+		scanning, err := ui.connection.ScanStatus()
+		if err != nil {
+			ui.logger.PrintError("ScanStatus", err)
+		}
+		ui.scanning = scanning.Scanning
+	}
+	statusRight := formatPlayerStatus(ui.scanning, 0, 0, 0)
 	ui.playerStatus = tview.NewTextView().SetText(statusRight).
 		SetTextAlign(tview.AlignRight).
 		SetDynamicColors(true).
@@ -153,7 +161,7 @@ func InitGui(artists []subsonic.Artist,
 	// top bar: status text
 	topBarFlex := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(ui.startStopStatus, 0, 1, false).
-		AddItem(ui.playerStatus, 20, 0, false)
+		AddItem(ui.playerStatus, 24, 0, false)
 
 	// browser page
 	ui.browserPage = ui.createBrowserPage(artists)

@@ -26,8 +26,16 @@ import (
 var osExit = os.Exit  // A variable to allow mocking os.Exit in tests
 var headlessMode bool // This can be set to true during tests
 var testMode bool     // This can be set to true during tests, too
+
 const DEVELOPMENT = "development"
 
+// APIVersion is the OpenSubsonic API version we talk, communicated to the server
+const APIVersion = "1.8.0"
+
+// Name is the client name we tell the server
+var Name string = "stmps"
+
+// Version is the program version; usually set from BuildInfo
 var Version string = DEVELOPMENT
 
 func readConfig(configFile *string) error {
@@ -199,7 +207,7 @@ func main() {
 	}
 
 	connection := subsonic.Init(logger)
-	connection.SetClientInfo(clientName, clientVersion)
+	connection.SetClientInfo(Name, APIVersion)
 	connection.Username = viper.GetString("auth.username")
 	connection.Password = viper.GetString("auth.password")
 	connection.Host = viper.GetString("server.host")

@@ -62,9 +62,17 @@ func (ui *Ui) guiEventLoop() {
 					continue
 				}
 				statusData := mpvEvent.Data.(mpvplayer.StatusData) // TODO is this safe to access? maybe we need a copy
+				if ui.scanning {
+					scanning, err := ui.connection.ScanStatus()
+					if err != nil {
+						ui.logger.PrintError("ScanStatus", err)
+					}
+					ui.scanning = scanning.Scanning
+				}
 
 				ui.app.QueueUpdateDraw(func() {
-					ui.playerStatus.SetText(formatPlayerStatus(statusData.Volume, statusData.Position, statusData.Duration))
+					txt := formatPlayerStatus(ui.scanning, statusData.Volume, statusData.Position, statusData.Duration)
+					ui.playerStatus.SetText(txt)
 					if ui.queuePage.lyrics != nil {
 						cl := ui.queuePage.currentLyrics.Lines
 						lcl := len(cl)
