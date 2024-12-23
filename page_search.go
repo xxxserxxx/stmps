@@ -359,9 +359,7 @@ func (s *SearchPage) search(search chan string) {
 		}
 
 		// Only do this the one time, to prevent loops from stealing the user's focus
-		if artOff == 0 && albOff == 0 && songOff == 0 {
-			s.aproposFocus()
-		}
+		s.aproposFocus()
 
 		s.ui.app.Draw()
 	}
@@ -441,6 +439,10 @@ func (s *SearchPage) addAlbumToQueue(entity subsonic.Ider) {
 }
 
 func (s *SearchPage) aproposFocus() {
+	if s.queryGenre {
+		s.ui.app.SetFocus(s.songList)
+		return
+	}
 	if len(s.artists) != 0 {
 		s.ui.app.SetFocus(s.artistList)
 	} else if len(s.albums) != 0 {
