@@ -495,7 +495,7 @@ func (connection *Connection) Search(searchTerm string, artistOffset, albumOffse
 	query.Set("songOffset", strconv.Itoa(songOffset))
 	requestUrl := connection.Host + "/rest/search3" + "?" + query.Encode()
 	res, err := connection.GetResponse("Search", requestUrl)
-	return Results(res.SearchResults3), err
+	return Results(res.SearchResult3), err
 }
 
 // StartScan tells the Subsonic server to initiate a media library scan. Whether

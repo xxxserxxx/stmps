@@ -296,7 +296,7 @@ func (s *SearchPage) search(search chan string) {
 			songs, err := s.ui.connection.GetSongsByGenre(query, songOff, "")
 			if err != nil {
 				s.logger.PrintError("SearchPage.search GetSongsByGenre", err)
-				return
+				continue
 			}
 			if len(songs) == 0 {
 				s.logger.Printf("found a total of %d songs", songOff)
@@ -321,6 +321,7 @@ func (s *SearchPage) search(search chan string) {
 				s.logger.PrintError("SearchPage.search Search", err)
 				return
 			}
+			s.logger.Printf("query returned %d/%d/%d", artOff, albOff, songOff)
 			// Quit searching if there are no more results
 			if len(results.Artists) == 0 &&
 				len(results.Albums) == 0 &&
@@ -362,13 +363,6 @@ func (s *SearchPage) search(search chan string) {
 			s.aproposFocus()
 		}
 
-		// if !s.queryGenre {
-		// 	artOff += len(searchResults.Artist)
-		// 	albOff += len(searchResults.Album)
-		// 	songOff += len(searchResults.Song)
-		// } else {
-		// 	songOff += len(songsByGenre.Song)
-		// }
 		s.ui.app.Draw()
 	}
 }

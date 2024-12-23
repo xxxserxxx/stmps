@@ -273,22 +273,22 @@ type Response struct {
 	OpenSubsonic  bool
 
 	// There's no better way to do this, because Go generics are useless
-	RandomSongs    Songs
-	SimilarSongs   Songs
-	Starred        Results
-	SearchResults3 Results
-	Directory      Directory
-	Album          Album
-	Artists        Indexes
-	Artist         Artist
-	ScanStatus     ScanStatus
-	PlayQueue      PlayQueue
-	Genres         GenreEntries
-	SongsByGenre   Songs
-	Indexes        Indexes
-	LyricsList     LyricsList
-	Playlists      Playlists
-	Playlist       Playlist
+	RandomSongs   Songs
+	SimilarSongs  Songs
+	Starred       Results
+	SearchResult3 Results
+	Directory     Directory
+	Album         Album
+	Artists       Indexes
+	Artist        Artist
+	ScanStatus    ScanStatus
+	PlayQueue     PlayQueue
+	Genres        GenreEntries
+	SongsByGenre  Songs
+	Indexes       Indexes
+	LyricsList    LyricsList
+	Playlists     Playlists
+	Playlist      Playlist
 
 	Error Error
 }
