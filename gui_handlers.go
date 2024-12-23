@@ -102,6 +102,7 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.queuePage.UpdateQueue()
 
 	case 'c':
+		ui.logger.Printf("info: starting server scan")
 		if err := ui.connection.StartScan(); err != nil {
 			ui.logger.PrintError("startScan:", err)
 		}
