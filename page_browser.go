@@ -153,9 +153,15 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 	})
 
 	browserPage.artistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
-		ui.logger.Printf("artistList changed, index %d, artistList %d, artistObjectList %d", index, browserPage.artistList.GetItemCount(), len(browserPage.artistObjectList))
+		it, _ := browserPage.artistList.GetItemText(index)
+		ui.logger.Printf("artistList changed, index %d (%d, %d): %q, %q",
+			index,
+			browserPage.artistList.GetItemCount(),
+			len(browserPage.artistObjectList),
+			it,
+			browserPage.artistObjectList[index].Name)
 		if index < len(browserPage.artistObjectList) {
-			browserPage.handleArtistSelected(browserPage.artistObjectList[index])
+			browserPage.handleArtistSelected(index, browserPage.artistObjectList[index])
 		}
 	})
 
@@ -219,7 +225,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 			artistIdx := browserPage.artistList.GetCurrentItem()
 			entity := browserPage.artistObjectList[artistIdx]
 			ui.connection.RemoveArtistCacheEntry(entity.Id)
-			browserPage.handleArtistSelected(browserPage.artistObjectList[artistIdx])
+			browserPage.handleArtistSelected(artistIdx, entity)
 			return nil
 		}
 		if event.Rune() == 'S' {
@@ -230,7 +236,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 
 	// open first artist by default so we don't get stuck when there's only one artist
 	if len(browserPage.artistObjectList) > 0 {
-		browserPage.handleArtistSelected(browserPage.artistObjectList[0])
+		browserPage.handleArtistSelected(0, browserPage.artistObjectList[0])
 	}
 
 	return &browserPage
@@ -255,16 +261,14 @@ func (b *BrowserPage) UpdateStars() {
 		if b.currentAlbum.Id != "" {
 			b.handleEntitySelected(b.currentAlbum.Id)
 		} else {
-			b.handleArtistSelected(b.currentArtist)
+			idx := b.artistList.GetCurrentItem()
+			b.handleArtistSelected(idx, b.currentArtist)
 		}
 	}
 }
 
 func (b *BrowserPage) handleAddArtistToQueue() {
 	currentIndex := b.artistList.GetCurrentItem()
-	if b.artistList.GetCurrentItem() < 0 {
-		return
-	}
 
 	for _, album := range b.currentArtist.Albums {
 		b.addAlbumToQueue(album)
@@ -301,20 +305,19 @@ func (b *BrowserPage) handleAddRandomSongs(randomType string) {
 // handleArtistSelected takes an artist ID and sets up the contents of the
 // entityList, including setting up selection handlers for each item in the
 // list. It also refreshes the artist from the server if it has a sparse copy.
-func (b *BrowserPage) handleArtistSelected(artist subsonic.Artist) {
+func (b *BrowserPage) handleArtistSelected(idx int, artist subsonic.Artist) {
 	// Refresh the artist and update the object list
 	artist, err := b.ui.connection.GetArtist(artist.Id)
 	if err != nil {
 		b.logger.PrintError("handleArtistSelected", err)
 	}
-	idx := b.artistList.GetCurrentItem()
+	b.logger.Printf("handleArtistSelected debug: idx=%d, artist=%q", idx, artist.Name)
 	if idx >= len(b.artistObjectList) {
 		b.logger.Printf("error: handleArtistSelected index %d > %d size of artist object list", idx, len(b.artistObjectList))
 		return
 	}
-	b.artistObjectList[idx] = artist
-
-	b.currentArtist = artist
+	b.logger.Printf("handleArtistSelected debug: setting artist object list %d to %q", idx, artist.Name)
+	b.currentArtist, b.artistObjectList[idx] = artist, artist
 
 	b.entityList.Clear()
 	b.currentAlbum = subsonic.Album{}
@@ -370,7 +373,10 @@ func (b *BrowserPage) handleEntitySelected(id string) {
 		b.entityList.Box.SetTitle(" song ")
 		b.entityList.AddItem(
 			tview.Escape("[..]"), "", 0,
-			func() { b.handleArtistSelected(b.currentArtist) })
+			func() {
+				idx := b.artistList.GetCurrentItem()
+				b.handleArtistSelected(idx, b.currentArtist)
+			})
 		for _, song := range album.Songs {
 			if hasArtist(song, b.currentArtist) {
 				b.entityList.AddItem(song.Title, "", 0, b.ui.makeSongHandler(song))
@@ -463,38 +469,6 @@ func entityListTextFormat(id, title string, dir bool, starredItems map[string]st
 	return tview.Escape(title) + star
 }
 
-//nolint:golint,unused
-func (b *BrowserPage) addArtistToQueue(artist subsonic.Artist) {
-	var err error
-	// If the artist is sparse, populate it
-	if len(artist.Albums) == 0 {
-		artist, err = b.ui.connection.GetArtist(artist.Id)
-		if err != nil {
-			b.logger.Printf("addArtistToQueue: GetArtist %s -- %s", artist.Id, err.Error())
-			return
-		}
-		// If it's _still_ sparse, return, as there's nothing to do
-		if len(artist.Albums) == 0 {
-			b.logger.Printf("addArtistToQueue: artist %q (%q) has no albums", artist.Name, artist.Id)
-			return
-		}
-	}
-
-	for _, album := range artist.Albums {
-		if len(album.Songs) == 0 {
-			album, err = b.ui.connection.GetAlbum(album.Id)
-			if err != nil {
-				b.logger.Printf("addArtistToQueue: GetAlbum %s -- %s", album.Id, err.Error())
-				// Hope the error is transient
-				continue
-			}
-		}
-		for _, s := range album.Songs {
-			b.ui.addSongToQueue(s)
-		}
-	}
-}
-
 func (b *BrowserPage) addAlbumToQueue(album subsonic.Album) {
 	var err error
 	if len(album.Songs) == 0 {
@@ -506,7 +480,6 @@ func (b *BrowserPage) addAlbumToQueue(album subsonic.Album) {
 	}
 
 	for _, s := range album.Songs {
-		// TODO maybe BrowserPage gets its own version of this function that uses dirname as artist name as fallback
 		b.ui.addSongToQueue(s)
 	}
 }
