@@ -138,7 +138,7 @@ type Entity struct {
 	Track              int
 	DiscNumber         int
 	Type               string
-	ReplayGain         string
+	ReplayGain         ReplayGain
 }
 
 // #####################################
@@ -224,6 +224,11 @@ func (s Entities) Less(i, j int) bool {
 	// they're on the same disk
 
 	return s[i].Title < s[j].Title
+}
+
+type ReplayGain struct {
+	TrackPeak int
+	AlbumPeak int
 }
 
 type DiscTitle struct {
