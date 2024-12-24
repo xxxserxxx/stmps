@@ -207,15 +207,14 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 			ui.app.SetFocus(browserPage.artistList)
 			return nil
 		}
-		if event.Rune() == 'a' {
+		switch event.Rune() {
+		case 'a':
 			browserPage.handleAddEntityToQueue()
 			return nil
-		}
-		if event.Rune() == 'y' {
+		case 'y':
 			browserPage.handleToggleEntityStar()
 			return nil
-		}
-		if event.Rune() == 'A' {
+		case 'A':
 			// only makes sense to add to a playlist if there are playlists
 			if ui.playlistPage.GetCount() > 0 {
 				ui.pages.ShowPage(PageAddToPlaylist)
@@ -224,17 +223,16 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 				ui.showMessageBox("No playlists available. Create one first.")
 			}
 			return nil
-		}
-		// REFRESH only the artist
-		if event.Rune() == 'R' {
+		case 'R':
+			// REFRESH only the artist albums
 			artistIdx := browserPage.artistList.GetCurrentItem()
 			entity := browserPage.artistObjectList[artistIdx]
 			ui.connection.RemoveArtistCacheEntry(entity.Id)
 			browserPage.handleArtistSelected(artistIdx, entity)
 			return nil
-		}
-		if event.Rune() == 'S' {
+		case 'S':
 			browserPage.handleAddRandomSongs("similar")
+			return nil
 		}
 		return event
 	})
@@ -576,6 +574,7 @@ func (b *BrowserPage) handleAddEntityToX(add func(song subsonic.Entity), update 
 	if currentIndex < 0 {
 		return
 	}
+	oldIndex := currentIndex
 
 	if b.currentAlbum.Id != "" {
 		// account for [..] entry that we show, see handleEntitySelected()
@@ -615,8 +614,8 @@ func (b *BrowserPage) handleAddEntityToX(add func(song subsonic.Entity), update 
 
 	update()
 
-	if currentIndex+1 < b.entityList.GetItemCount() {
-		b.entityList.SetCurrentItem(currentIndex + 1)
+	if oldIndex+1 < b.entityList.GetItemCount() {
+		b.entityList.SetCurrentItem(oldIndex + 1)
 	}
 }
 
@@ -628,7 +627,6 @@ func (b *BrowserPage) handleAddEntityToPlaylist(playlist *subsonic.Playlist) {
 	b.handleAddEntityToX(func(song subsonic.Entity) {
 		if err := b.ui.connection.AddSongToPlaylist(string(playlist.Id), song.Id); err != nil {
 			b.logger.PrintError("AddSongToPlaylist", err)
-			return
 		}
 	}, b.ui.playlistPage.UpdatePlaylists)
 }
