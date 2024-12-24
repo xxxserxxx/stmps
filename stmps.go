@@ -29,6 +29,7 @@ import (
 // TODO (A) Add mocking library
 // TODO (C) Get unit tests up to some non-embarassing percentage
 // TODO (B) Merge feature_27_save_queue / issue-54-save-queue-on-exit / seekable-queue-load, and finish the restoring play location on first run, or hotkey
+// TODO (C) Support "Download" for songs, albums, artists, and playlists
 
 var osExit = os.Exit  // A variable to allow mocking os.Exit in tests
 var headlessMode bool // This can be set to true during tests

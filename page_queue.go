@@ -169,6 +169,7 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
 	queuePage.lyrics.SetWrap(true)
 	queuePage.lyrics.SetWordWrap(true)
+	queuePage.lyrics.SetTextAlign(tview.AlignCenter)
 	queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
 
 	queuePage.queueList.SetSelectionChangedFunc(queuePage.changeSelection)

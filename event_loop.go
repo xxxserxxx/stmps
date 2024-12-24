@@ -4,6 +4,7 @@
 package main
 
 import (
+	"sort"
 	"time"
 
 	"github.com/spezifisch/stmps/mpvplayer"
@@ -86,20 +87,21 @@ func (ui *Ui) guiEventLoop() {
 							// in the future
 							p := statusData.Position*1000 + 500
 							_, _, _, fh := ui.queuePage.lyrics.GetInnerRect()
-							// FIXME (A) the lyrics lookup would perform better as a binary search
-							for i := 0; i < lcl-1; i++ {
-								if p >= cl[i].Start && p < cl[i+1].Start {
-									txt := ""
-									if i > 0 {
-										txt = cl[i-1].Value + "\n"
-									}
-									txt += "[::b]" + cl[i].Value + "[-:-:-]\n"
-									for k := i + 1; k < lcl && k-i < fh; k++ {
-										txt += cl[k].Value + "\n"
-									}
-									ui.queuePage.lyrics.SetText(txt)
-									break
+							i := sort.Search(len(cl), func(i int) bool {
+								return p < cl[i].Start
+							})
+							if i < lcl && p < cl[i].Start {
+								txt := ""
+								if i > 1 {
+									txt = cl[i-2].Value + "\n"
 								}
+								if i > 0 {
+									txt += "[::b]" + cl[i-1].Value + "[-:-:-]\n"
+								}
+								for k := i; k < lcl && k-i < fh; k++ {
+									txt += cl[k].Value + "\n"
+								}
+								ui.queuePage.lyrics.SetText(txt)
 							}
 						}
 					}
