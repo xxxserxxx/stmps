@@ -111,7 +111,9 @@ func (ui *Ui) guiEventLoop() {
 				ui.logger.Print("mpvEvent: stopped")
 				ui.app.QueueUpdateDraw(func() {
 					ui.startStopStatus.SetText("[red::b]Stopped[::-]")
-					ui.queuePage.lyrics.SetText("")
+					if ui.queuePage.lyrics != nil {
+						ui.queuePage.lyrics.SetText("")
+					}
 					ui.queuePage.updateQueue()
 				})
 
@@ -157,10 +159,12 @@ func (ui *Ui) guiEventLoop() {
 				ui.app.QueueUpdateDraw(func() {
 					ui.startStopStatus.SetText(statusText)
 					ui.queuePage.updateQueue()
-					if len(ui.queuePage.currentLyrics.Lines) == 0 {
-						ui.queuePage.lyrics.SetText("\n[::i]No lyrics[-:-:-]")
-					} else {
-						ui.queuePage.lyrics.SetText("")
+					if ui.queuePage.lyrics != nil {
+						if len(ui.queuePage.currentLyrics.Lines) == 0 {
+							ui.queuePage.lyrics.SetText("\n[::i]No lyrics[-:-:-]")
+						} else {
+							ui.queuePage.lyrics.SetText("")
+						}
 					}
 				})
 

@@ -162,15 +162,18 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		return action, nil
 	})
 
-	queuePage.lyrics = tview.NewTextView()
-	queuePage.lyrics.SetBorder(true)
-	queuePage.lyrics.SetTitle(" lyrics ")
-	queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
-	queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
-	queuePage.lyrics.SetWrap(true)
-	queuePage.lyrics.SetWordWrap(true)
-	queuePage.lyrics.SetTextAlign(tview.AlignCenter)
-	queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
+	serverHasLyrics := ui.connection.HasOpenSubsonicExtension("songLyrics")
+	if serverHasLyrics {
+		queuePage.lyrics = tview.NewTextView()
+		queuePage.lyrics.SetBorder(true)
+		queuePage.lyrics.SetTitle(" lyrics ")
+		queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
+		queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
+		queuePage.lyrics.SetWrap(true)
+		queuePage.lyrics.SetWordWrap(true)
+		queuePage.lyrics.SetTextAlign(tview.AlignCenter)
+		queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
+	}
 
 	queuePage.queueList.SetSelectionChangedFunc(queuePage.changeSelection)
 
@@ -178,9 +181,11 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.coverArt.SetImage(STMPS_LOGO)
 
 	queuePage.infoFlex = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(queuePage.songInfo, 0, 1, false).
-		AddItem(queuePage.lyrics, 0, 1, false).
-		AddItem(queuePage.coverArt, 0, 1, false)
+		AddItem(queuePage.songInfo, 0, 1, false)
+	if serverHasLyrics {
+		queuePage.infoFlex.AddItem(queuePage.lyrics, 0, 1, false)
+	}
+	queuePage.infoFlex.AddItem(queuePage.coverArt, 0, 1, false)
 	queuePage.infoFlex.SetBorder(true)
 	queuePage.infoFlex.SetTitle(" song info ")
 

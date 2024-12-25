@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/spezifisch/stmps/logger"
 )
@@ -663,4 +664,43 @@ func (connection *Connection) GetSongsByGenre(genre string, offset int, musicFol
 		return Entities{}, fmt.Errorf("GetSongsByGenre(%q, %d, %s) nil response from server: %s", genre, offset, musicFolderID, err)
 	}
 	return resp.SongsByGenre.Songs, nil
+}
+
+func (connection *Connection) HasOpenSubsonicExtension(feature string) bool {
+	info, err := connection.GetServerInfo()
+	if err != nil {
+		connection.logger.PrintError("HasOpenSubsonicExtension", err)
+		return false
+	}
+	if !info.OpenSubsonic {
+		return false
+	}
+	query := defaultQuery(connection)
+	requestUrl := connection.Host + "/rest/getOpenSubsonicExtensions" + "?" + query.Encode()
+	resp, err := connection.getResponse("GetOpenSubsonicExtensions", requestUrl)
+	if err != nil {
+		return false
+	}
+	m := major(info.Version)
+	for _, e := range resp.OpenSubsonicExtensions {
+		if e.Name == feature {
+			for _, v := range e.Versions {
+				if v == m {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func major(version string) int {
+	parts := strings.Split(version, ".")
+	if len(parts) > 1 {
+		rv, e := strconv.Atoi(parts[0])
+		if e == nil {
+			return rv
+		}
+	}
+	return 0
 }
