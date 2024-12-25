@@ -1,0 +1,57 @@
+name: Build+Test macOS
+
+on:
+  push:
+    paths-ignore:
+      - "*.md"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - macos-12
+          - macos-13
+          - macos-latest
+        architecture:
+          - amd64
+          - arm64
+        go:
+          - "1.22"
+          - "1.23"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Library dependencies
+        run: brew install mpv
+      - uses: actions/checkout@v4
+      - name: Install Go ${{ matrix.go }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Export paths
+        uses: spezifisch/export-homebrew-build-paths@v1.0.0
+      - name: Set Environment Variables for Cross-Compilation
+        run: |
+          if [ "${{ matrix.architecture }}" == "amd64" ]; then
+            export GOARCH=amd64
+            export GOOS=darwin
+          else
+            export GOARCH=arm64
+            export GOOS=darwin
+          fi
+      - name: Get Go deps
+        run: go get .
+      - name: Run tests
+        run: go test -v ./...
+      - name: Compile
+        run: go build -o stmps-macos-${{ matrix.architecture }}
+      - name: Upload binary as artifact
+        if: matrix.go == 'stable' && matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          path: stmps-macos-${{ matrix.architecture }}
+          name: stmps-macos-${{ matrix.architecture }}
