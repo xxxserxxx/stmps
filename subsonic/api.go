@@ -263,22 +263,24 @@ type SubsonicPlaylist struct {
 }
 
 type SubsonicResponse struct {
-	Status        string            `json:"status"`
-	Version       string            `json:"version"`
-	Indexes       SubsonicIndexes   `json:"indexes"`
-	Directory     SubsonicDirectory `json:"directory"`
-	RandomSongs   SubsonicSongs     `json:"randomSongs"`
-	SimilarSongs  SubsonicSongs     `json:"similarSongs"`
-	Starred       SubsonicResults   `json:"starred"`
-	Playlists     SubsonicPlaylists `json:"playlists"`
-	Playlist      SubsonicPlaylist  `json:"playlist"`
-	Error         SubsonicError     `json:"error"`
-	Artist        Artist            `json:"artist"`
-	Album         Album             `json:"album"`
-	SearchResults SubsonicResults   `json:"searchResult3"`
-	ScanStatus    ScanStatus        `json:"scanStatus"`
-	PlayQueue     PlayQueue         `json:"playQueue"`
-	LyricsList    LyricsList        `json:"lyricsList"`
+	Status                 string            `json:"status"`
+	Version                string            `json:"version"`
+	Indexes                SubsonicIndexes   `json:"indexes"`
+	Directory              SubsonicDirectory `json:"directory"`
+	RandomSongs            SubsonicSongs     `json:"randomSongs"`
+	SimilarSongs           SubsonicSongs     `json:"similarSongs"`
+	Starred                SubsonicResults   `json:"starred"`
+	Playlists              SubsonicPlaylists `json:"playlists"`
+	Playlist               SubsonicPlaylist  `json:"playlist"`
+	Error                  SubsonicError     `json:"error"`
+	Artist                 Artist            `json:"artist"`
+	Album                  Album             `json:"album"`
+	SearchResults          SubsonicResults   `json:"searchResult3"`
+	ScanStatus             ScanStatus        `json:"scanStatus"`
+	PlayQueue              PlayQueue         `json:"playQueue"`
+	LyricsList             LyricsList        `json:"lyricsList"`
+	OpenSubsonic           bool
+	OpenSubsonicExtensions []Extension
 }
 
 type responseWrapper struct {
@@ -732,6 +734,45 @@ func (connection *SubsonicConnection) LoadPlayQueue() (*SubsonicResponse, error)
 	return connection.getResponse("GetPlayQueue", requestUrl)
 }
 
+func (connection *SubsonicConnection) HasOpenSubsonicExtension(feature string) bool {
+	info, err := connection.GetServerInfo()
+	if err != nil {
+		connection.logger.PrintError("HasOpenSubsonicExtension", err)
+		return false
+	}
+	if !info.OpenSubsonic {
+		return false
+	}
+	query := defaultQuery(connection)
+	requestUrl := connection.Host + "/rest/getOpenSubsonicExtensions" + "?" + query.Encode()
+	resp, err := connection.getResponse("GetOpenSubsonicExtensions", requestUrl)
+	if err != nil {
+		return false
+	}
+	m := major(info.Version)
+	for _, e := range resp.OpenSubsonicExtensions {
+		if e.Name == feature {
+			for _, v := range e.Versions {
+				if v == m {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func major(version string) int {
+	parts := strings.Split(version, ".")
+	if len(parts) > 1 {
+		rv, e := strconv.Atoi(parts[0])
+		if e == nil {
+			return rv
+		}
+	}
+	return 0
+}
+
 type LyricsList struct {
 	StructuredLyrics []StructuredLyrics `json:"structuredLyrics"`
 }
@@ -745,4 +786,9 @@ type StructuredLyrics struct {
 type LyricsLine struct {
 	Start int64  `json:"start"`
 	Value string `json:"value"`
+}
+
+type Extension struct {
+	Name     string
+	Versions []int
 }

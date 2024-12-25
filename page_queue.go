@@ -21,8 +21,6 @@ import (
 	"github.com/spezifisch/stmps/subsonic"
 )
 
-// TODO show total # of entries somewhere (top?)
-
 // columns: star, title, artist, duration
 const queueDataColumns = 4
 const starIcon = "♥"
@@ -153,14 +151,18 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		return action, nil
 	})
 
-	queuePage.lyrics = tview.NewTextView()
-	queuePage.lyrics.SetBorder(true)
-	queuePage.lyrics.SetTitle(" lyrics ")
-	queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
-	queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
-	queuePage.lyrics.SetWrap(true)
-	queuePage.lyrics.SetWordWrap(true)
-	queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
+	serverHasLyrics := ui.connection.HasOpenSubsonicExtension("songLyrics")
+	if serverHasLyrics {
+		queuePage.lyrics = tview.NewTextView()
+		queuePage.lyrics.SetBorder(true)
+		queuePage.lyrics.SetTitle(" lyrics ")
+		queuePage.lyrics.SetTitleAlign(tview.AlignCenter)
+		queuePage.lyrics.SetDynamicColors(true).SetScrollable(true)
+		queuePage.lyrics.SetWrap(true)
+		queuePage.lyrics.SetWordWrap(true)
+		queuePage.lyrics.SetTextAlign(tview.AlignCenter)
+		queuePage.lyrics.SetBorderPadding(1, 1, 1, 1)
+	}
 
 	queuePage.queueList.SetSelectionChangedFunc(queuePage.changeSelection)
 
@@ -168,9 +170,11 @@ func (ui *Ui) createQueuePage() *QueuePage {
 	queuePage.coverArt.SetImage(STMPS_LOGO)
 
 	queuePage.infoFlex = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(queuePage.songInfo, 0, 1, false).
-		AddItem(queuePage.lyrics, 0, 1, false).
-		AddItem(queuePage.coverArt, 0, 1, false)
+		AddItem(queuePage.songInfo, 0, 1, false)
+	if serverHasLyrics {
+		queuePage.infoFlex.AddItem(queuePage.lyrics, 0, 1, false)
+	}
+	queuePage.infoFlex.AddItem(queuePage.coverArt, 0, 1, false)
 	queuePage.infoFlex.SetBorder(true)
 	queuePage.infoFlex.SetTitle(" song info ")
 
@@ -184,14 +188,11 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		starIdList: ui.starIdList,
 	}
 
-	// flex wrapper
-	queuePage.Root = tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(queuePage.queueList, 0, 2, true)
-
 	return &queuePage
 }
 
 func (q *QueuePage) changeSelection(row, column int) {
+	// TODO (A) Merge concurrent cover art code
 	q.songInfo.Clear()
 	if row >= len(q.queueData.playerQueue) || row < 0 || column < 0 {
 		q.coverArt.SetImage(STMPS_LOGO)
@@ -295,6 +296,7 @@ func (q *QueuePage) updateQueue() {
 		q.queueList.ScrollToBeginning()
 	}
 
+	q.queueList.Box.SetTitle(fmt.Sprintf(" queue (%d) ", q.queueList.GetRowCount()))
 	r, c := q.queueList.GetSelection()
 	q.changeSelection(r, c)
 }
