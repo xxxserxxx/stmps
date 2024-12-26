@@ -57,6 +57,7 @@ type QueuePage struct {
 	songInfoTemplate *template.Template
 
 	coverArtCache Cache[image.Image]
+	lyricsCache   Cache[[]subsonic.StructuredLyrics]
 }
 
 var STMPS_LOGO image.Image
@@ -201,6 +202,7 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		starIdList: ui.starIdList,
 	}
 
+	coverArtLru := NewLRU(100)
 	queuePage.coverArtCache = NewCache(
 		// zero value
 		STMPS_LOGO,
@@ -227,19 +229,42 @@ func (ui *Ui) createQueuePage() *QueuePage {
 				queuePage.coverArt.SetImage(img)
 			})
 		},
-		// function called to check if asset is invalid:
-		// true if it can be purged from the cache, false if it's still needed
-		func(assetId string) bool {
-			for _, song := range queuePage.queueData.playerQueue {
-				if song.CoverArtId == assetId {
-					return false
-				}
+		coverArtLru.Touch,
+		ui.logger,
+	)
+
+	lyricsLru := NewLRU(100)
+	queuePage.lyricsCache = NewCache(
+		// zero value
+		[]subsonic.StructuredLyrics{},
+		// function that loads assets; can be slow
+		func(id string) ([]subsonic.StructuredLyrics, error) {
+			sl, err := ui.connection.GetLyricsBySongId(id)
+			if err != nil {
+				return []subsonic.StructuredLyrics{}, err
 			}
-			// Didn't find a song that needs the asset; purge it.
-			return true
+			return sl, nil
 		},
-		// How frequently we check for invalid assets
-		time.Minute,
+		// function that gets called when the actual asset is loaded
+		func(id string, lyrics []subsonic.StructuredLyrics) {
+			// Do nothing if there are no lyrics
+			if len(lyrics) == 0 {
+				return
+			}
+			row, _ := queuePage.queueList.GetSelection()
+			// If the fetched lyrics isn't for the current song,
+			// just skip it.
+			currentSong := queuePage.queueData.playerQueue[row]
+			if currentSong.Id != id {
+				return
+			}
+			// Otherwise, the asset is for the current song, so update it
+			queuePage.currentLyrics = lyrics[0]
+			ui.app.QueueUpdate(func() {
+				_ = queuePage.songInfoTemplate.Execute(queuePage.songInfo, currentSong)
+			})
+		},
+		lyricsLru.Touch,
 		ui.logger,
 	)
 
@@ -247,7 +272,6 @@ func (ui *Ui) createQueuePage() *QueuePage {
 }
 
 func (q *QueuePage) changeSelection(row, column int) {
-	// TODO (A) Merge concurrent cover art code
 	q.songInfo.Clear()
 	if row >= len(q.queueData.playerQueue) || row < 0 || column < 0 {
 		q.coverArt.SetImage(STMPS_LOGO)
@@ -259,16 +283,11 @@ func (q *QueuePage) changeSelection(row, column int) {
 		art = q.coverArtCache.Get(currentSong.CoverArtId)
 	}
 	q.coverArt.SetImage(art)
-	lyrics, err := q.ui.connection.GetLyricsBySongId(currentSong.Id)
-	if err != nil {
-		q.logger.Printf("error fetching lyrics for %s: %v", currentSong.Title, err)
-	} else if len(lyrics) > 0 {
-		q.logger.Printf("got lyrics for %s", currentSong.Title)
+	lyrics := q.lyricsCache.Get(currentSong.Id)
+	if len(lyrics) > 0 {
 		q.currentLyrics = lyrics[0]
-	} else {
-		q.currentLyrics = subsonic.StructuredLyrics{Lines: []subsonic.LyricsLine{}}
+		_ = q.songInfoTemplate.Execute(q.songInfo, currentSong)
 	}
-	_ = q.songInfoTemplate.Execute(q.songInfo, currentSong)
 }
 
 func (q *QueuePage) UpdateQueue() {

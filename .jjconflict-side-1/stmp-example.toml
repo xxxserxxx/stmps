@@ -1,8 +1,0 @@
-[auth]
-username = 'admin'
-password = 'password'
-plaintext = false
-
-[server]
-host = 'https://your-subsonic-host.example.com'
-scrobble = true

@@ -35,12 +35,11 @@ type Connection struct {
 	clientName    string
 	clientVersion string
 
-	logger logger.LoggerInterface
-	// TODO (A) Connect album art and album caches to an LRU; artists probably don't take up much space, but review.
+	logger         logger.LoggerInterface
 	directoryCache map[string]Directory
-	albumCache     map[string]Album
 	artistCache    map[string]Artist
-	coverArts      map[string]image.Image
+	// TODO replace this by a Cache in the client
+	albumCache map[string]Album
 }
 
 func Init(logger logger.LoggerInterface) *Connection {
@@ -63,7 +62,6 @@ func (s *Connection) ClearCache() {
 	s.directoryCache = make(map[string]Directory)
 	s.artistCache = make(map[string]Artist)
 	s.albumCache = make(map[string]Album)
-	s.coverArts = make(map[string]image.Image)
 }
 
 func (s *Connection) RemoveDirectoryCacheEntry(key string) {
@@ -246,15 +244,11 @@ func (connection *Connection) GetMusicDirectory(id string) (Directory, error) {
 // - image/png
 // - image/jpeg
 // - image/gif
-// If the item is in the cache, the cached item is returned; if not, it is put
-// in the cache and returned.
+// These assets are not cached by this connection.
 // https://opensubsonic.netlify.app/docs/endpoints/getcoverart/
 func (connection *Connection) GetCoverArt(id string) (image.Image, error) {
 	if id == "" {
 		return nil, fmt.Errorf("GetCoverArt: no ID provided")
-	}
-	if rv, ok := connection.coverArts[id]; ok {
-		return rv, nil
 	}
 	query := defaultQuery(connection)
 	query.Set("id", id)
@@ -292,9 +286,6 @@ func (connection *Connection) GetCoverArt(id string) (image.Image, error) {
 		art, err = gif.Decode(bytes.NewReader(responseBody))
 	default:
 		return nil, fmt.Errorf("[%s] unhandled image type %s: %v", caller, res.Header["Content-Type"][0], err)
-	}
-	if art != nil {
-		connection.coverArts[id] = art
 	}
 	return art, err
 }

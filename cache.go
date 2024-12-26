@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/spezifisch/stmps/logger"
 )
 
@@ -23,10 +21,11 @@ import (
 // Caches are indexed by strings, because. They don't have to be, but
 // stmps doesn't need them to be anything different.
 type Cache[T any] struct {
-	zero     T
-	cache    map[string]T
-	pipeline chan string
-	quit     func()
+	zero       T
+	cache      map[string]T
+	pipeline   chan string
+	quit       func()
+	cacheCheck func(string) string
 }
 
 // NewCache sets up a new cache, given
@@ -36,11 +35,8 @@ type Cache[T any] struct {
 //     fetcher should take a key ID and return an asset, or an error.
 //   - a call-back, which will be called when a requested asset is available. It
 //     will be called with the asset ID, and the loaded asset.
-//   - an invalidation function, returning true if a cached object stored under a
-//     key can be removed from the cache. It will be called with an asset ID to
-//     check.
-//   - an invalidation frequency; the invalidation function will be called for
-//     every cached object this frequently.
+//   - a cache check function; given a key, returns a key to remove from the
+//     cache, or the empty string if nothing is to be removed.
 //   - a logger, used for reporting errors returned by the fetching function
 //
 // The invalidation should be reasonably efficient.
@@ -48,8 +44,7 @@ func NewCache[T any](
 	zeroValue T,
 	fetcher func(string) (T, error),
 	fetchedItem func(string, T),
-	isInvalid func(string) bool,
-	invalidateFrequency time.Duration,
+	cacheCheck func(string) string,
 	logger *logger.Logger,
 ) Cache[T] {
 
@@ -64,24 +59,10 @@ func NewCache[T any](
 				continue
 			}
 			cache[i] = asset
-			fetchedItem(i, asset)
-		}
-	}()
-
-	timer := time.NewTicker(invalidateFrequency)
-	done := make(chan bool)
-	go func() {
-		for {
-			select {
-			case <-timer.C:
-				for k := range cache {
-					if isInvalid(k) {
-						delete(cache, k)
-					}
-				}
-			case <-done:
-				return
+			if remove := cacheCheck(i); remove != "" {
+				delete(cache, remove)
 			}
+			fetchedItem(i, asset)
 		}
 	}()
 
@@ -91,8 +72,8 @@ func NewCache[T any](
 		pipeline: getPipe,
 		quit: func() {
 			close(getPipe)
-			done <- true
 		},
+		cacheCheck: cacheCheck,
 	}
 }
 
@@ -100,6 +81,9 @@ func NewCache[T any](
 // On a cache miss, the requested asset is queued for fetching.
 func (c *Cache[T]) Get(key string) T {
 	if v, ok := c.cache[key]; ok {
+		// We're just touching something in the cache, not putting anything in it,
+		// so we just call cacheCheck to refresh this key
+		c.cacheCheck(key)
 		return v
 	}
 	c.pipeline <- key
