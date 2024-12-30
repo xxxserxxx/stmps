@@ -20,6 +20,11 @@ All notable changes to this project will be documented in this file.
 - During the merge, a field rename prevented unmarshalling of search results
 - Search page apropos focus now focuses appropriately
 - Queue page root was being created twice, and the second time omitted the song info, causing it to not be shown until the user toggled it on
+- Adding an artist replaces artist in cache with next artist. This is a consequence of the unexpected tview behavior that List.SetChangedFunc calls the callback _before_ changing the value returned by GetCurrentItem; so if the callback calls GetCurrentItem, it'll get the wrong value.
+- ReplayGain is specific to Navidrome (and is not documented in OpenSubsonic) but I added it to the API in case we want to support it at some point. However, it had the wrong structure, which caused issues with deserialization on Navidrome.
+- Entity list wasn't advancing the cursor
+- Only adds lyrics support if the server has the OpenSubsonic lyrics extension
+- Update README to reflect removing background playlist syncing
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -30,6 +35,7 @@ All notable changes to this project will be documented in this file.
 
 - Fetch version information from build info
 - Search now pro-actively searches until no more results are returned. It still queries in batches of 20, and updates the list(s) as results are available.
+- Concurrent album art and lyrics fetching; should improve UI lag on slow server responses
 
 ### Adds
 
@@ -42,6 +48,9 @@ All notable changes to this project will be documented in this file.
 - Tweaks the lyrics timing offset to try to hit that sweet spot that makes up for the inaccuracy of mpv
 - Rolls back the (unrelated, unnecessary) logger changes
 - Changelog is updated, and readme updated to list the extra merged features
+- Display the song genre, or the album genre if the server doesn't provide song-level genres
+- Adds a work-around for Navidrome not populating the `albumArtist` field in songs
+- Lyrics uses binary search instead of linear search to find current lyric.
 
 ## [0.1.0] - 2024-10-15
 

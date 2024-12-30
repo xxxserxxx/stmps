@@ -162,20 +162,6 @@ The save function includes an autocomplete function; if an existing playlist is 
 - `a`: Add playlist or song to queue
 - `R`: Refresh playlists from server
 
-On servers with a large number of songs in the playlists, Subsonic can take a while to respond to a request for a list. stmps therefore loads playlists in the background, and will display a spinner next to the "playlist" tab label at the bottom. This spinner can be configured with the `ui.spinner` option in the config file. Some ideas are:
-
-```toml
-spinner = '▁▂▃▄▅▆▇█▇▆▅▄▃▁'
-spinner = '⠁⠂⠄⡀⢀⠠⠐⠈'
-spinner = '|/-\'
-spinner = '▖▘'
-spinner = '▖▌▘'
-spinner = '┤┘┴└├┌┬┐'
-spinner = '⣾⣽⣻⢿⡿⣟⣯⣷'
-```
-
-The default is `▉▊▋▌▍▎▏▎▍▌▋▊▉`. Set only one of these at a time, and the glyphs must exist in the font that the terminal running stmps is using.
-
 ### Search Controls
 
 The search tab performs a server-side search for text in metadata name fields. The search results are filtered into three columns: artist, album, and song, where each entry matches the query in name or title.
