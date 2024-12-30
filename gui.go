@@ -56,7 +56,6 @@ type Ui struct {
 	mpvEvents   chan mpvplayer.UiEvent
 	mprisPlayer *remote.MprisPlayer
 
-	playlists  []subsonic.Playlist
 	connection *subsonic.Connection
 	player     *mpvplayer.Player
 	logger     *logger.Logger
@@ -91,7 +90,6 @@ func InitGui(artists []subsonic.Artist,
 		eventLoop: nil, // initialized by initEventLoops()
 		mpvEvents: make(chan mpvplayer.UiEvent, 5),
 
-		playlists:   []subsonic.Playlist{},
 		connection:  connection,
 		player:      player,
 		logger:      logger,
@@ -202,8 +200,6 @@ func InitGui(artists []subsonic.Artist,
 	ui.app.SetRoot(rootFlex, true).
 		SetFocus(rootFlex).
 		EnableMouse(true)
-
-	ui.playlistPage.UpdatePlaylists()
 
 	return ui
 }

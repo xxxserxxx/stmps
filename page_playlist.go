@@ -4,15 +4,10 @@
 package main
 
 import (
-	"fmt"
-	"sync"
-	"time"
-
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/spezifisch/stmps/logger"
 	"github.com/spezifisch/stmps/subsonic"
-	"github.com/spf13/viper"
 )
 
 type PlaylistPage struct {
@@ -23,20 +18,18 @@ type PlaylistPage struct {
 	playlistList     *tview.List
 	newPlaylistInput *tview.InputField
 	selectedPlaylist *tview.List
+	playlists        []subsonic.Playlist
 
 	// external refs
 	ui     *Ui
 	logger logger.LoggerInterface
-
-	updatingMutex sync.Locker
-	isUpdating    bool
 }
 
 func (ui *Ui) createPlaylistPage() *PlaylistPage {
 	playlistPage := PlaylistPage{
-		ui:            ui,
-		logger:        ui.logger,
-		updatingMutex: &sync.Mutex{},
+		ui:        ui,
+		logger:    ui.logger,
+		playlists: make([]subsonic.Playlist, 0),
 	}
 
 	// left half: playlists
@@ -48,10 +41,7 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 		SetTitleAlign(tview.AlignLeft).
 		SetBorder(true)
 
-	// add the playlists
-	for _, playlist := range ui.playlists {
-		playlistPage.playlistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
-	}
+	playlistPage.UpdatePlaylists()
 
 	// right half: songs of selected playlist
 	playlistPage.selectedPlaylist = tview.NewList().
@@ -106,17 +96,19 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 			ui.app.SetFocus(playlistPage.selectedPlaylist)
 			return nil
 		}
-		if event.Rune() == 'a' {
+		switch event.Rune() {
+		case 'a':
 			playlistPage.handleAddPlaylistToQueue()
 			return nil
-		}
-		if event.Rune() == 'n' {
+		case 'n':
 			ui.pages.ShowPage(PageNewPlaylist)
 			ui.app.SetFocus(ui.playlistPage.newPlaylistInput)
 			return nil
-		}
-		if event.Rune() == 'd' {
+		case 'd':
 			ui.pages.ShowPage(PageDeletePlaylist)
+			return nil
+		case 'R':
+			playlistPage.UpdatePlaylists()
 			return nil
 		}
 
@@ -167,15 +159,15 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 	playlistPage.DeletePlaylistModal = makeModal(deletePlaylistFlex, 20, 3)
 
 	playlistPage.playlistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
-		if index < 0 || index >= len(ui.playlists) {
+		if index < 0 || index >= len(playlistPage.playlists) {
 			return
 		}
-		playlistPage.handlePlaylistSelected(ui.playlists[index])
+		playlistPage.handlePlaylistSelected(playlistPage.playlists[index])
 	})
 
 	// open first playlist by default so we don't get stuck when there's only one playlist
-	if len(ui.playlists) > 0 {
-		playlistPage.handlePlaylistSelected(ui.playlists[0])
+	if len(playlistPage.playlists) > 0 {
+		playlistPage.handlePlaylistSelected(playlistPage.playlists[0])
 	}
 
 	return &playlistPage
@@ -190,94 +182,20 @@ func (p *PlaylistPage) GetCount() int {
 }
 
 func (p *PlaylistPage) UpdatePlaylists() {
-	// There's a potential race condition here and, albeit highly unlikely to ever get hit,
-	// we'll put in some protection
-	p.updatingMutex.Lock()
-	defer p.updatingMutex.Unlock()
-	if p.isUpdating {
+	playlists, err := p.ui.connection.GetPlaylists()
+	if err != nil {
+		p.logger.PrintError("GetPlaylists", err)
 		return
 	}
-	p.isUpdating = true
-	// TODO (B) Stop pro-actively deeply loading the playlists. This will remove all of the threading and spinner code.
-
-	var spinnerText []rune = []rune(viper.GetString("ui.spinner"))
-	if len(spinnerText) == 0 {
-		spinnerText = []rune("▉▊▋▌▍▎▏▎▍▌▋▊▉")
+	p.playlistList.Clear()
+	p.playlists = playlists.Playlists
+	for _, pl := range playlists.Playlists {
+		p.playlistList.AddItem(tview.Escape(pl.Name), "", 0, nil)
 	}
-	spinnerMax := len(spinnerText) - 1
-	playlistsButton := buttonOrder[PAGE_PLAYLISTS]
-	stop := make(chan bool)
-	go func() {
-		var idx int
-		timer := time.NewTicker(500 * time.Millisecond)
-		defer timer.Stop()
-		for {
-			select {
-			case <-timer.C:
-				p.ui.app.QueueUpdateDraw(func() {
-					var format string
-					if playlistsButton == p.ui.menuWidget.activeButton {
-						format = "%d: [::b][red]%c[white]%s[::-]"
-					} else {
-						format = "%d: [red]%c[white]%s"
-					}
-					label := fmt.Sprintf(format, PAGE_PLAYLISTS+1, spinnerText[idx], playlistsButton)
-					p.ui.menuWidget.buttons[playlistsButton].SetLabel(label)
-					idx++
-					if idx > spinnerMax {
-						idx = 0
-					}
-				})
-			case <-stop:
-				p.ui.app.QueueUpdateDraw(func() {
-					var format string
-					if playlistsButton == p.ui.menuWidget.activeButton {
-						format = "%d: [::b]%s[::-]"
-					} else {
-						format = "%d: %s"
-					}
-					label := fmt.Sprintf(format, PAGE_PLAYLISTS+1, playlistsButton)
-					p.ui.menuWidget.buttons[playlistsButton].SetLabel(label)
-				})
-				close(stop)
-				return
-			}
-		}
-	}()
-
-	go func() {
-		playlists, err := p.ui.connection.GetPlaylists()
-		if err != nil {
-			p.logger.PrintError("GetPlaylists", err)
-			p.isUpdating = false
-			stop <- true
-			return
-		}
-		if len(playlists.Playlists) == 0 {
-			p.logger.Printf("no error from GetPlaylists, but also no response!")
-			stop <- true
-			return
-		}
-		p.updatingMutex.Lock()
-		defer p.updatingMutex.Unlock()
-		p.ui.playlists = playlists.Playlists
-		p.ui.app.QueueUpdateDraw(func() {
-			p.playlistList.Clear()
-			p.ui.addToPlaylistList.Clear()
-
-			for _, playlist := range p.ui.playlists {
-				p.addPlaylist(playlist)
-			}
-
-			p.isUpdating = false
-		})
-		stop <- true
-	}()
 }
 
 func (p *PlaylistPage) addPlaylist(playlist subsonic.Playlist) {
-	p.playlistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
-	p.ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
+	// Rather than getting the current selected, let's use the features of closures.
 }
 
 func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
@@ -289,7 +207,7 @@ func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
 	if entityIndex < 0 || entityIndex >= p.selectedPlaylist.GetItemCount() {
 		return
 	}
-	if playlistIndex >= len(p.ui.playlists) || entityIndex >= len(p.ui.playlists[playlistIndex].Entries) {
+	if playlistIndex >= len(p.playlists) || entityIndex >= len(p.playlists[playlistIndex].Entries) {
 		return
 	}
 
@@ -298,7 +216,7 @@ func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
 		p.selectedPlaylist.SetCurrentItem(entityIndex + 1)
 	}
 
-	entity := p.ui.playlists[playlistIndex].Entries[entityIndex]
+	entity := p.playlists[playlistIndex].Entries[entityIndex]
 	p.ui.addSongToQueue(entity)
 
 	p.ui.queuePage.UpdateQueue()
@@ -306,7 +224,7 @@ func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
 
 func (p *PlaylistPage) handleAddPlaylistToQueue() {
 	currentIndex := p.playlistList.GetCurrentItem()
-	if currentIndex < 0 || currentIndex >= p.playlistList.GetItemCount() || currentIndex >= len(p.ui.playlists) {
+	if currentIndex < 0 || currentIndex >= p.playlistList.GetItemCount() || currentIndex >= len(p.playlists) {
 		return
 	}
 
@@ -315,7 +233,7 @@ func (p *PlaylistPage) handleAddPlaylistToQueue() {
 		p.playlistList.SetCurrentItem(currentIndex + 1)
 	}
 
-	playlist := p.ui.playlists[currentIndex]
+	playlist := p.playlists[currentIndex]
 	for _, entity := range playlist.Entries {
 		p.ui.addSongToQueue(entity)
 	}
@@ -324,6 +242,13 @@ func (p *PlaylistPage) handleAddPlaylistToQueue() {
 }
 
 func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.Playlist) {
+	var err error
+	playlist, err = p.ui.connection.GetPlaylist(string(playlist.Id))
+	if err != nil {
+		p.logger.PrintError("handlePlaylistSelected", err)
+		return
+	}
+
 	p.selectedPlaylist.Clear()
 	p.selectedPlaylist.SetSelectedFocusOnly(true)
 
@@ -341,25 +266,25 @@ func (p *PlaylistPage) newPlaylist(name string) {
 		return
 	}
 
-	p.ui.playlists = append(p.ui.playlists, playlist)
+	p.playlists = append(p.playlists, playlist)
 
 	p.playlistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
 	p.ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
 }
 
 func (p *PlaylistPage) deletePlaylist(index int) {
-	if index < 0 || index >= len(p.ui.playlists) {
+	if index < 0 || index >= len(p.playlists) {
 		return
 	}
 
-	playlist := p.ui.playlists[index]
+	playlist := p.playlists[index]
 
 	if index == 0 {
 		p.playlistList.SetCurrentItem(1)
 	}
 
 	// Removes item with specified index
-	p.ui.playlists = append(p.ui.playlists[:index], p.ui.playlists[index+1:]...)
+	p.playlists = append(p.playlists[:index], p.playlists[index+1:]...)
 
 	p.playlistList.RemoveItem(index)
 	p.ui.addToPlaylistList.RemoveItem(index)

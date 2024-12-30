@@ -45,6 +45,7 @@ const helpPagePlaylists = `
 n     new playlist
 d     delete playlist
 a     add playlist or song to queue
+R     refresh playlists
 `
 
 const helpSearchPage = `

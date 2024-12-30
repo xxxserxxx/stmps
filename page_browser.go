@@ -170,10 +170,6 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 		}
 	})
 
-	// "add to playlist" modal
-	for _, playlist := range ui.playlists {
-		ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
-	}
 	ui.addToPlaylistList.SetBorder(true).
 		SetTitle("Add to Playlist")
 
@@ -190,7 +186,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 			ui.app.SetFocus(browserPage.entityList)
 			return nil
 		} else if event.Key() == tcell.KeyEnter {
-			playlist := ui.playlists[ui.addToPlaylistList.GetCurrentItem()]
+			playlist := ui.playlistPage.playlists[ui.addToPlaylistList.GetCurrentItem()]
 			browserPage.handleAddEntityToPlaylist(&playlist)
 
 			ui.pages.HidePage(PageAddToPlaylist)
@@ -217,6 +213,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 		case 'A':
 			// only makes sense to add to a playlist if there are playlists
 			if ui.playlistPage.GetCount() > 0 {
+				browserPage.updatePlaylists()
 				ui.pages.ShowPage(PageAddToPlaylist)
 				ui.app.SetFocus(ui.addToPlaylistList)
 			} else {
@@ -629,4 +626,15 @@ func (b *BrowserPage) handleAddEntityToPlaylist(playlist *subsonic.Playlist) {
 			b.logger.PrintError("AddSongToPlaylist", err)
 		}
 	}, b.ui.playlistPage.UpdatePlaylists)
+}
+
+func (b *BrowserPage) updatePlaylists() {
+	ui := b.ui
+	ui.addToPlaylistList.Clear()
+	if ui.playlistPage.playlists != nil && len(ui.playlistPage.playlists) > 0 {
+		// "add to playlist" modal
+		for _, playlist := range ui.playlistPage.playlists {
+			ui.addToPlaylistList.AddItem(tview.Escape(playlist.Name), "", 0, nil)
+		}
+	}
 }

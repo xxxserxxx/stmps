@@ -452,7 +452,7 @@ func (q *QueuePage) saveQueue(playlistName string) {
 	}
 
 	var playlistId string
-	for _, p := range q.ui.playlists {
+	for _, p := range q.ui.playlistPage.playlists {
 		if p.Name == playlistName {
 			playlistId = string(p.Id)
 			break
@@ -473,15 +473,15 @@ func (q *QueuePage) saveQueue(playlistName string) {
 		q.logger.Print(message)
 	} else {
 		if playlistId != "" {
-			for i, pl := range q.ui.playlists {
+			for i, pl := range q.ui.playlistPage.playlists {
 				if string(pl.Id) == playlistId {
-					q.ui.playlists[i] = response
+					q.ui.playlistPage.playlists[i] = response
 					break
 				}
 			}
 		} else {
 			q.ui.playlistPage.addPlaylist(response)
-			q.ui.playlists = append(q.ui.playlists, response)
+			q.ui.playlistPage.playlists = append(q.ui.playlistPage.playlists, response)
 		}
 		q.ui.playlistPage.handlePlaylistSelected(response)
 	}

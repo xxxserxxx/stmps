@@ -41,9 +41,13 @@ func (ui *Ui) createPlaylistSelectionWidget() (m *PlaylistSelectionWidget) {
 	m.accept = tview.NewButton("Accept").SetLabelColor(tcell.ColorBlack)
 	m.cancel = tview.NewButton("Cancel").SetLabelColor(tcell.ColorBlack)
 	m.inputField = tview.NewInputField().SetAutocompleteFunc(func(current string) []string {
+		// if the playlists page hasn't been created, there's nothing to work with
+		if ui.playlistPage == nil {
+			return []string{}
+		}
 		rv := make([]string, 0)
 		var exactMatch bool
-		for _, p := range ui.playlists {
+		for _, p := range ui.playlistPage.playlists {
 			if strings.Contains(p.Name, current) {
 				rv = append(rv, p.Name)
 			}
@@ -83,7 +87,7 @@ func (ui *Ui) createPlaylistSelectionWidget() (m *PlaylistSelectionWidget) {
 	acceptFunc := func() {
 		inputText := m.inputField.GetText()
 		if !m.overwrite.IsChecked() {
-			for _, p := range ui.playlists {
+			for _, p := range ui.playlistPage.playlists {
 				if p.Name == inputText {
 					return
 				}
@@ -188,7 +192,7 @@ func (m *PlaylistSelectionWidget) focusNext(event *tcell.EventKey) *tcell.EventK
 	case m.inputField:
 		st := m.inputField.GetText()
 		found := false
-		for _, p := range m.ui.playlists {
+		for _, p := range m.ui.playlistPage.playlists {
 			if p.Name == st {
 				m.overwrite.SetDisabled(false)
 				m.overwriteEnabled = true

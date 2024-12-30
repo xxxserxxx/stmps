@@ -160,6 +160,7 @@ The save function includes an autocomplete function; if an existing playlist is 
 - `n`: New playlist
 - `d`: Delete playlist
 - `a`: Add playlist or song to queue
+- `R`: Refresh playlists from server
 
 On servers with a large number of songs in the playlists, Subsonic can take a while to respond to a request for a list. stmps therefore loads playlists in the background, and will display a spinner next to the "playlist" tab label at the bottom. This spinner can be configured with the `ui.spinner` option in the config file. Some ideas are:
 

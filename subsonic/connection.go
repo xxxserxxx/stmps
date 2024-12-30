@@ -381,26 +381,7 @@ func (connection *Connection) GetPlaylists() (Playlists, error) {
 	if resp == nil {
 		return Playlists{}, fmt.Errorf("GetPlaylists nil response from server: %s", err)
 	}
-	playlists := resp.Playlists
-
-	for i := 0; i < len(playlists.Playlists); i++ {
-		playlist := playlists.Playlists[i]
-
-		if playlist.SongCount == 0 {
-			continue
-		}
-
-		pl, err := connection.GetPlaylist(string(playlist.Id))
-
-		if err != nil {
-			return Playlists{Playlists: make([]Playlist, 0)}, err
-		}
-
-		playlists.Playlists[i].Entries = pl.Entries
-
-	}
-
-	return playlists, nil
+	return resp.Playlists, nil
 }
 
 func (connection *Connection) GetPlaylist(id string) (Playlist, error) {
