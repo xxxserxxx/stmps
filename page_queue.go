@@ -247,6 +247,10 @@ func (ui *Ui) createQueuePage() *QueuePage {
 		},
 		// function that gets called when the actual asset is loaded
 		func(id string, lyrics []subsonic.StructuredLyrics) {
+			// Make sure we clear out old lyrics
+			queuePage.currentLyrics = subsonic.StructuredLyrics{
+				Lines: make([]subsonic.LyricsLine, 0),
+			}
 			// Do nothing if there are no lyrics
 			if len(lyrics) == 0 {
 				return
