@@ -159,6 +159,7 @@ func (ui *Ui) addRandomSongsToQueue(id string) {
 
 // make sure to call ui.QueuePage.UpdateQueue() after this
 func (ui *Ui) addSongToQueue(entity subsonic.Entity) {
+	ui.logger.Printf("debug addSongToQueue %s", entity)
 	uri := ui.connection.GetPlayUrl(entity)
 
 	album, err := ui.connection.GetAlbum(entity.Parent)

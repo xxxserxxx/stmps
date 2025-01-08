@@ -10,6 +10,7 @@ import (
 	"github.com/spezifisch/stmps/subsonic"
 )
 
+// TODO (B) Test against Navidrome, which is returning different playlists than gonic
 type PlaylistPage struct {
 	Root                *tview.Flex
 	NewPlaylistModal    tview.Primitive
@@ -92,12 +93,12 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 
 	// main list input handler
 	playlistPage.playlistList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		playlistPage.logger.Printf("debug: playlistPage inputcapture with %q", event.Rune())
 		if event.Key() == tcell.KeyRight {
 			ui.app.SetFocus(playlistPage.selectedPlaylist)
 			return nil
 		}
 		switch event.Rune() {
-		// FIXME (A) add playlist to queue is not working
 		case 'a':
 			playlistPage.handleAddPlaylistToQueue()
 			return nil
@@ -122,7 +123,6 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
 		}
-		// FIXME (A) add song to queue is not working
 		if event.Rune() == 'a' {
 			playlistPage.handleAddPlaylistSongToQueue()
 			return nil
@@ -164,12 +164,12 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 		if index < 0 || index >= len(playlistPage.playlists) {
 			return
 		}
-		playlistPage.handlePlaylistSelected(playlistPage.playlists[index])
+		playlistPage.playlists[index] = playlistPage.handlePlaylistSelected(playlistPage.playlists[index])
 	})
 
 	// open first playlist by default so we don't get stuck when there's only one playlist
 	if len(playlistPage.playlists) > 0 {
-		playlistPage.handlePlaylistSelected(playlistPage.playlists[0])
+		playlistPage.playlists[0] = playlistPage.handlePlaylistSelected(playlistPage.playlists[0])
 	}
 
 	return &playlistPage
@@ -226,16 +226,20 @@ func (p *PlaylistPage) handleAddPlaylistSongToQueue() {
 
 func (p *PlaylistPage) handleAddPlaylistToQueue() {
 	currentIndex := p.playlistList.GetCurrentItem()
+	p.logger.Printf("debug: handleAddPlaylistToQueue currentIndex %d, item count %d, playlists %d", currentIndex, p.playlistList.GetItemCount(), len(p.playlists))
 	if currentIndex < 0 || currentIndex >= p.playlistList.GetItemCount() || currentIndex >= len(p.playlists) {
+		p.logger.Printf("error: handleAddPlaylistToQueue bad index %d, returning")
 		return
 	}
 
 	// focus next entry
 	if currentIndex+1 < p.playlistList.GetItemCount() {
+		p.logger.Printf("debug: handleAddPlaylistToQueue focusing next")
 		p.playlistList.SetCurrentItem(currentIndex + 1)
 	}
 
 	playlist := p.playlists[currentIndex]
+	p.logger.Printf("debug: handleAddPlaylistToQueue adding %d entries", len(playlist.Entries))
 	for _, entity := range playlist.Entries {
 		p.ui.addSongToQueue(entity)
 	}
@@ -243,12 +247,12 @@ func (p *PlaylistPage) handleAddPlaylistToQueue() {
 	p.ui.queuePage.UpdateQueue()
 }
 
-func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.Playlist) {
+func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.Playlist) subsonic.Playlist {
 	var err error
 	playlist, err = p.ui.connection.GetPlaylist(string(playlist.Id))
 	if err != nil {
 		p.logger.PrintError("handlePlaylistSelected", err)
-		return
+		return playlist
 	}
 
 	p.selectedPlaylist.Clear()
@@ -259,6 +263,7 @@ func (p *PlaylistPage) handlePlaylistSelected(playlist subsonic.Playlist) {
 		line := formatSongForPlaylistEntry(entity)
 		p.selectedPlaylist.AddItem(line, "", 0, handler)
 	}
+	return playlist
 }
 
 func (p *PlaylistPage) newPlaylist(name string) {
