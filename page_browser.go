@@ -417,7 +417,7 @@ func (b *BrowserPage) handleToggleEntityStar() {
 			b.logger.Printf("error: handleToggleEntityStar bad state; index %d > %d number of songs", currentIndex, len(b.currentAlbum.Songs))
 			return
 		}
-		song := b.currentAlbum.Songs[currentIndex-1]
+		song := b.currentAlbum.Songs[currentIndex]
 		idToStar = song.Id
 		title = song.Title
 	} else {
