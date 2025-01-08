@@ -30,12 +30,12 @@ type Cache[T any] struct {
 
 // NewCache sets up a new cache, given
 //
-//   - a zero value, returned immediately on cache misses
+//   - a zeroValue, returned immediately on cache misses
 //   - a fetcher, which can be a long-running function that loads assets.
 //     fetcher should take a key ID and return an asset, or an error.
-//   - a call-back, which will be called when a requested asset is available. It
+//   - a fetchedItem call-back function, which will be called when a requested asset is available. It
 //     will be called with the asset ID, and the loaded asset.
-//   - a cache check function; given a key, returns a key to remove from the
+//   - a cacheCheck function which, when given a key, returns a key to remove from the
 //     cache, or the empty string if nothing is to be removed.
 //   - a logger, used for reporting errors returned by the fetching function
 //

@@ -14,6 +14,8 @@ import (
 	"github.com/spezifisch/stmps/subsonic"
 )
 
+// TODO (B) Put all "heavy" structures behind a Queue
+// TODO (B) Don't let connection calls hang up the UI
 // struct contains all the updatable elements of the Ui
 type Ui struct {
 	app   *tview.Application

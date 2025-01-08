@@ -35,9 +35,11 @@ type Connection struct {
 	clientName    string
 	clientVersion string
 
-	logger         logger.LoggerInterface
+	logger logger.LoggerInterface
+	// TODO replace this by a Cache in the client
 	directoryCache map[string]Directory
-	artistCache    map[string]Artist
+	// TODO replace this by a Cache in the client
+	artistCache map[string]Artist
 	// TODO replace this by a Cache in the client
 	albumCache map[string]Album
 }
@@ -120,6 +122,7 @@ func (connection *Connection) GetIndexes() (Indexes, error) {
 
 // GetIndexes returns an indexed structure of all artists
 // Artists in the response are _not_ sorted
+// TODO (B) Artists that only exist under Various Artists don't show up as their own artists in getArtists calls to either gonic or Navidrome. E.g. if an artist has a single song tagged with artist=X and albumartist=A, living in directory A/somealbum/song.opus, that artist will not appear in getArtists
 // https://opensubsonic.netlify.app/docs/endpoints/getartists/
 func (connection *Connection) GetArtists() (Indexes, error) {
 	query := defaultQuery(connection)

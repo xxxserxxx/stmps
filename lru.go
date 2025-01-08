@@ -3,6 +3,8 @@
 
 package main
 
+// TODO (A) document combining Cache with LRU; is a combining wrapper needed?
+
 // LRU is a least-recently-used algorithm for Caches. It tracks the age of items in
 // a Cache by access time, and when the cache size is greater than a configured value,
 // reports which items in excess of the cache size are the least recently used.
