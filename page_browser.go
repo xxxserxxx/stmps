@@ -159,14 +159,11 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 
 	browserPage.artistList.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
 		it, _ := browserPage.artistList.GetItemText(index)
-		ui.logger.Printf("artistList changed, index %d (%d, %d): %q, %q",
-			index,
-			browserPage.artistList.GetItemCount(),
-			len(browserPage.artistObjectList),
-			it,
-			browserPage.artistObjectList[index].Name)
+		ui.logger.Printf("debug: artistList changed, index %d (%d, %d): %q, %q", index, browserPage.artistList.GetItemCount(), len(browserPage.artistObjectList), it, browserPage.artistObjectList[index].Name)
 		if index < len(browserPage.artistObjectList) {
 			browserPage.handleArtistSelected(index, browserPage.artistObjectList[index])
+		} else {
+			ui.logger.Printf("error: unexpected selected artist index %d > %d size of artist queue", index, len(browserPage.artistObjectList))
 		}
 	})
 
@@ -259,7 +256,7 @@ func (b *BrowserPage) UpdateStars() {
 	// reload album/song list if one is open
 	if b.currentArtist.Id != "" {
 		if b.currentAlbum.Id != "" {
-			b.handleEntitySelected(b.currentAlbum.Id)
+			b.handleAlbumSelected(b.currentAlbum.Id)
 		} else {
 			idx := b.artistList.GetCurrentItem()
 			b.handleArtistSelected(idx, b.currentArtist)
@@ -311,12 +308,12 @@ func (b *BrowserPage) handleArtistSelected(idx int, artist subsonic.Artist) {
 	if err != nil {
 		b.logger.PrintError("handleArtistSelected", err)
 	}
-	b.logger.Printf("handleArtistSelected debug: idx=%d, artist=%q", idx, artist.Name)
+	b.logger.Printf("debug: handleArtistSelected: idx=%d, artist=%q", idx, artist.Name)
 	if idx >= len(b.artistObjectList) {
 		b.logger.Printf("error: handleArtistSelected index %d > %d size of artist object list", idx, len(b.artistObjectList))
 		return
 	}
-	b.logger.Printf("handleArtistSelected debug: setting artist object list %d to %q", idx, artist.Name)
+	b.logger.Printf("debug handleArtistSelected: setting artist object list %d to %q", idx, artist.Name)
 	b.currentArtist, b.artistObjectList[idx] = artist, artist
 
 	b.entityList.Clear()
@@ -324,9 +321,10 @@ func (b *BrowserPage) handleArtistSelected(idx int, artist subsonic.Artist) {
 
 	b.entityList.Box.SetTitle(" album ")
 
+	b.logger.Printf("debug handleArtistSelected: adding %d albums to album list", len(artist.Albums))
 	for _, album := range artist.Albums {
 		title := entityListTextFormat(album.Id, album.Name, true, b.ui.starIdList)
-		b.entityList.AddItem(title, "", 0, func() { b.handleEntitySelected(album.Id) })
+		b.entityList.AddItem(title, "", 0, func() { b.handleAlbumSelected(album.Id) })
 	}
 }
 
@@ -371,60 +369,36 @@ func hasArtist(song subsonic.Entity, artist subsonic.Artist) bool {
 	return false
 }
 
-// handleEntitySelected takes an album or song ID and sets up the
-// contents of the entityList, including setting up selection handlers for each
-// item in the list.
+// handleAlbumSelected fills the entity list with an album's songs, including setting handlers for each entity.
 //
 // If an album is selected, it displays only songs that have the selected artist
 // as their artist.
-func (b *BrowserPage) handleEntitySelected(id string) {
+func (b *BrowserPage) handleAlbumSelected(id string) {
 	if id == "" {
 		return
 	}
 
-	if b.currentAlbum.Id == "" {
-		// entityList contains albums, so set the album
-		album, err := b.ui.connection.GetAlbum(id)
-		if err != nil {
-			b.logger.Printf("handleEntitySelected: GetAlbum %s -- %v", id, err)
-			return
-		}
-		b.currentAlbum = album
-		// Browsing an album
-		b.entityList.Clear()
-		b.entityList.Box.SetTitle(" song ")
-		b.entityList.AddItem(
-			tview.Escape("[..]"), "", 0,
-			func() {
-				idx := b.artistList.GetCurrentItem()
-				b.handleArtistSelected(idx, b.currentArtist)
-			})
-		for _, song := range album.Songs {
-			if hasArtist(song, b.currentArtist) {
-				b.entityList.AddItem(song.Title, "", 0, b.ui.makeSongHandler(song))
-			}
-		}
+	// entityList contains albums, so set the album
+	album, err := b.ui.connection.GetAlbum(id)
+	if err != nil {
+		b.logger.Printf("error: handleEntitySelected: GetAlbum %s -- %v", id, err)
 		return
 	}
-
-	// entityList contains songs, so activate the song
-
-	// Derive the song from the selection list
-	currentIndex := b.entityList.GetCurrentItem()
-	// We don't handle [..] here
-	if currentIndex < 1 {
-		return
-	}
+	b.currentAlbum = album
+	// Browsing an album
 	b.entityList.Clear()
-	song := b.currentAlbum.Songs[currentIndex]
-
-	uri := b.ui.connection.GetPlayUrl(song)
-	coverArtId := song.CoverArtId
-	if err := b.ui.player.PlayUri(uri, coverArtId, song); err != nil {
-		b.ui.logger.PrintError("SongHandler Play", err)
-		return
+	b.entityList.Box.SetTitle(" song ")
+	b.entityList.AddItem(
+		tview.Escape("[..]"), "", 0,
+		func() {
+			idx := b.artistList.GetCurrentItem()
+			b.handleArtistSelected(idx, b.currentArtist)
+		})
+	for _, song := range album.Songs {
+		if hasArtist(song, b.currentArtist) {
+			b.entityList.AddItem(song.Title, "", 0, b.ui.makeSongHandler(song))
+		}
 	}
-	b.ui.queuePage.UpdateQueue()
 }
 
 func (b *BrowserPage) handleToggleEntityStar() {

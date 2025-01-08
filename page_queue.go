@@ -256,17 +256,15 @@ func (ui *Ui) createQueuePage() *QueuePage {
 				return
 			}
 			row, _ := queuePage.queueList.GetSelection()
+			currentSong := queuePage.queueData.playerQueue[row]
 			// If the fetched lyrics isn't for the current song,
 			// just skip it.
-			currentSong := queuePage.queueData.playerQueue[row]
 			if currentSong.Id != id {
 				return
 			}
 			// Otherwise, the asset is for the current song, so update it
 			queuePage.currentLyrics = lyrics[0]
-			ui.app.QueueUpdate(func() {
-				_ = queuePage.songInfoTemplate.Execute(queuePage.songInfo, currentSong)
-			})
+			ui.app.Draw()
 		},
 		lyricsLru.Touch,
 		ui.logger,
@@ -290,8 +288,8 @@ func (q *QueuePage) changeSelection(row, column int) {
 	lyrics := q.lyricsCache.Get(currentSong.Id)
 	if len(lyrics) > 0 {
 		q.currentLyrics = lyrics[0]
-		_ = q.songInfoTemplate.Execute(q.songInfo, currentSong)
 	}
+	_ = q.songInfoTemplate.Execute(q.songInfo, currentSong)
 }
 
 func (q *QueuePage) UpdateQueue() {

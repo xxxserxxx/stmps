@@ -97,6 +97,7 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 			return nil
 		}
 		switch event.Rune() {
+		// FIXME (A) add playlist to queue is not working
 		case 'a':
 			playlistPage.handleAddPlaylistToQueue()
 			return nil
@@ -121,6 +122,7 @@ func (ui *Ui) createPlaylistPage() *PlaylistPage {
 			ui.app.SetFocus(playlistPage.playlistList)
 			return nil
 		}
+		// FIXME (A) add song to queue is not working
 		if event.Rune() == 'a' {
 			playlistPage.handleAddPlaylistSongToQueue()
 			return nil
