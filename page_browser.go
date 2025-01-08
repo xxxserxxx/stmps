@@ -395,8 +395,10 @@ func (b *BrowserPage) handleAlbumSelected(id string) {
 			b.handleArtistSelected(idx, b.currentArtist)
 		})
 	for _, song := range album.Songs {
+		// Only show songs that belong to the artist being viewed, in the case of collection albums
 		if hasArtist(song, b.currentArtist) {
-			b.entityList.AddItem(song.Title, "", 0, b.ui.makeSongHandler(song))
+			title := entityListTextFormat(song.Id, song.Title, false, b.ui.starIdList)
+			b.entityList.AddItem(title, "", 0, b.ui.makeSongHandler(song))
 		}
 	}
 }
