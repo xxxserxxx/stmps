@@ -120,6 +120,9 @@ func (ui *Ui) ShowPage(name string) {
 	ui.menuWidget.SetActivePage(name)
 	_, prim := ui.pages.GetFrontPage()
 	ui.app.SetFocus(prim)
+	if name == PageSearch {
+		ui.searchPage.aproposFocus()
+	}
 }
 
 func (ui *Ui) Quit() {

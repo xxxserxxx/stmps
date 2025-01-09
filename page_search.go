@@ -104,11 +104,17 @@ func (ui *Ui) createSearchPage() *SearchPage {
 
 		switch event.Rune() {
 		case 'a':
-			if len(searchPage.artists) != 0 {
-				idx := searchPage.artistList.GetCurrentItem()
-				searchPage.logger.Printf("artistList adding (%d) %s", idx, searchPage.artists[idx].Name)
-				searchPage.addArtistToQueue(searchPage.artists[idx])
-				return nil
+			idx := searchPage.artistList.GetCurrentItem()
+			if idx >= 0 && searchPage.artistList.GetItemCount() > 0 {
+				if idx < len(searchPage.artists) {
+					searchPage.addArtistToQueue(searchPage.artists[idx])
+					idx++
+					if idx < searchPage.artistList.GetItemCount() {
+						searchPage.artistList.SetCurrentItem(idx)
+					}
+					return nil
+				}
+				searchPage.logger.Printf("error: searchPage.artistList event selected index %d > %d artists, which shouldn't be possible", idx, len(searchPage.artists))
 			}
 			return event
 		case '/':
@@ -166,20 +172,33 @@ func (ui *Ui) createSearchPage() *SearchPage {
 
 		switch event.Rune() {
 		case 'a':
-			if searchPage.queryGenre {
-				idx := searchPage.albumList.GetCurrentItem()
-				if idx < searchPage.albumList.GetItemCount() {
-					genre, _ := searchPage.albumList.GetItemText(idx)
-					searchPage.addGenreToQueue(genre)
-				}
-				return nil
-			}
 			idx := searchPage.albumList.GetCurrentItem()
-			if idx >= 0 && idx < len(searchPage.albums) {
-				searchPage.addAlbumToQueue(searchPage.albums[idx])
-				return nil
+			if idx < 0 || searchPage.albumList.GetItemCount() == 0 {
+				return event
 			}
-			return event
+
+			if searchPage.queryGenre {
+				// Handle the search-by-genre case
+				if idx >= searchPage.albumList.GetItemCount() {
+					searchPage.logger.Printf("error: searchPage.albumList event selected index %d > %d genres, which shouldn't be possible", idx, searchPage.albumList.GetItemCount())
+					return event
+				}
+				genre, _ := searchPage.albumList.GetItemText(idx)
+				searchPage.addGenreToQueue(genre)
+			} else {
+				// Handle the search-by-match case
+				if idx >= len(searchPage.albums) {
+					searchPage.logger.Printf("error: searchPage.albumList event selected index %d > %d albums, which shouldn't be possible", idx, len(searchPage.albums))
+					return event
+				}
+				searchPage.addAlbumToQueue(searchPage.albums[idx])
+			}
+
+			idx++
+			if idx < searchPage.albumList.GetItemCount() {
+				searchPage.albumList.SetCurrentItem(idx)
+			}
+			return nil
 		case '/':
 			searchPage.ui.app.SetFocus(searchPage.searchField)
 			return nil
@@ -220,11 +239,18 @@ func (ui *Ui) createSearchPage() *SearchPage {
 
 		switch event.Rune() {
 		case 'a':
-			if len(searchPage.artists) != 0 {
-				idx := searchPage.songList.GetCurrentItem()
-				ui.addSongToQueue(searchPage.songs[idx])
-				ui.queuePage.updateQueue()
-				return nil
+			idx := searchPage.songList.GetCurrentItem()
+			if idx >= 0 && searchPage.songList.GetItemCount() > 0 {
+				if idx < len(searchPage.songs) {
+					ui.addSongToQueue(searchPage.songs[idx])
+					idx++
+					if idx < searchPage.songList.GetItemCount() {
+						searchPage.songList.SetCurrentItem(idx)
+					}
+					ui.queuePage.updateQueue()
+					return nil
+				}
+				searchPage.logger.Printf("error: searchPage.songList event selected index %d > %d songs, which shouldn't be possible", idx, len(searchPage.songs))
 			}
 			return event
 		case '/':
@@ -367,6 +393,8 @@ func (s *SearchPage) search(search chan string) {
 	}
 }
 
+// addGenreToQueue adds all songs tagged with the genre, by genre name, to the queue.
+// The genre name is e.g. "Rock", "folk", "acid rock", etc.
 func (s *SearchPage) addGenreToQueue(query string) {
 	var songOff int
 	for {
@@ -441,15 +469,15 @@ func (s *SearchPage) addAlbumToQueue(entity subsonic.Ider) {
 }
 
 func (s *SearchPage) aproposFocus() {
-	if s.queryGenre {
+	if s.queryGenre && s.songList.GetItemCount() > 0 {
 		s.ui.app.SetFocus(s.songList)
 		return
 	}
-	if len(s.artists) != 0 {
+	if s.artistList.GetItemCount() != 0 {
 		s.ui.app.SetFocus(s.artistList)
-	} else if len(s.albums) != 0 {
+	} else if s.albumList.GetItemCount() != 0 {
 		s.ui.app.SetFocus(s.albumList)
-	} else if len(s.songs) != 0 {
+	} else if s.songList.GetItemCount() != 0 {
 		s.ui.app.SetFocus(s.songList)
 	} else {
 		s.ui.app.SetFocus(s.artistList)

@@ -48,6 +48,7 @@ type QueuePage struct {
 	lyrics   *tview.TextView
 	coverArt *tview.Image
 
+	// FIXME (A) make *sure* that lyrics are being cleared between songs
 	currentLyrics subsonic.StructuredLyrics
 
 	// external refs

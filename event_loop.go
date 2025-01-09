@@ -73,6 +73,7 @@ func (ui *Ui) guiEventLoop() {
 				}
 
 				ui.app.QueueUpdateDraw(func() {
+					// FIXME (A) scanning is not showing scanning anymore
 					txt := formatPlayerStatus(ui.scanning, statusData.Volume, statusData.Position, statusData.Duration)
 					ui.playerStatus.SetText(txt)
 					if ui.queuePage.lyrics != nil {
