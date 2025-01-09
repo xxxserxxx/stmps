@@ -390,6 +390,14 @@ func (p *Player) GetTimePos() float64 {
 	return p.remoteState.timePos
 }
 
+func (p *Player) GetVolume() int64 {
+	volume, err := p.getPropertyInt64("volume")
+	if err != nil {
+		return 0
+	}
+	return volume
+}
+
 func (p *Player) IsSeeking() (bool, error) {
 	return false, nil
 }

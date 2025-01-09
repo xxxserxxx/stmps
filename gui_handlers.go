@@ -5,6 +5,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/spezifisch/stmps/mpvplayer"
@@ -106,7 +107,34 @@ func (ui *Ui) handlePageInput(event *tcell.EventKey) *tcell.EventKey {
 		ui.scanning = true
 		if err := ui.connection.StartScan(); err != nil {
 			ui.logger.PrintError("startScan:", err)
+			return event
 		}
+		go func() {
+			for {
+				if pl, err := ui.player.IsPlaying(); err != nil || pl {
+					return
+				}
+				if ss, err := ui.connection.ScanStatus(); err != nil {
+					return
+				} else {
+					ui.scanning = ss.Scanning
+				}
+				item, err := ui.player.GetPlayingTrack()
+				if err != nil {
+					item = mpvplayer.QueueItem{}
+				}
+				ui.app.QueueUpdateDraw(func() {
+					txt := formatPlayerStatus(ui.scanning, ui.player.GetVolume(), int64(ui.player.GetTimePos()), int64(item.Duration))
+					ui.playerStatus.SetText(txt)
+				})
+				// If we're not scanning, this poller is not needed
+				if !ui.scanning {
+					return
+				}
+				// We could do this with a timer channel, but this is simpler
+				time.Sleep(1 * time.Second)
+			}
+		}()
 
 	default:
 		return event
