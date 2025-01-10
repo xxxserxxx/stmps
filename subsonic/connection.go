@@ -516,7 +516,7 @@ func (connection *Connection) Search(searchTerm string, artistOffset, albumOffse
 
 // StartScan tells the Subsonic server to initiate a media library scan. Whether
 // this is a deep or surface scan is dependent on the server implementation.
-// https://subsonic.org/pages/api.jsp#startScan
+// https://opensubsonic.netlify.app/docs/endpoints/startscan/
 func (connection *Connection) StartScan() error {
 	query := defaultQuery(connection)
 	requestUrl := fmt.Sprintf("%s/rest/startScan?%s", connection.Host, query.Encode())
@@ -524,14 +524,12 @@ func (connection *Connection) StartScan() error {
 		return err
 	} else if resp == nil {
 		return err
-	} else if !resp.ScanStatus.Scanning {
-		return fmt.Errorf("server returned false for scan status on scan attempt")
 	}
 	return nil
 }
 
 // ScanStatus returns the state of any current scanning processes.
-// https://subsonic.org/pages/api.jsp#scanStatus
+// https://opensubsonic.netlify.app/docs/endpoints/getscanstatus/
 func (connection *Connection) ScanStatus() (ScanStatus, error) {
 	query := defaultQuery(connection)
 	requestUrl := fmt.Sprintf("%s/rest/getScanStatus?%s", connection.Host, query.Encode())
