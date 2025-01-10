@@ -333,23 +333,27 @@ const VARIOUS_ARTISTS = "Various Artists"
 // hasArtist tests whether artist is the artist, or is in either
 // the artist or album artist lists
 func hasArtist(song subsonic.Entity, artist subsonic.Artist) bool {
-	// Navidrome doesn't correctly populate artist fields, so we have to jump through some hoops here.
-	// The convention among Subsonic servers (and many media servers, in general) is that albums with
+	// Some servers do not populate the albumArtists field, so we have to jump through some hoops here.
+	// The convention among many media servers (including some Subsonic API servers) is that albums with
 	// multiple artists:
+	//
 	// 1. Set the artist field to the actual artist of the song
 	// 2. Set the albumArtist field to "Various Artists"
-	// Navidrome does not return the albumArtists field through the API, which means that clients
+	//
+	// For servers which do not return the albumArtists field through the API, clients
 	// can't check this convention.
 	//
 	// This code wants to help the caller determine whether a given song matches a
 	// specific artist, even when the song is part of a collection. The issue is when
-	// the user is browsing under "Various Artists"; gonic populates the
-	// "albumArtists" field in each song, allowing us to match the "Various Artists"
-	// artist with the song. Since Navidrome does not, no songs will match.
+	// the user is browsing under the "Various Artists" artist; servers which populate the
+	// "albumArtists" field in each song allow us to match the "Various Artists"
+	// artist with the song. Servers which do not result in empty matches:
+	// the "artist" being browsed is "Various Artists", but the song's "artist"
+	// is the actual artist, and so no match is made.
 	//
 	// We work around this by testing whether the artist is "Various Artist"; if so, we
-	// return "true". It's a hack, but the cases where the results are undesireable should
-	// be edge cases.
+	// always return "true". It's a hack, but the cases where the
+	// results are undesireable should be edge cases.
 	if artist.Name == VARIOUS_ARTISTS {
 		return true
 	}
