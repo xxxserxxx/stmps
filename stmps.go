@@ -132,6 +132,7 @@ func main() {
 	pl := flag.Bool("playlists", false, "include playlist info (only used with --list; playlists can take a long time to load)")
 	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to `file`")
 	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
+	logFile := flag.String("logfile", "", "Also write log messages to this file")
 	configFile := flag.String("config", "", "use config `file`")
 	version := flag.Bool("version", false, "print the stmps version and exit")
 
@@ -178,7 +179,8 @@ func main() {
 		osExit(2)
 	}
 
-	logger := logger.Init()
+	logger := logger.Init(*logFile)
+	defer logger.Close()
 	initCommandHandler(logger)
 
 	// init mpv engine
