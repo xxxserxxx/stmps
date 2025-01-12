@@ -27,6 +27,8 @@ Dev Branch:
 - Song info panel (song information, lyrics, and cover art) can be toggled with 'i'
 - Synced lyrics are shown, and synced with the music, if the server supports `getLyricsBySongId/`. Currently, a PR in gonic provides this through filesystem `.lrc` files. This version of gonic is in the main branch of [@danielepintore's fork](https://github.com/danielepintore/gonic.git).
 - The search tab can toggle between "search for anything" (via `search3/`), or search-by-genre (via `getSongsByGenre/`. As part of this, switching to the genre search in the search tab with 'g' also shows a list of all known genres, which can be browsed.
+- Includes refactoring s.t. the interface reflects song metadata, and not directory structure. This mainly affects the UI in the browser tab, where the left column is _always_ the list of artists, and the right column is _always_ either albums or songs. Consequently, the right column title is accurate, and can't be browsed out of the artist.
+- Playlists now behave like the rest of the UI items, and are not loaded in the background. The list of playlists is consequently immediately available, although browsing through the list now calls to the server and can be slower until all playlists are loaded.
 
 ## Screenshots
 

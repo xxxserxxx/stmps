@@ -79,6 +79,7 @@ func (s *Connection) RemoveAlbumCacheEntry(key string) {
 }
 
 func defaultQuery(connection *Connection) url.Values {
+	// TODO add version information and compare to server API version +undecided
 	query := url.Values{}
 	if connection.PlaintextAuth {
 		query.Set("p", connection.Password)
