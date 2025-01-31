@@ -17,7 +17,7 @@ type Logger struct {
 
 func Init(file string) *Logger {
 	l := Logger{
-		Prints: make(chan string, 100),
+		Prints: make(chan string, 200),
 	}
 	if file != "" {
 		var err error

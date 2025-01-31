@@ -30,8 +30,28 @@ func (ui *Ui) initEventLoops() {
 }
 
 func (ui *Ui) runEventLoops() {
+	go ui.logEventLoops()
 	go ui.guiEventLoop()
 	go ui.backgroundEventLoop()
+}
+
+// logEventLoops processes log events
+// This may look weird: why this way? Why not in guiEventLoop()? Why fork a
+// goroutine for every message? Because, my friend, if we fill up the log chan,
+// everything hangs, and we can't be *certain* the application won't generate
+// more log messages in one UI tick than the chan size. We _could_ make the chan
+// size really, absurdly large, but this still wouldn't be a guarantee. This may
+// not be the most efficient implementation, but it ensures that the application
+// will never hang because of chatty logging (as during DEBUG). This problem is
+// particular to stmps because of how much threading is going on in this
+// application, and in particular, because logPage.Print does UI stuff, which
+// could hang trying to log too many things during this single Print() call.
+func (ui *Ui) logEventLoops() {
+	for {
+		msg := <-ui.logger.Prints
+		// handle log page output
+		go ui.logPage.Print(msg)
+	}
 }
 
 // handle ui updates
@@ -48,10 +68,6 @@ func (ui *Ui) guiEventLoop() {
 			fpsTimer.Reset(10 * time.Second)
 			// ui.logger.Printf("guiEventLoop: %f events per second", events/10.0)
 			events = 0
-
-		case msg := <-ui.logger.Prints:
-			// handle log page output
-			ui.logPage.Print(msg)
 
 		case mpvEvent := <-ui.mpvEvents:
 			events++

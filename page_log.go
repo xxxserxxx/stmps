@@ -38,9 +38,9 @@ func (l *LogPage) Print(line string) {
 		l.logList.InsertItem(0, line, "", 0, nil)
 
 		// Make sure the log list doesn't grow infinitely
-		for l.logList.GetItemCount() > 100 {
+		toRemove := l.logList.GetItemCount() - 100
+		for c := 0; c < toRemove; c++ {
 			l.logList.RemoveItem(-1)
 		}
 	})
-
 }

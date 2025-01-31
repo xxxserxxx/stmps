@@ -205,6 +205,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 			browserPage.handleAddEntityToQueue()
 			return nil
 		case 'y':
+			// FIXME (C) When browsing a Various Artists album that appears under an artist, and the songs are filtered by artist, the indexing is based on the whole album and not the filter. 'y' may favorite the wrong item.
 			browserPage.handleToggleEntityStar()
 			return nil
 		case 'A':
@@ -218,6 +219,7 @@ func (ui *Ui) createBrowserPage(artists []subsonic.Artist) *BrowserPage {
 			}
 			return nil
 		case 'R':
+			// FIXME (A) Sometimes when browsing, we completely lose all of the albums. Refresh doesn't work. Artists can still be added with 'a', but nothing is shown in the entity list. This is hard to reproduce.
 			// REFRESH only the artist albums
 			artistIdx := browserPage.artistList.GetCurrentItem()
 			entity := browserPage.artistObjectList[artistIdx]

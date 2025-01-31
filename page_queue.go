@@ -48,6 +48,7 @@ type QueuePage struct {
 	lyrics   *tview.TextView
 	coverArt *tview.Image
 
+	// FIXME (A) lyrics are _still_ not being cleared between songs. Song 1 has lyrics, and system _automatically_ finishes and moves to the next song, Song 2 has no lyrics: Song 1 lyrics are used.
 	currentLyrics subsonic.StructuredLyrics
 
 	// external refs
@@ -108,6 +109,7 @@ func (ui *Ui) createQueuePage() *QueuePage {
 			case 'k':
 				queuePage.moveSongUp()
 			case 's':
+				// FIXME (B) verify saving works -- it doesn't look like it's working properly. Gonic: "subsonic error code 50: you aren't allowed update that user's playlist"
 				if len(queuePage.queueData.playerQueue) == 0 {
 					queuePage.logger.Print("no items in queue to save")
 					return nil
@@ -285,6 +287,7 @@ func (q *QueuePage) changeSelection(row, column int) {
 		art = q.coverArtCache.Get(currentSong.CoverArtId)
 	}
 	q.coverArt.SetImage(art)
+	// TODO (C) don't change the lyrics if a song is currently playing (?)
 	lyrics := q.lyricsCache.Get(currentSong.Id)
 	if len(lyrics) > 0 {
 		q.currentLyrics = lyrics[0]
