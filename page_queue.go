@@ -48,7 +48,6 @@ type QueuePage struct {
 	lyrics   *tview.TextView
 	coverArt *tview.Image
 
-	// FIXME (A) lyrics are _still_ not being cleared between songs. Song 1 has lyrics, and system _automatically_ finishes and moves to the next song, Song 2 has no lyrics: Song 1 lyrics are used.
 	currentLyrics subsonic.StructuredLyrics
 
 	// external refs
@@ -287,7 +286,6 @@ func (q *QueuePage) changeSelection(row, column int) {
 		art = q.coverArtCache.Get(currentSong.CoverArtId)
 	}
 	q.coverArt.SetImage(art)
-	// TODO (C) don't change the lyrics if a song is currently playing (?)
 	lyrics := q.lyricsCache.Get(currentSong.Id)
 	if len(lyrics) > 0 {
 		q.currentLyrics = lyrics[0]

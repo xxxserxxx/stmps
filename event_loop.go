@@ -147,6 +147,10 @@ func (ui *Ui) guiEventLoop() {
 					if ui.mprisPlayer != nil {
 						ui.mprisPlayer.OnSongChange(currentSong)
 					}
+					lyrics := ui.queuePage.lyricsCache.Get(currentSong.Id)
+					if len(lyrics) > 0 {
+						ui.queuePage.currentLyrics = lyrics[0]
+					}
 
 					if ui.connection.Scrobble {
 						// scrobble "now playing" event (delegate to background event loop)
